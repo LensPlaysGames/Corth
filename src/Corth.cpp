@@ -102,6 +102,10 @@ namespace Corth {
 		printf("\n%s\n", "End program simulation");
 	}
 
+	void GenerateAssembly_NASM_linux64(Program& prog){
+
+	}
+
 	void GenerateAssembly_NASM_win64(Program& prog){
 		// Loop through a lexed program and then generate assembly file from it.
 
@@ -268,7 +272,7 @@ bool FileExists(std::string filePath) {
 std::string loadFromFile(std::string filePath) {
     std::ifstream inFileStream(filePath);
     if (!inFileStream) {
-		throw std::exception(("File not found at " + filePath).c_str());
+		throw std::runtime_error(("File not found at " + filePath).c_str());
 	}
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
@@ -368,7 +372,7 @@ int main(int argc, char** argv){
         lexSuccessful = true;
         PrintTokens(prog);
     }
-    catch (std::exception e) {
+    catch (std::runtime_error e) {
         printf("Error during loading file: %s\n", e.what());
         return -1;
     }
