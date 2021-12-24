@@ -127,8 +127,8 @@ namespace Corth {
                      << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS\n"
 					 << "    extern printf\n"
 					 << "\n"
-					 << "    global main\n"
-					 << "main:\n";
+					 << "    global _start\n"
+					 << "_start:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL		
 			assert(static_cast<int>(TokenType::COUNT) == 3); 
