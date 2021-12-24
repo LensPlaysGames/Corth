@@ -54,30 +54,15 @@ namespace Corth {
 			// WRITE HEADER TO ASM FILE
 			/* MISSING .bss SECTION FOR STDIN STDOUT HANDLES AND .data SECTION FOR STDIN/OUT QUERY CODES */
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
-					 << "    SECTION .bss\n"
-					 << "stdin resq 1\n"
-					 << "readBytes resq 1\n"
-					 << "inbuf resb 1\n"
-					 << "stdout resq 1\n"
-					 << "writeBytes resq 1\n"
-					 << "bytes resb 8\n"
-					 << "\n"
+					 << "    SECTION .data\n"
+					 << "    fmt db "%u", 0x0a, 0\n"
 					 << "    SECTION .text\n"
                      << "    ;; DEFINE EXTERNAL WINAPI SYMBOLS (LINK AGAINST KERNEL32.DLL AND USER32.DLL)\n"
-					 << "    extern GetStdHandle\n"
-					 << "    extern WriteFile\n"
+					 << "    extern printf\n"
 					 << "    extern ExitProcess\n"
 					 << "\n"
 					 << "    global main\n"
-					 << "main:\n"
-					 << "    mov rcx, -10\n"
-					 << "    call GetStdHandle\n"
-					 << "    mov [stdin], rax\n"
-					 << "\n"
-					 << "    mov rcx, -11\n"
-					 << "    call GetStdHandle\n"
-					 << "    mov [stdout], rax\n"
-					 << "\n";
+					 << "main:\n";
 
 			assert(static_cast<int>(TokenType::COUNT) == 3); // Exhaustive handling of implementation of token types
     		for (auto& tok : prog.tokens){
@@ -95,13 +80,11 @@ namespace Corth {
 								 << "    add rax, rbx\n"
 								 << "    push rax\n";
 					} else if (tok.text == "#") {
-						asm_file << "    ;; -- WINAPI WriteFile --\n"
-								 << "    mov rcx, [stdout]\n"
-								 << "    pop bytes\n"
-								 << "    mov rdx, bytes\n"
-								 << "    mov r8, 8\n"
-								 << "    mov r9, writeBytes\n"
-								 << "    call WriteFile\n";
+						asm_file << "    ;; -- dump (C runtime) --\n"
+								 << "    lea rcx, [rel fmt]\n"
+								 << "    pop rdx\n"
+								 << "    mov al, 0\n"
+								 << "    call printf\n"
 					}
 				}
     		}
