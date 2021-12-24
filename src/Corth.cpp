@@ -9,8 +9,12 @@ namespace Corth {
 	void PrintUsage(){
 		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
 		printf("    %s\n", "Options:");
-		printf("        %s\n", "-a, --nasm-path      | *optional Specify path to NASM");
-        printf("        %s\n", "-a, --golink-path    | *optional Specify path to GoLink");
+		printf("        %s\n", "-com, --compile          | Compile program from source into executable");
+		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
+		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
+        printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
+		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
+        printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
 	}
 
     enum class TokenType {
@@ -20,7 +24,7 @@ namespace Corth {
 		COUNT
     };
 
-	std::string TokenTypeStr(TokenType t){
+	std::string TokenTypeStr(TokenType& t) {
 		assert(static_cast<int>(TokenType::COUNT) == 3);
 		if (t == TokenType::WHITESPACE) { return "WHITESPACE"; }
 		else if (t == TokenType::INT) { return "INTEGER"; }
@@ -45,17 +49,69 @@ namespace Corth {
 		std::vector<Token> tokens;
 	};
 
-	void GenerateAssembly_NASM_win64(Program prog){
-		// Loop through a lexed program and then generate assembly file from it.
+	void SimulateProgram(Program& prog) {
+		printf("\n%s\n\n", "Begin program simulation");
 		
+		std::vector<std::string> stack;
+		
+		for (auto& tok : prog.tokens) {
+			if (tok.type == TokenType::INT) {
+				stack.push_back(tok.text);
+			}
+			else if (tok.type == TokenType::OP) {
+				if (tok.text == "+") {
+					assert(stack.size() >= 2);
+					int a = std::stoi(stack.back());
+					stack.pop_back();
+					int b = std::stoi(stack.back());
+					stack.pop_back();
+					stack.push_back(std::to_string(a + b));
+				}
+				else if (tok.text == "-") {
+					assert(stack.size() >= 2);
+					int b = std::stoi(stack.back());
+					stack.pop_back();					
+					int a = std::stoi(stack.back());
+					stack.pop_back();
+					stack.push_back(std::to_string(a - b));
+				}
+				else if (tok.text == "*") {
+                    assert(stack.size() >= 2);
+					int a = std::stoi(stack.back());
+					stack.pop_back();
+					int b = std::stoi(stack.back());
+                    stack.pop_back();
+					stack.push_back(std::to_string(a * b));
+				}
+				else if (tok.text == "/") {
+					assert(stack.size() >= 2);
+					int b = std::stoi(stack.back());
+					stack.pop_back();
+					int a = std::stoi(stack.back());
+					stack.pop_back();
+					stack.push_back(std::to_string(a / b));
+				}
+				else if (tok.text == "#") {
+                    assert(stack.size() > 0);
+					printf("%s\n", stack.back().c_str());
+					stack.pop_back();
+				}
+			}
+		}
+
+		printf("\n%s\n", "End program simulation");
+	}
+
+	void GenerateAssembly_NASM_win64(Program& prog){
+		// Loop through a lexed program and then generate assembly file from it.
+
+		std::string asm_file_path = "corth_program.asm";
 		std::fstream asm_file;
-		asm_file.open("corth_program.asm", std::ios::out);
+		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
     		printf("%s\n", "Generating NASM win64 assembly");
-
-
+			
 			// WRITE HEADER TO ASM FILE
-			/* MISSING .bss SECTION FOR STDIN STDOUT HANDLES AND .data SECTION FOR STDIN/OUT QUERY CODES */
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
 					 << "    SECTION .data\n"
 					 << "    fmt db '%u', 0x0a, 0\n"
@@ -67,6 +123,7 @@ namespace Corth {
 					 << "    global main\n"
 					 << "main:\n";
 
+			// WRITE TOKENS TO ASM FILE MAIN LABEL
 			assert(static_cast<int>(TokenType::COUNT) == 3); // Exhaustive handling of implementation of token types
     		for (auto& tok : prog.tokens){
     			// Write assembly to opened file based on token type and value
@@ -114,13 +171,13 @@ namespace Corth {
 					}
 				}
     		}
-
+			// WRITE ASM FOOTER (EXIT GRACEFUL)
 			asm_file << "    ;; EXIT PROCESS WITH GRACEFUL EXIT CODE USING WINDOWS API\n"
 					 << "    mov rax, 0\n"
 					 << "    call ExitProcess";
 
 			asm_file.close();
-			printf("%s\n", "NASM win64 assembly generated at corth_program.obj");
+			printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
 		}
 	}
 
@@ -201,6 +258,12 @@ namespace Corth {
 	}
 }
 
+bool FileExists(std::string filePath) {
+	std::ifstream file(filePath);
+	if (file.is_open()) { file.close(); return true; }
+	return false;
+}
+
 // Load a file into a string from a path.
 std::string loadFromFile(std::string filePath) {
     std::ifstream inFileStream(filePath);
@@ -210,8 +273,18 @@ std::string loadFromFile(std::string filePath) {
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
-std::string NASM_PATH = "nasm";
-std::string GOLINK_PATH = "golink";
+std::string SOURCE_PATH = "main.corth";
+std::string ASMB_PATH = "nasm";
+std::string LINK_PATH = "golink";
+
+std::string ASMB_OPTS = " -f win64 corth_program.asm";
+std::string LINK_OPTS = " /console /ENTRY:main kernel32.dll user32.dll msvcrt.dll corth_program.obj";
+
+enum class MODE {
+	COMPILE,
+	SIMULATE,
+	COUNT
+} RUN_MODE { MODE::COMPILE };
 
 int main(int argc, char** argv){
     // Print arguments
@@ -219,7 +292,7 @@ int main(int argc, char** argv){
         printf("Arg. %zi: %s\n", i, argv[i]);
     }
 	std::cout << "\n";
-	
+
 	std::string sourceFilePath;
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -227,29 +300,61 @@ int main(int argc, char** argv){
 			Corth::PrintUsage();
 			return 0;
 		}
-		else if (arg == "-a" || arg == "--nasm-path") {
+		else if (arg == "-a" || arg == "--assembler-path") {
 			if (i + 1 < argc) {
 				i++;
-				NASM_PATH = argv[i];
+				ASMB_PATH = argv[i];
 			}
 			else {
-				printf("Error: %s\n", "Expected NASM path to be specified after `-a`!");
+				printf("Error: %s\n", "Expected path to assembler to be specified after `-a`!");
 				return -1;
 			}
 		}
-		else if (arg == "-l" || arg == "--golink-path") {
+		else if (arg == "-ao" || arg == "--assembler-options"){
 			if (i + 1 < argc) {
 				i++;
-				GOLINK_PATH = argv[i];
+				ASMB_OPTS = argv[i];
 			}
 			else {
-				printf("Error: %s\n", "Expected GoLink path to be specified after `-l`!");
+				printf("Error: %s\n", "Expected assembler options to be specified afer `-ao`!");
 				return -1;
 			}
+		}
+		else if (arg == "-l" || arg == "--linker-path") {
+			if (i + 1 < argc) {
+				i++;
+				LINK_PATH = argv[i];
+			}
+			else {
+				printf("Error: %s\n", "Expected path to linker to be specified after `-l`!");
+				return -1;
+			}
+		}
+		else if (arg == "-lo" || arg == "--linker-options"){
+			if (i + 1 < argc) {
+				i++;
+				LINK_OPTS = argv[i];
+			}
+			else {
+				printf("Error: %s\n", "Expected linker options to be specified after `-lo`!");
+				return -1;
+			}
+		}
+		else if (arg == "-com" || arg == "--compile") {
+			RUN_MODE = MODE::COMPILE;
+		}
+		else if (arg == "-sim" || arg == "--simulate") {
+			RUN_MODE = MODE::SIMULATE;
 		}
 		else {
 			sourceFilePath = argv[i];
 		}
+	}
+
+	if (sourceFilePath.empty()) {
+		printf("Error: %s\n", "Expected source file path in command line arguments!");
+		Corth::PrintUsage();
+		return -1;
 	}
 
 	Corth::Program prog;
@@ -273,15 +378,39 @@ int main(int argc, char** argv){
     }
 
 	if (lexSuccessful) {
-		Corth::GenerateAssembly_NASM_win64(prog);
+		assert(static_cast<int>(MODE::COUNT) == 2);
+		switch (RUN_MODE) {
+		case MODE::SIMULATE:
+			SimulateProgram(prog);
+			break;
+        case MODE::COMPILE:
+			Corth::GenerateAssembly_NASM_win64(prog);
 
-		std::string cmd_asmb = NASM_PATH + " -f win64 corth_program.asm";
-		std::string cmd_link = GOLINK_PATH + " /console /ENTRY:main kernel32.dll user32.dll msvcrt.dll corth_program.obj";
+			if (FileExists(ASMB_PATH)) {
+				if (FileExists(LINK_PATH)) {
+					std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
+					std::string cmd_link = LINK_PATH + LINK_OPTS;
 		
-		printf("Running: `%s`\n", cmd_asmb.c_str());
-		system(cmd_asmb.c_str());
-		printf("Running: `%s`\n", cmd_link.c_str());
-		system(cmd_link.c_str());
-		printf("%s\n", "Executable built successfully!");
+					printf("Running: `%s`\n", cmd_asmb.c_str());
+					system(cmd_asmb.c_str());
+		
+					printf("Running: `%s`\n", cmd_link.c_str());
+					system(cmd_link.c_str());
+		
+					printf("%s\n", "Executable built successfully!");
+				}
+				else {
+					printf(("Error: Linker not found at " + LINK_PATH).c_str());
+					return -1;
+				}
+			}
+			else {
+				printf(("Error: Assembler not found at " + ASMB_PATH).c_str());
+				return -1;
+			}
+			break;
+		}
 	}
+
+	return 0;
 }
