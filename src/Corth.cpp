@@ -181,7 +181,7 @@ namespace Corth {
 			// WRITE ASM FOOTER FOR GRACEFUL PROGRAM EXIT
 			asm_file << "    ;; -- exit --\n"
 					 << "    mov rax, 60\n"
-					 << "    int 0x80\n"
+					 << "    int 0x80\n";
 			
 			asm_file.close();
 		}
