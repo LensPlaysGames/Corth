@@ -172,8 +172,8 @@ namespace Corth {
 					}
 					else if (tok.text == "#") {
 						asm_file << "    ;; -- dump --\n"
-								 << "    lea rcx, [rel fmt]\n"
-								 << "    pop rdx\n"
+								 << "    lea rdi, [rel fmt]\n"
+								 << "    pop rsi\n"
 								 << "    mov rax, 0\n"
 								 << "    call printf\n";
 					}
