@@ -445,8 +445,8 @@ int main(int argc, char** argv){
 			case PLATFORM::LINUX64:
 				#ifdef __linux__
 				Corth::GenerateAssembly_NASM_linux64(prog);
-				if (system(("which " + ASMB_PATH).c_str())) {
-					if (system(("which " + LINK_PATH).c_str())) {
+				if (!system(("which " + ASMB_PATH).c_str())) {
+					if (!system(("which " + LINK_PATH).c_str())) {
 						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
 						std::string cmd_link = LINK_PATH + LINK_OPTS;
 
