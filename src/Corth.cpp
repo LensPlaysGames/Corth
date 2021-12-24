@@ -6,7 +6,12 @@
 #include <vector>
 
 namespace Corth {
-	void PrintUsage(){ printf("%s\n", "Usage: `Corth.exe Path/To/File.corth`"); }
+	void PrintUsage(){
+		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
+		printf("    %s\n", "Options:");
+		printf("        %s\n", "-a, --nasm-path      | *optional Specify path to NASM");
+        printf("        %s\n", "-a, --golink-path    | *optional Specify path to GoLink");
+	}
 
     enum class TokenType {
         WHITESPACE,
@@ -46,7 +51,7 @@ namespace Corth {
 		std::fstream asm_file;
 		asm_file.open("corth_program.asm", std::ios::out);
 		if (asm_file) {
-    		printf("%s\n", "Generating assembly");
+    		printf("%s\n", "Generating NASM win64 assembly");
 
 
 			// WRITE HEADER TO ASM FILE
@@ -115,7 +120,7 @@ namespace Corth {
 					 << "    call ExitProcess";
 
 			asm_file.close();
-			printf("%s\n", "Assembly generated");
+			printf("%s\n", "NASM win64 assembly generated at corth_program.obj");
 		}
 	}
 
@@ -205,8 +210,8 @@ std::string loadFromFile(std::string filePath) {
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
-std::string NASM_PATH = "\NASM\nasm";
-std::string GOLINK_PATH = "\ASM_Dev\Golink\golink";
+std::string NASM_PATH = "nasm";
+std::string GOLINK_PATH = "golink";
 
 int main(int argc, char** argv){
     // Print arguments
@@ -224,7 +229,8 @@ int main(int argc, char** argv){
 		}
 		else if (arg == "-a" || arg == "--nasm-path") {
 			if (i + 1 < argc) {
-				NASM_PATH = argv[i++];
+				i++;
+				NASM_PATH = argv[i];
 			}
 			else {
 				printf("Error: %s\n", "Expected NASM path to be specified after `-a`!");
@@ -233,7 +239,8 @@ int main(int argc, char** argv){
 		}
 		else if (arg == "-l" || arg == "--golink-path") {
 			if (i + 1 < argc) {
-				GOLINK_PATH = argv[i++];
+				i++;
+				GOLINK_PATH = argv[i];
 			}
 			else {
 				printf("Error: %s\n", "Expected GoLink path to be specified after `-l`!");
@@ -267,5 +274,14 @@ int main(int argc, char** argv){
 
 	if (lexSuccessful) {
 		Corth::GenerateAssembly_NASM_win64(prog);
+
+		std::string cmd_asmb = NASM_PATH + " -f win64 corth_program.asm";
+		std::string cmd_link = GOLINK_PATH + " /console /ENTRY:main kernel32.dll user32.dll msvcrt.dll corth_program.obj";
+		
+		printf("Running: `%s`\n", cmd_asmb.c_str());
+		system(cmd_asmb.c_str());
+		printf("Running: `%s`\n", cmd_link.c_str());
+		system(cmd_link.c_str());
+		printf("%s\n", "Executable built successfully!");
 	}
 }
