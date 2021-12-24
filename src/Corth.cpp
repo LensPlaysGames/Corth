@@ -125,6 +125,7 @@ namespace Corth {
 					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
                      << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS\n"
+					 << "    extern exit\n"
 					 << "    extern printf\n"
 					 << "\n"
 					 << "    global _start\n"
@@ -179,9 +180,7 @@ namespace Corth {
 				}
     		}
 			// WRITE ASM FOOTER FOR GRACEFUL PROGRAM EXIT
-			asm_file << "    ;; -- exit --\n"
-					 << "    mov rax, 60\n"
-					 << "    int 0x80\n";
+			asm_file << "    call exit\n";
 			
 			asm_file.close();
 		}
