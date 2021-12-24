@@ -404,12 +404,12 @@ int main(int argc, char** argv){
 					printf("%s\n", "Executable built successfully!");
 				}
 				else {
-					printf(("Error: Linker not found at " + LINK_PATH).c_str());
+					printf(("Error: Linker not found at " + LINK_PATH + "\n").c_str());
 					return -1;
 				}
 			}
 			else {
-				printf(("Error: Assembler not found at " + ASMB_PATH).c_str());
+				printf(("Error: Assembler not found at " + ASMB_PATH + "\n").c_str());
 				return -1;
 			}
 			break;
