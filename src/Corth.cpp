@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-std::string g_WorkingDirectory; // The directory the program is being run from
-
 namespace Corth {
 	void PrintUsage(){ printf("%s\n", "Usage: `Corth.exe Path/To/File.corth`"); }
 
@@ -55,7 +53,7 @@ namespace Corth {
 			/* MISSING .bss SECTION FOR STDIN STDOUT HANDLES AND .data SECTION FOR STDIN/OUT QUERY CODES */
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
 					 << "    SECTION .data\n"
-					 << "    fmt db "%u", 0x0a, 0\n"
+					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
                      << "    ;; DEFINE EXTERNAL WINAPI SYMBOLS (LINK AGAINST KERNEL32.DLL AND USER32.DLL)\n"
 					 << "    extern printf\n"
@@ -74,17 +72,40 @@ namespace Corth {
 				}
 				else if (tok.type == TokenType::OP) {
 					if (tok.text == "+") {
-						asm_file << "    ;; -- plus --\n"
+						asm_file << "    ;; -- add --\n"
 								 << "    pop rax\n"
 								 << "    pop rbx\n"
 								 << "    add rax, rbx\n"
 								 << "    push rax\n";
-					} else if (tok.text == "#") {
-						asm_file << "    ;; -- dump (C runtime) --\n"
+					}
+					else if (tok.text == "-") {
+						asm_file << "    ;; -- subtract --\n"
+								 << "    pop rbx\n"
+								 << "    pop rax\n"
+								 << "    sub rax, rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "*") {
+						asm_file << "    ;; -- multiply --\n"
+								 << "    pop rax\n"
+								 << "    pop rbx\n"
+								 << "    mul rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "/") {
+						asm_file << "    ;; -- divide --\n"
+								 << "    xor rdx, rdx\n"
+								 << "    pop rbx\n"
+								 << "    pop rax\n"
+								 << "    div rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "#") {
+						asm_file << "    ;; -- dump --\n"
 								 << "    lea rcx, [rel fmt]\n"
 								 << "    pop rdx\n"
-								 << "    mov al, 0\n"
-								 << "    call printf\n"
+								 << "    mov rax, 0\n"
+								 << "    call printf\n";
 					}
 				}
     		}
@@ -114,10 +135,8 @@ namespace Corth {
 	}
 
 	void PushToken(std::vector<Token>& tokList, Token& tok){
-		printf("Attempting to push TOKEN(%s, %s)\n", TokenTypeStr(tok.type).c_str(), tok.text.c_str());
 		// Add token to program if it is not whitespace
 		if (tok.type != TokenType::WHITESPACE) {
-			std::cout << "Pushing token!\n";
 			tokList.push_back(tok);
 		}
 		// Reset token
@@ -163,20 +182,17 @@ namespace Corth {
             }
 		}
 	}
-}
 
-std::string RemovePathFromFileName(std::string str){
-    return str.substr(str.find_last_of("/\\"), str.size());
-}
+	void PrintToken(Token& t) {
+        printf("TOKEN(%s, %s)\n", TokenTypeStr(t.type).c_str(), t.text.c_str());		
+	}
 
-std::string RemoveFileNameFromPath(std::string str){
-    return str.substr(0, str.find_last_of("/\\"));
-}
-
-void PrintTokens(Corth::Program& p) {
-	printf("%s\n", "TOKENS:");
-	for (auto& tok : p.tokens){
-		printf("    TOKEN(%s, %s)\n", Corth::TokenTypeStr(tok.type).c_str(), tok.text.c_str());
+	void PrintTokens(Program& p) {
+		printf("%s\n", "TOKENS:");
+		for (auto& tok : p.tokens){
+			std::cout << "    ";
+			PrintToken(tok);
+		}
 	}
 }
 
@@ -189,60 +205,67 @@ std::string loadFromFile(std::string filePath) {
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
+std::string NASM_PATH = "\NASM\nasm";
+std::string GOLINK_PATH = "\ASM_Dev\Golink\golink";
+
 int main(int argc, char** argv){
-	g_WorkingDirectory = RemoveFileNameFromPath(argv[0]);
-	printf("Working Directory: %s\n", g_WorkingDirectory.c_str());
-
-	int EXIT_CODE = 0;
-
     // Print arguments
     for (size_t i = 0; i < argc; i++){
         printf("Arg. %zi: %s\n", i, argv[i]);
     }
 	std::cout << "\n";
+	
+	std::string sourceFilePath;
+	for (int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+		if (arg == "-h" || arg == "--help") {
+			Corth::PrintUsage();
+			return 0;
+		}
+		else if (arg == "-a" || arg == "--nasm-path") {
+			if (i + 1 < argc) {
+				NASM_PATH = argv[i++];
+			}
+			else {
+				printf("Error: %s\n", "Expected NASM path to be specified after `-a`!");
+				return -1;
+			}
+		}
+		else if (arg == "-l" || arg == "--golink-path") {
+			if (i + 1 < argc) {
+				GOLINK_PATH = argv[i++];
+			}
+			else {
+				printf("Error: %s\n", "Expected GoLink path to be specified after `-l`!");
+				return -1;
+			}
+		}
+		else {
+			sourceFilePath = argv[i];
+		}
+	}
 
 	Corth::Program prog;
 	bool lexSuccessful = false;
 
-	// This is okay for dealing with arguments right now, but I would like to tokenize arguments if possible.
-    if (argc < 2){
-        printf("Error: %s\n", "Path to file not given!");
-		Corth::PrintUsage();
-		EXIT_CODE = -1;
+    try {
+        prog.source = loadFromFile(sourceFilePath);
+        printf("%s\n", "Successfully loaded file.");
+        Corth::Lex(prog);
+        printf("%s\n", "Lexed file into tokens");
+        lexSuccessful = true;
+        PrintTokens(prog);
     }
-    else if (argc == 2 && (argv[1] != "-h" || argv[1] != "--help")) {
-        // Try to compile a program from given file path
-		std::string relativeFilePath = argv[1];
-		try {
-		    prog.source = loadFromFile(relativeFilePath);
-			printf("%s\n", "Successfully loaded file.");
-			Corth::Lex(prog);
-			printf("%s\n", "Lexed file into tokens");
-			lexSuccessful = true;
-			PrintTokens(prog);
-		}
-		catch (std::exception e) {
-			printf("Error during loading file: %s\n", e.what());
-			EXIT_CODE = -1;
-		}
-		catch (...) {
-			std::cout << "Error during loading file!";
-			EXIT_CODE = -1;
-		}
+    catch (std::exception e) {
+        printf("Error during loading file: %s\n", e.what());
+        return -1;
     }
-    else if (argc > 2){
-		// Eventually deal with things like custom paths to NASM and/or GoLink, as well as specifying type of assembly to generate
-        printf("Error: %s\n", "Can not comprehend arguments given.");
-		Corth::PrintUsage();
-		EXIT_CODE = -1;
+    catch (...) {
+        std::cout << "Error during loading file!";
+        return -1;
     }
 
 	if (lexSuccessful) {
 		Corth::GenerateAssembly_NASM_win64(prog);
-    }
-	
-    // Wait for character input
-	printf("\n%s", "Waiting to halt execution. Press 'Return' or 'Enter' to exit.");
-	std::cin.get();
-    return EXIT_CODE;
+	}
 }
