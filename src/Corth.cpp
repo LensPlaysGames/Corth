@@ -113,7 +113,81 @@ namespace Corth {
 	}
 
 	void GenerateAssembly_NASM_linux64(Program& prog){
+		std::string asm_file_path = "corth_program.asm";
+		std::fstream asm_file;
+		asm_file.open(asm_file_path.c_str(), std::ios::out);
+		if (asm_file) {
+			printf("%s\n", "Generating NASM elf64 assembly");
 
+            // WRITE HEADER TO ASM FILE
+			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    SECTION .data\n"
+					 << "    fmt db '%u', 0x0a, 0\n"
+					 << "    SECTION .text\n"
+                     << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS\n"
+					 << "    extern printf\n"
+					 << "\n"
+					 << "    global main\n"
+					 << "main:\n";
+
+            // WRITE TOKENS TO ASM FILE MAIN LABEL		
+			assert(static_cast<int>(TokenType::COUNT) == 3); 
+    		for (auto& tok : prog.tokens){
+    			// Write assembly to opened file based on token type and value
+				if (tok.type == TokenType::INT){
+					asm_file << "    ;; -- push INT --\n"
+							 << "    mov rax, " << tok.text << "\n"
+							 << "    push rax\n";
+				}
+				else if (tok.type == TokenType::OP) {
+					if (tok.text == "+") {
+						asm_file << "    ;; -- add --\n"
+								 << "    pop rax\n"
+								 << "    pop rbx\n"
+								 << "    add rax, rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "-") {
+						asm_file << "    ;; -- subtract --\n"
+								 << "    pop rbx\n"
+								 << "    pop rax\n"
+								 << "    sub rax, rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "*") {
+						asm_file << "    ;; -- multiply --\n"
+								 << "    pop rax\n"
+								 << "    pop rbx\n"
+								 << "    mul rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "/") {
+						asm_file << "    ;; -- divide --\n"
+								 << "    xor rdx, rdx\n"
+								 << "    pop rbx\n"
+								 << "    pop rax\n"
+								 << "    div rbx\n"
+								 << "    push rax\n";
+					}
+					else if (tok.text == "#") {
+						asm_file << "    ;; -- dump --\n"
+								 << "    lea rcx, [rel fmt]\n"
+								 << "    pop rdx\n"
+								 << "    mov rax, 0\n"
+								 << "    call printf\n";
+					}
+				}
+    		}
+			// WRITE ASM FOOTER FOR GRACEFUL PROGRAM EXIT
+			asm_file << "    ;; -- exit --\n"
+					 << "    mov rax, 60\n"
+					 << "    int 0x80\n"
+			
+			asm_file.close();
+		}
+		else {
+			printf("Error: %s\n", "Could not open file for writing. Missing permissions?");
+		}
 	}
 
 	void GenerateAssembly_NASM_win64(Program& prog){
@@ -192,6 +266,9 @@ namespace Corth {
 
 			asm_file.close();
 			printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
+		}
+		else {
+			printf("Error: %s\n", "Could not open file for writing. Missing permissions?");
 		}
 	}
 
@@ -418,6 +495,7 @@ int main(int argc, char** argv){
 			assert(static_cast<int>(PLATFORM::COUNT) == 2);
 			switch (RUN_PLATFORM) {
 			case PLATFORM::WIN64:
+				#ifdef _WIN64
 				Corth::GenerateAssembly_NASM_win64(prog);
 				if (FileExists(ASMB_PATH)) {
 					if (FileExists(LINK_PATH)) {
@@ -441,6 +519,7 @@ int main(int argc, char** argv){
 				    printf("Error: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
 					return -1;
 				}
+				#endif
 				break;
 			case PLATFORM::LINUX64:
 				#ifdef __linux__
