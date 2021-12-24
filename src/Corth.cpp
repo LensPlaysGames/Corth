@@ -54,15 +54,30 @@ namespace Corth {
 			// WRITE HEADER TO ASM FILE
 			/* MISSING .bss SECTION FOR STDIN STDOUT HANDLES AND .data SECTION FOR STDIN/OUT QUERY CODES */
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    SECTION .bss\n"
+					 << "stdin resq 1\n"
+					 << "readBytes resq 1\n"
+					 << "inbuf resb 1\n"
+					 << "stdout resq 1\n"
+					 << "writeBytes resq 1\n"
+					 << "bytes resb 8\n"
 					 << "\n"
-					 << "    ;; DEFINE EXTERNAL WINAPI SYMBOLS (LINK AGAINST KERNEL32.DLL AND USER32.DLL)\n"
+					 << "    SECTION .text\n"
+                     << "    ;; DEFINE EXTERNAL WINAPI SYMBOLS (LINK AGAINST KERNEL32.DLL AND USER32.DLL)\n"
 					 << "    extern GetStdHandle\n"
 					 << "    extern WriteFile\n"
 					 << "    extern ExitProcess\n"
 					 << "\n"
-					 << "    SECTION .text\n"
 					 << "    global main\n"
-					 << "main:\n";
+					 << "main:\n"
+					 << "    mov rcx, -10\n"
+					 << "    call GetStdHandle\n"
+					 << "    mov [stdin], rax\n"
+					 << "\n"
+					 << "    mov rcx, -11\n"
+					 << "    call GetStdHandle\n"
+					 << "    mov [stdout], rax\n"
+					 << "\n";
 
 			assert(static_cast<int>(TokenType::COUNT) == 3); // Exhaustive handling of implementation of token types
     		for (auto& tok : prog.tokens){
@@ -71,6 +86,23 @@ namespace Corth {
 					asm_file << "    ;; -- push INT --\n"
 							 << "    mov rax, " << tok.text << "\n"
 							 << "    push rax\n";
+				}
+				else if (tok.type == TokenType::OP) {
+					if (tok.text == "+") {
+						asm_file << "    ;; -- plus --\n"
+								 << "    pop rax\n"
+								 << "    pop rbx\n"
+								 << "    add rax, rbx\n"
+								 << "    push rax\n";
+					} else if (tok.text == "#") {
+						asm_file << "    ;; -- WINAPI WriteFile --\n"
+								 << "    mov rcx, [stdout]\n"
+								 << "    pop bytes\n"
+								 << "    mov rdx, bytes\n"
+								 << "    mov r8, 8\n"
+								 << "    mov r9, writeBytes\n"
+								 << "    call WriteFile\n";
+					}
 				}
     		}
 
