@@ -278,27 +278,6 @@ bool FileExists(std::string filePath) {
 	return false;
 }
 
-bool FileExistsLinux(std::string filePath) {
-	struct stat sb;
-	std::string delimiter = ":";
-	std::string path = std::string(std::getenv("PATH"));
-	size_t start_pos = 0, end_pos = 0;
-
-	while ((end_pos = path.find(':', start_pos)) != std::string::npos)
-    {
-		std::string current_path =
-			path.substr(start_pos, end_pos - start_pos) + "/" + filePath;
-
-		if ((stat(current_path.c_str(), &sb) == 0) && (sb.st_mode & std::S_IXOTH))
-        {
-			cout << "Okay" << endl;
-			return EXIT_SUCCESS;
-		}
-
-		start_pos = end_pos + 1;
-	}
-}
-
 // Load a file into a string from a path.
 std::string loadFromFile(std::string filePath) {
     std::ifstream inFileStream(filePath);
@@ -454,20 +433,20 @@ int main(int argc, char** argv){
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-						printf(("Error: Linker not found at " + LINK_PATH + "\n").c_str());
+					    printf("Error: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
 						return -1;
 					}
 				}
 				else {
-					printf(("Error: Assembler not found at " + ASMB_PATH + "\n").c_str());
+				    printf("Error: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
 					return -1;
 				}
 				break;
 			case PLATFORM::LINUX64:
 				#ifdef __linux__
 				Corth::GenerateAssembly_NASM_linux64(prog);
-				if (FileExistsLinux(ASMB_PATH)) {
-					if (FileExistsLinux(LINK_PATH)) {
+				if (system(("which " + ASMB_PATH).c_str())) {
+					if (system(("which " + LINK_PATH).c_str())) {
 						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
 						std::string cmd_link = LINK_PATH + LINK_OPTS;
 
@@ -481,12 +460,12 @@ int main(int argc, char** argv){
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-						printf(("Error: Linker not found at " + LINK_PATH + "\n").c_str());
+						printf("Error: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
 						return -1;
 					}
 				}
 				else {
-                    printf(("Error: Assembler not found at " + ASMB_PATH + "\n").c_str());
+                    printf("Error: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
                     return -1;
                 }
 				#endif
