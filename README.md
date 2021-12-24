@@ -2,6 +2,8 @@
 # Corth
 Corth is like Porth, which is like Forth, but it's in Python, but it's in C++, and it compiles directly to executable on multiple platforms (not MacOS (yet)).
 
+---
+
 ## How to write in Corth
 Corth, like Porth (like Forth), is a stack based language. \
 This means that in order to do any operation, a value must be pushed onto the stack. \
@@ -35,3 +37,19 @@ Best practices in Corth indicate that the stack should be empty by the end of th
 |`-`| Subtraction | Pops the two most-recent values off the stack, then pushes the difference. |
 |`*`| Multiplication | Pops the two most-recent values off the stack, then pushes the product. |
 |`/`| Division | Pops the two most-recent values off the stack, then pushes the quotient. |
+
+---
+
+## How to build a Corth program
+This project uses [CMake](https://cmake.org/) to build Corth for any platform that CMake supports (which is a lot). \
+This means Corth source code can be easily built in your favorite IDE that supports C++ (or with make, you linux-folk).
+
+#### On Windows
+First, clone this repository somewhere on your local system. \
+It doesn't matter where, but keep in mind this guide will assume it is installed somewhere in the 'C' OS drive.
+
+Once cloned, open a terminal and navigate to the repository directory. If you use the newest version of Visual Studio, simply run the following command: \
+`cmake -S . -B build/`
+
+Corth is built natively in Windows, for Windows (but not exclusively). \
+This means by default, when compiling, it will work pretty well, given a few adjustments.

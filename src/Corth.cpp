@@ -14,6 +14,8 @@
 #endif
 
 namespace Corth {
+	bool verbose_logging = false;
+	
 	void PrintUsage(){
 		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
 		printf("    %s\n", "Options:");
@@ -25,6 +27,7 @@ namespace Corth {
         printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
         printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
+		printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
 	}
 
     enum class TokenType {
@@ -385,18 +388,16 @@ enum class PLATFORM {
 PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
 
 int main(int argc, char** argv){
-    // Print arguments
-    for (size_t i = 0; i < argc; i++){
-        printf("Arg. %zi: %s\n", i, argv[i]);
-    }
-	std::cout << "\n";
-
 	std::string sourceFilePath;
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if (arg == "-h" || arg == "--help") {
 			Corth::PrintUsage();
 			return 0;
+		}
+		else if (arg == "-v" || arg == "--verbose"){
+			printf("%s\n", "Verbose logging enabled");
+			Corth::verbose_logging = true;
 		}
 		else if (arg == "-a" || arg == "--assembler-path") {
 			if (i + 1 < argc) {
@@ -473,7 +474,9 @@ int main(int argc, char** argv){
         Corth::Lex(prog);
         printf("%s\n", "Lexed file into tokens");
         lexSuccessful = true;
-        PrintTokens(prog);
+		if (Corth::verbose_logging){
+			PrintTokens(prog);
+		}
     }
     catch (std::runtime_error e) {
         printf("Error during loading file: %s\n", e.what());
