@@ -1,14 +1,24 @@
 #include <iostream>    // printf
 #include <stdio.h>     // cout, cin
 #include <fstream>     // ofstream, ifstream (reading/writing files)
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <string>
 #include <vector>
+
+#ifdef __linux__
+#include <unistd.h>
+#else
+#endif
 
 namespace Corth {
 	void PrintUsage(){
 		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
 		printf("    %s\n", "Options:");
+        printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit");
+        printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths");
 		printf("        %s\n", "-com, --compile          | Compile program from source into executable");
 		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
 		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
@@ -268,6 +278,27 @@ bool FileExists(std::string filePath) {
 	return false;
 }
 
+bool FileExistsLinux(std::string filePath) {
+	struct stat sb;
+	std::string delimiter = ":";
+	std::string path = std::string(std::getenv("PATH"));
+	size_t start_pos = 0, end_pos = 0;
+
+	while ((end_pos = path.find(':', start_pos)) != std::string::npos)
+    {
+		std::string current_path =
+			path.substr(start_pos, end_pos - start_pos) + "/" + filePath;
+
+		if ((stat(current_path.c_str(), &sb) == 0) && (sb.st_mode & std::S_IXOTH))
+        {
+			cout << "Okay" << endl;
+			return EXIT_SUCCESS;
+		}
+
+		start_pos = end_pos + 1;
+	}
+}
+
 // Load a file into a string from a path.
 std::string loadFromFile(std::string filePath) {
     std::ifstream inFileStream(filePath);
@@ -288,7 +319,15 @@ enum class MODE {
 	COMPILE,
 	SIMULATE,
 	COUNT
-} RUN_MODE { MODE::COMPILE };
+};
+MODE RUN_MODE = MODE::COMPILE;
+
+enum class PLATFORM {
+	WIN64,
+	LINUX64,
+	COUNT
+};
+PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
 
 int main(int argc, char** argv){
     // Print arguments
@@ -344,6 +383,15 @@ int main(int argc, char** argv){
 				return -1;
 			}
 		}
+		else if (arg == "-win" || arg == "-win64" ) {
+			RUN_PLATFORM = PLATFORM::WIN64;
+		}
+		else if (arg == "-linux" || arg == "-linux64") {
+			RUN_PLATFORM = PLATFORM::LINUX64;
+		}
+		else if (arg == "-win32" || arg == "-m32") {
+			printf("Error: %s\n", "32-bit mode is not supported!");
+		}
 		else if (arg == "-com" || arg == "--compile") {
 			RUN_MODE = MODE::COMPILE;
 		}
@@ -388,30 +436,63 @@ int main(int argc, char** argv){
 			SimulateProgram(prog);
 			break;
         case MODE::COMPILE:
-			Corth::GenerateAssembly_NASM_win64(prog);
-
-			if (FileExists(ASMB_PATH)) {
-				if (FileExists(LINK_PATH)) {
-					std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
-					std::string cmd_link = LINK_PATH + LINK_OPTS;
+			assert(static_cast<int>(PLATFORM::COUNT) == 2);
+			switch (RUN_PLATFORM) {
+			case PLATFORM::WIN64:
+				Corth::GenerateAssembly_NASM_win64(prog);
+				if (FileExists(ASMB_PATH)) {
+					if (FileExists(LINK_PATH)) {
+						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
+						std::string cmd_link = LINK_PATH + LINK_OPTS;
 		
-					printf("Running: `%s`\n", cmd_asmb.c_str());
-					system(cmd_asmb.c_str());
+						printf("Running: `%s`\n", cmd_asmb.c_str());
+						system(cmd_asmb.c_str());
 		
-					printf("Running: `%s`\n", cmd_link.c_str());
-					system(cmd_link.c_str());
+						printf("Running: `%s`\n", cmd_link.c_str());
+						system(cmd_link.c_str());
 		
-					printf("%s\n", "Executable built successfully!");
+						printf("%s\n", "Executable built successfully!");
+					}
+					else {
+						printf(("Error: Linker not found at " + LINK_PATH + "\n").c_str());
+						return -1;
+					}
 				}
 				else {
-					printf(("Error: Linker not found at " + LINK_PATH + "\n").c_str());
+					printf(("Error: Assembler not found at " + ASMB_PATH + "\n").c_str());
 					return -1;
 				}
+				break;
+			case PLATFORM::LINUX64:
+				#ifdef __linux__
+				Corth::GenerateAssembly_NASM_linux64(prog);
+				if (FileExistsLinux(ASMB_PATH)) {
+					if (FileExistsLinux(LINK_PATH)) {
+						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
+						std::string cmd_link = LINK_PATH + LINK_OPTS;
+
+						// TODO: Look into exec() family of functions
+						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+						system(cmd_asmb.c_str());
+
+						printf("[CMD]: `%s`\n", cmd_link.c_str());
+						system(cmd_link.c_str());
+
+						printf("%s\n", "Executable built successfully!");
+					}
+					else {
+						printf(("Error: Linker not found at " + LINK_PATH + "\n").c_str());
+						return -1;
+					}
+				}
+				else {
+                    printf(("Error: Assembler not found at " + ASMB_PATH + "\n").c_str());
+                    return -1;
+                }
+				#endif
+				break;
 			}
-			else {
-				printf(("Error: Assembler not found at " + ASMB_PATH + "\n").c_str());
-				return -1;
-			}
+			
 			break;
 		}
 	}
