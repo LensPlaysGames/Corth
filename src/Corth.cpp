@@ -18,11 +18,12 @@ namespace Corth {
 	
 	void PrintUsage(){
 		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
-		printf("    %s\n", "Options:");
+		printf("    %s\n", "Options (latest over-rides):");
         printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
         printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths");
 		printf("        %s\n", "-com, --compile          | Compile program from source into executable");
 		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
+		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
 		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
         printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
@@ -125,6 +126,7 @@ namespace Corth {
 
             // WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    ;; USING LINUX x64 CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9)\n"
 					 << "    SECTION .data\n"
 					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
@@ -204,12 +206,13 @@ namespace Corth {
 			
 			// WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    ;; USING WINDOWS x64 CALLING CONVENTION (RCX, RDX, R8, R9, ETC)\n"
 					 << "    SECTION .data\n"
 					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
-                     << "    ;; DEFINE EXTERNAL WINAPI SYMBOLS (LINK AGAINST KERNEL32.DLL AND USER32.DLL)\n"
+                     << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS (LINK AGAINST MSVCRT.DLL)\n"
 					 << "    extern printf\n"
-					 << "    extern ExitProcess\n"
+					 << "    extern exit\n"
 					 << "\n"
 					 << "    global main\n"
 					 << "main:\n";
@@ -263,9 +266,7 @@ namespace Corth {
 				}
     		}
 			// WRITE ASM FOOTER (EXIT GRACEFUL)
-			asm_file << "    ;; EXIT PROCESS WITH GRACEFUL EXIT CODE USING WINDOWS API\n"
-					 << "    mov rax, 0\n"
-					 << "    call ExitProcess";
+			asm_file << "    call exit\n";
 
 			asm_file.close();
 			printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
@@ -353,6 +354,7 @@ namespace Corth {
 }
 
 bool FileExists(std::string filePath) {
+	// TODO: Check PATH variable
 	std::ifstream file(filePath);
 	if (file.is_open()) { file.close(); return true; }
 	return false;
@@ -367,6 +369,8 @@ std::string loadFromFile(std::string filePath) {
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
+// TODO: Move globals to Corth namespace
+
 std::string SOURCE_PATH = "main.corth";
 std::string ASMB_PATH = "nasm";
 std::string LINK_PATH = "golink";
@@ -377,6 +381,7 @@ std::string LINK_OPTS = " /console /ENTRY:main msvcrt.dll corth_program.obj";
 enum class MODE {
 	COMPILE,
 	SIMULATE,
+	GENERATE,
 	COUNT
 };
 MODE RUN_MODE = MODE::COMPILE;
@@ -388,13 +393,15 @@ enum class PLATFORM {
 };
 PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
 
-int main(int argc, char** argv){
-	std::string sourceFilePath;
-	for (int i = 1; i < argc; i++) {
+bool HandleCMDLineArgs(int argc, char** argv) {
+	// Return value = whether execution will halt or not in main function
+	assert(static_cast<int>(MODE::COUNT) == 3);
+	assert(static_cast<int>(PLATFORM::COUNT) == 2);
+  	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if (arg == "-h" || arg == "--help") {
 			Corth::PrintUsage();
-			return 0;
+			return false;
 		}
 		else if (arg == "-v" || arg == "--verbose"){
 			printf("%s\n", "Verbose logging enabled");
@@ -407,7 +414,7 @@ int main(int argc, char** argv){
 			}
 			else {
 				printf("Error: %s\n", "Expected path to assembler to be specified after `-a`!");
-				return -1;
+				return false;
 			}
 		}
 		else if (arg == "-ao" || arg == "--assembler-options"){
@@ -417,7 +424,7 @@ int main(int argc, char** argv){
 			}
 			else {
 				printf("Error: %s\n", "Expected assembler options to be specified afer `-ao`!");
-				return -1;
+				return false;
 			}
 		}
 		else if (arg == "-l" || arg == "--linker-path") {
@@ -427,7 +434,7 @@ int main(int argc, char** argv){
 			}
 			else {
 				printf("Error: %s\n", "Expected path to linker to be specified after `-l`!");
-				return -1;
+				return false;
 			}
 		}
 		else if (arg == "-lo" || arg == "--linker-options"){
@@ -437,7 +444,7 @@ int main(int argc, char** argv){
 			}
 			else {
 				printf("Error: %s\n", "Expected linker options to be specified after `-lo`!");
-				return -1;
+				return false;
 			}
 		}
 		else if (arg == "-win" || arg == "-win64" ) {
@@ -455,22 +462,34 @@ int main(int argc, char** argv){
 		else if (arg == "-sim" || arg == "--simulate") {
 			RUN_MODE = MODE::SIMULATE;
 		}
+		else if (arg == "-gen" || arg == "--generate") {
+			RUN_MODE = MODE::GENERATE;
+		}
 		else {
-			sourceFilePath = argv[i];
+			SOURCE_PATH = argv[i];
 		}
 	}
 
-	if (sourceFilePath.empty()) {
+	if (SOURCE_PATH.empty()) {
 		printf("Error: %s\n", "Expected source file path in command line arguments!");
 		Corth::PrintUsage();
+		return false;
+	}
+	
+	return true;
+}
+
+int main(int argc, char** argv) {
+	if (!HandleCMDLineArgs(argc, argv)){
+		// Non-graceful handling of command line arguments, abort execution.
 		return -1;
 	}
-
+	
 	Corth::Program prog;
 	bool lexSuccessful = false;
 
     try {
-        prog.source = loadFromFile(sourceFilePath);
+        prog.source = loadFromFile(SOURCE_PATH);
         printf("%s\n", "Successfully loaded file.");
         Corth::Lex(prog);
         printf("%s\n", "Lexed file into tokens");
@@ -489,10 +508,25 @@ int main(int argc, char** argv){
     }
 
 	if (lexSuccessful) {
-		assert(static_cast<int>(MODE::COUNT) == 2);
+		assert(static_cast<int>(MODE::COUNT) == 3);
 		switch (RUN_MODE) {
 		case MODE::SIMULATE:
 			SimulateProgram(prog);
+			break;
+		case MODE::GENERATE:
+			assert(static_cast<int>(PLATFORM::COUNT) == 2);
+			switch (RUN_PLATFORM) {
+			case PLATFORM::WIN64:
+				#ifdef _WIN64
+				Corth::GenerateAssembly_NASM_win64(prog);
+				#endif
+				break;
+			case PLATFORM::LINUX64:
+				#ifdef __linux__
+				Corth::GenerateAssembly_NASM_linux64(prog);
+				#endif
+				break;
+			}
 			break;
         case MODE::COMPILE:
 			assert(static_cast<int>(PLATFORM::COUNT) == 2);
@@ -505,21 +539,21 @@ int main(int argc, char** argv){
 						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
 						std::string cmd_link = LINK_PATH + LINK_OPTS;
 		
-						printf("Running: `%s`\n", cmd_asmb.c_str());
+						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						system(cmd_asmb.c_str());
 		
-						printf("Running: `%s`\n", cmd_link.c_str());
+						printf("[CMD]: `%s`\n", cmd_link.c_str());
 						system(cmd_link.c_str());
 		
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-					    printf("Error: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
+					    printf("[ERR]: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
 						return -1;
 					}
 				}
 				else {
-				    printf("Error: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
+				    printf("[ERR]: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
 					return -1;
 				}
 				#endif
@@ -542,12 +576,12 @@ int main(int argc, char** argv){
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-						printf("Error: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
+						printf("[ERR]: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
 						return -1;
 					}
 				}
 				else {
-                    printf("Error: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
+                    printf("[ERR]: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
                     return -1;
                 }
 				#endif
