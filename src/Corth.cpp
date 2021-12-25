@@ -366,7 +366,7 @@ namespace Corth {
 					ASMB_PATH = argv[i];
 				}
 				else {
-					printf("[ERR]: %s\n", "Expected path to assembler to be specified after `-a`!");
+					Error("Expected path to assembler to be specified after `-a`!");
 					return false;
 				}
 			}
@@ -376,7 +376,7 @@ namespace Corth {
 					ASMB_OPTS = argv[i];
 				}
 				else {
-					printf("[ERR]: %s\n", "Expected assembler options to be specified afer `-ao`!");
+					Error("Expected assembler options to be specified afer `-ao`!");
 					return false;
 				}
 			}
@@ -386,7 +386,7 @@ namespace Corth {
 					LINK_PATH = argv[i];
 				}
 				else {
-					printf("[ERR]: %s\n", "Expected path to linker to be specified after `-l`!");
+					Error("Expected path to linker to be specified after `-l`!");
 					return false;
 				}
 			}
@@ -396,7 +396,7 @@ namespace Corth {
 					LINK_OPTS = argv[i];
 				}
 				else {
-					printf("[ERR]: %s\n", "Expected linker options to be specified after `-lo`!");
+					Error("Expected linker options to be specified after `-lo`!");
 					return false;
 				}
 			}
@@ -407,7 +407,8 @@ namespace Corth {
 				RUN_PLATFORM = PLATFORM::LINUX64;
 			}
 			else if (arg == "-win32" || arg == "-m32" || arg == "-linux32") {
-				printf("[ERR]: %s\n", "32-bit mode is not supported!");
+				Error("32-bit mode is not supported!");
+				return false;
 			}
 			else if (arg == "-com" || arg == "--compile") {
 				RUN_MODE = MODE::COMPILE;
@@ -658,12 +659,12 @@ int main(int argc, char** argv) {
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-					    printf("[ERR]: %s\n", ("Linker not found at " + Corth::LINK_PATH + "\n").c_str());
+						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
 						return -1;
 					}
 				}
 				else {
-				    printf("[ERR]: %s\n", ("Assembler not found at " + Corth::ASMB_PATH + "\n").c_str());
+					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
 					return -1;
 				}
 				#endif
@@ -691,13 +692,12 @@ int main(int argc, char** argv) {
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-						printf("[ERR]: %s\n", ("Linker not found at " + Corth::LINK_PATH + "\n").c_str());
+						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
 						return -1;
 					}
 				}
 				else {
-					Corth::
-                    printf("[ERR]: %s\n", ("Assembler not found at " + Corth::ASMB_PATH + "\n").c_str());
+					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
                     return -1;
                 }
 				#endif
