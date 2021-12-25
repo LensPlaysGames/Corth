@@ -592,8 +592,8 @@ int main(int argc, char** argv) {
 							By default on linux, NASM generates an output `.o` file of the same name as the input file
 							This means the linker needs to link to `Corth::OUTPUT_NAME.o`
 						 */
-						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + CORTH::OUTPUT_NAME + ".asm";
-						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + CORTH::OUTPUT_NAME + ".o";
+						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + Corth::OUTPUT_NAME + ".asm";
+						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + Corth::OUTPUT_NAME + ".o";
 
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
