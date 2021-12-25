@@ -1,9 +1,8 @@
 #include <iostream>    // printf
 #include <stdio.h>     // cout, cin
 #include <fstream>     // ofstream, ifstream (reading/writing files)
+#include <algorithm>   // remove_if
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <assert.h>    // I use assert to exit the program in the case it encounters an error.
 #include <string>
 #include <vector>
@@ -85,8 +84,28 @@ namespace Corth {
 		std::vector<Token> tokens;
 	};
 
-    void CorthStackError(){
+    void StackError(){
 		printf("[ERR]: %s (%s)\n", "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+	}
+
+	void StackError(size_t line_num) {
+		printf("[ERR] LINE %zu: %s (%s)\n", line_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+	}
+
+	void Error(std::string msg) {
+		printf("[ERR]: %s\n", msg.c_str());
+	}
+
+	void Error(std::string msg, size_t line_num) {
+		printf("[ERR] LINE %zu: %s\n", line_num, msg.c_str());
+	}
+
+	void Error(std::string msg, std::exception e) {
+		printf("[ERR]: %s (%s)\n", msg.c_str(), e.what());
+	}
+
+	void Warning(std::string msg, size_t line_num = 1) {
+		printf("[WRN] LINE %zu: %s\n", line_num, msg.c_str());
 	}
 
     // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
@@ -109,7 +128,7 @@ namespace Corth {
 						stack.push_back(std::to_string(a + b));
 					}
 					else {
-						CorthStackError();
+						StackError();
 						assert(stack.size() > 1);
 					}
 				}
@@ -122,7 +141,7 @@ namespace Corth {
 						stack.push_back(std::to_string(a - b));
 					}
 					else {
-						CorthStackError();
+						StackError();
 						assert(stack.size() > 1);
 					}
 				}
@@ -135,7 +154,7 @@ namespace Corth {
 						stack.push_back(std::to_string(a * b));
 					}
 					else {
-						CorthStackError();
+						StackError();
 						assert(stack.size() > 1);
 					}
 				}
@@ -148,18 +167,17 @@ namespace Corth {
 						stack.push_back(std::to_string(a / b));
 					}
 					else {
-						CorthStackError();
+						StackError();
 						assert(stack.size() > 1);
 					}
 				}
 				else if (tok.text == "#") {
 					if (stack.size() > 0) {
-						assert(stack.size() > 0);
 						printf("%s\n", stack.back().c_str());
 						stack.pop_back();
 					}
 					else {
-						CorthStackError();
+						StackError();
 						assert(stack.size() > 0);
 					}
 				}
@@ -244,7 +262,7 @@ namespace Corth {
 			asm_file.close();
 		}
 		else {
-			printf("[ERR]: %s\n", "Could not open file for writing. Missing permissions?");
+			Error("Could not open file for writing. Missing permissions?");
 		}
 	}
 
@@ -325,8 +343,92 @@ namespace Corth {
 			printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
 		}
 		else {
-			printf("[ERR]: %s\n", "Could not open file for writing. Missing permissions?");
+			Error("Could not open file for writing. Missing permissions?");
 		}
+	}
+
+	bool HandleCMDLineArgs(int argc, char** argv) {
+		// Return value = whether execution will halt or not in main function
+		assert(static_cast<int>(MODE::COUNT) == 3);
+		assert(static_cast<int>(PLATFORM::COUNT) == 2);
+		for (int i = 1; i < argc; i++) {
+			std::string arg = argv[i];
+			if (arg == "-h" || arg == "--help") {
+				return false;
+			}
+			else if (arg == "-v" || arg == "--verbose"){
+				printf("%s\n", "Verbose logging enabled");
+				verbose_logging = true;
+			}
+			else if (arg == "-a" || arg == "--assembler-path") {
+				if (i + 1 < argc) {
+					i++;
+					ASMB_PATH = argv[i];
+				}
+				else {
+					printf("[ERR]: %s\n", "Expected path to assembler to be specified after `-a`!");
+					return false;
+				}
+			}
+			else if (arg == "-ao" || arg == "--assembler-options"){
+				if (i + 1 < argc) {
+					i++;
+					ASMB_OPTS = argv[i];
+				}
+				else {
+					printf("[ERR]: %s\n", "Expected assembler options to be specified afer `-ao`!");
+					return false;
+				}
+			}
+			else if (arg == "-l" || arg == "--linker-path") {
+				if (i + 1 < argc) {
+					i++;
+					LINK_PATH = argv[i];
+				}
+				else {
+					printf("[ERR]: %s\n", "Expected path to linker to be specified after `-l`!");
+					return false;
+				}
+			}
+			else if (arg == "-lo" || arg == "--linker-options"){
+				if (i + 1 < argc) {
+					i++;
+					LINK_OPTS = argv[i];
+				}
+				else {
+					printf("[ERR]: %s\n", "Expected linker options to be specified after `-lo`!");
+					return false;
+				}
+			}
+			else if (arg == "-win" || arg == "-win64" ) {
+				RUN_PLATFORM = PLATFORM::WIN64;
+			}
+			else if (arg == "-linux" || arg == "-linux64") {
+				RUN_PLATFORM = PLATFORM::LINUX64;
+			}
+			else if (arg == "-win32" || arg == "-m32" || arg == "-linux32") {
+				printf("[ERR]: %s\n", "32-bit mode is not supported!");
+			}
+			else if (arg == "-com" || arg == "--compile") {
+				RUN_MODE = MODE::COMPILE;
+			}
+			else if (arg == "-sim" || arg == "--simulate") {
+				RUN_MODE = MODE::SIMULATE;
+			}
+			else if (arg == "-gen" || arg == "--generate") {
+				RUN_MODE = MODE::GENERATE;
+			}
+			else {
+				SOURCE_PATH = argv[i];
+			}
+		}
+
+		if (SOURCE_PATH.empty()) {
+			Error("Expected source file path in command line arguments!");
+			return false;
+		}
+	
+		return true;
 	}
 
 	bool iswhitespace(char& c){
@@ -381,14 +483,13 @@ namespace Corth {
                 tok.type = TokenType::INT;
 				tok.text.append(1, current);
 				// Handle multi-digit numbers
-				while (i < src_end){
+				while (i < src_end) {
 					// Look ahead for digit.
 					i++;
 					current = src[i];
 					if (isdigit(current)) { tok.text.append(1, current); }
 					else { break; }
 				}
-				
 				i--; // Undo lookahead.
 				PushToken(toks, tok);
             }
@@ -406,12 +507,48 @@ namespace Corth {
 			PrintToken(tok);
 		}
 	}
+
+    bool RemovableToken(Token& tok) {
+		if (tok.type == TokenType::WHITESPACE) { return false; }
+		return true;
+	}
+
+	void ValidateTokens(Program& prog) {
+		std::vector<Token>& toks = prog.tokens;
+		size_t stackSize = 0; // Used for protecting from stack overflow by popping too much (dumping over and over).
+
+		assert(static_cast<int>(TokenType::COUNT) == 3);
+
+		for (auto& tok : toks) {
+			if (tok.type == TokenType::WHITESPACE) {
+				Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number);
+			} else if (tok.type == TokenType::OP) {
+				// Most operators pop off the stack, so validate them
+				if (tok.text == "+") {
+					if (stackSize > 1) {
+						continue;
+					}
+					else {
+						StackError(tok.line_number);
+					}
+				}
+			}
+		}
+
+		// Remove all un-neccessary tokens (just whitespace for now)
+		std::remove_if(toks.begin(), toks.end(), RemovableToken);
+	}
 }
 
 bool FileExists(std::string filePath) {
 	// TODO: Check PATH variable
-	std::string path_var = getenv("PATH");
-	printf("WINDOWS PATH TEST: %s\n", path_var);
+	size_t buf_sz = 2048;
+	char* buf[2048];
+	_dupenv_s(buf, &buf_sz, "PATH");
+	printf("%s\n", "WINDOWS PATH TEST");
+	for (auto& var : buf) {
+		printf("%s\n", var);
+	}
 
 	// Check path relative Corth.exe
 	std::ifstream file(filePath);
@@ -426,90 +563,6 @@ std::string loadFromFile(std::string filePath) {
 		throw std::runtime_error(("File not found at " + filePath).c_str());
 	}
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
-}
-
-bool HandleCMDLineArgs(int argc, char** argv) {
-	// Return value = whether execution will halt or not in main function
-	assert(static_cast<int>(Corth::MODE::COUNT) == 3);
-	assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
-  	for (int i = 1; i < argc; i++) {
-		std::string arg = argv[i];
-		if (arg == "-h" || arg == "--help") {
-			return false;
-		}
-		else if (arg == "-v" || arg == "--verbose"){
-			printf("%s\n", "Verbose logging enabled");
-			Corth::verbose_logging = true;
-		}
-		else if (arg == "-a" || arg == "--assembler-path") {
-			if (i + 1 < argc) {
-				i++;
-				Corth::ASMB_PATH = argv[i];
-			}
-			else {
-				printf("[ERR]: %s\n", "Expected path to assembler to be specified after `-a`!");
-				return false;
-			}
-		}
-		else if (arg == "-ao" || arg == "--assembler-options"){
-			if (i + 1 < argc) {
-				i++;
-				Corth::ASMB_OPTS = argv[i];
-			}
-			else {
-				printf("[ERR]: %s\n", "Expected assembler options to be specified afer `-ao`!");
-				return false;
-			}
-		}
-		else if (arg == "-l" || arg == "--linker-path") {
-			if (i + 1 < argc) {
-				i++;
-				Corth::LINK_PATH = argv[i];
-			}
-			else {
-				printf("[ERR]: %s\n", "Expected path to linker to be specified after `-l`!");
-				return false;
-			}
-		}
-		else if (arg == "-lo" || arg == "--linker-options"){
-			if (i + 1 < argc) {
-				i++;
-				Corth::LINK_OPTS = argv[i];
-			}
-			else {
-				printf("[ERR]: %s\n", "Expected linker options to be specified after `-lo`!");
-				return false;
-			}
-		}
-		else if (arg == "-win" || arg == "-win64" ) {
-			Corth::RUN_PLATFORM = Corth::PLATFORM::WIN64;
-		}
-		else if (arg == "-linux" || arg == "-linux64") {
-			Corth::RUN_PLATFORM = Corth::PLATFORM::LINUX64;
-		}
-		else if (arg == "-win32" || arg == "-m32" || arg == "-linux32") {
-			printf("[ERR]: %s\n", "32-bit mode is not supported!");
-		}
-		else if (arg == "-com" || arg == "--compile") {
-			Corth::RUN_MODE = Corth::MODE::COMPILE;
-		}
-		else if (arg == "-sim" || arg == "--simulate") {
-			Corth::RUN_MODE = Corth::MODE::SIMULATE;
-		}
-		else if (arg == "-gen" || arg == "--generate") {
-			Corth::RUN_MODE = Corth::MODE::GENERATE;
-		}
-		else {
-			Corth::SOURCE_PATH = argv[i];
-		}
-	}
-
-	if (Corth::SOURCE_PATH.empty()) {
-		printf("[ERR]: %s\n", "Expected source file path in command line arguments!");
-		return false;
-	}
-	
-	return true;
 }
 
 int main(int argc, char** argv) {
@@ -529,7 +582,7 @@ int main(int argc, char** argv) {
 	Corth::LINK_OPTS = "-dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64";
 	#endif
 	
-	if (!HandleCMDLineArgs(argc, argv)){
+	if (!Corth::HandleCMDLineArgs(argc, argv)){
 		// Non-graceful handling of command line arguments, abort execution.
 	    Corth::PrintUsage();
 		return -1;
@@ -540,6 +593,7 @@ int main(int argc, char** argv) {
 
     try {
         prog.source = loadFromFile(Corth::SOURCE_PATH);
+				
         printf("%s\n", "Successfully loaded file.");
         Corth::Lex(prog);
         printf("%s\n", "Lexed file into tokens");
@@ -549,12 +603,12 @@ int main(int argc, char** argv) {
 		}
     }
     catch (std::runtime_error e) {
-        printf("[ERR]: Could not load source file: %s\n", e.what());
+		Corth::Error("Could not load source file!", e);
 		Corth::PrintUsage();
         return -1;
     }
     catch (...) {
-        std::cout << "[ERR]: Could not load source file at " + Corth::SOURCE_PATH + "!";
+		Corth::Error(("Could not load source file at " + Corth::SOURCE_PATH));
 		Corth::PrintUsage();
         return -1;
     }
@@ -642,6 +696,7 @@ int main(int argc, char** argv) {
 					}
 				}
 				else {
+					Corth::
                     printf("[ERR]: %s\n", ("Assembler not found at " + Corth::ASMB_PATH + "\n").c_str());
                     return -1;
                 }
