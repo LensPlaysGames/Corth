@@ -14,6 +14,27 @@
 #endif
 
 namespace Corth {
+	std::string SOURCE_PATH = "main.corth";
+	std::string ASMB_PATH = "nasm";
+	std::string LINK_PATH = "golink";
+
+	std::string ASMB_OPTS = " -f win64 corth_program.asm";
+	std::string LINK_OPTS = " /console /ENTRY:main msvcrt.dll corth_program.obj";
+
+	enum class MODE {
+		COMPILE,
+		SIMULATE,
+		GENERATE,
+		COUNT
+	};
+	MODE RUN_MODE = MODE::COMPILE;
+
+	enum class PLATFORM {
+		WIN64,
+		LINUX64,
+		COUNT
+	};
+	PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
 	bool verbose_logging = false;
 	
 	void PrintUsage(){
@@ -191,7 +212,7 @@ namespace Corth {
 			asm_file.close();
 		}
 		else {
-			printf("Error: %s\n", "Could not open file for writing. Missing permissions?");
+			printf("[ERR]: %s\n", "Could not open file for writing. Missing permissions?");
 		}
 	}
 
@@ -272,7 +293,7 @@ namespace Corth {
 			printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
 		}
 		else {
-			printf("Error: %s\n", "Could not open file for writing. Missing permissions?");
+			printf("[ERR]: %s\n", "Could not open file for writing. Missing permissions?");
 		}
 	}
 
@@ -341,7 +362,7 @@ namespace Corth {
 	}
 
 	void PrintToken(Token& t) {
-        printf("TOKEN(%s, %s)\n", TokenTypeStr(t.type).c_str(), t.text.c_str());		
+		printf("TOKEN(%s, %s)\n", TokenTypeStr(t.type).c_str(), t.text.c_str());		
 	}
 
 	void PrintTokens(Program& p) {
@@ -355,6 +376,9 @@ namespace Corth {
 
 bool FileExists(std::string filePath) {
 	// TODO: Check PATH variable
+	std::string path_var = getenv("PATH");
+
+	// Check path relative Corth.exe
 	std::ifstream file(filePath);
 	if (file.is_open()) { file.close(); return true; }
 	return false;
@@ -369,30 +393,6 @@ std::string loadFromFile(std::string filePath) {
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
-// TODO: Move globals to Corth namespace
-
-std::string SOURCE_PATH = "main.corth";
-std::string ASMB_PATH = "nasm";
-std::string LINK_PATH = "golink";
-
-std::string ASMB_OPTS = " -f win64 corth_program.asm";
-std::string LINK_OPTS = " /console /ENTRY:main msvcrt.dll corth_program.obj";
-
-enum class MODE {
-	COMPILE,
-	SIMULATE,
-	GENERATE,
-	COUNT
-};
-MODE RUN_MODE = MODE::COMPILE;
-
-enum class PLATFORM {
-	WIN64,
-	LINUX64,
-	COUNT
-};
-PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
-
 bool HandleCMDLineArgs(int argc, char** argv) {
 	// Return value = whether execution will halt or not in main function
 	assert(static_cast<int>(MODE::COUNT) == 3);
@@ -400,7 +400,6 @@ bool HandleCMDLineArgs(int argc, char** argv) {
   	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if (arg == "-h" || arg == "--help") {
-			Corth::PrintUsage();
 			return false;
 		}
 		else if (arg == "-v" || arg == "--verbose"){
@@ -410,69 +409,68 @@ bool HandleCMDLineArgs(int argc, char** argv) {
 		else if (arg == "-a" || arg == "--assembler-path") {
 			if (i + 1 < argc) {
 				i++;
-				ASMB_PATH = argv[i];
+				Corth::ASMB_PATH = argv[i];
 			}
 			else {
-				printf("Error: %s\n", "Expected path to assembler to be specified after `-a`!");
+				printf("[ERR]: %s\n", "Expected path to assembler to be specified after `-a`!");
 				return false;
 			}
 		}
 		else if (arg == "-ao" || arg == "--assembler-options"){
 			if (i + 1 < argc) {
 				i++;
-				ASMB_OPTS = argv[i];
+				Corth::ASMB_OPTS = argv[i];
 			}
 			else {
-				printf("Error: %s\n", "Expected assembler options to be specified afer `-ao`!");
+				printf("[ERR]: %s\n", "Expected assembler options to be specified afer `-ao`!");
 				return false;
 			}
 		}
 		else if (arg == "-l" || arg == "--linker-path") {
 			if (i + 1 < argc) {
 				i++;
-				LINK_PATH = argv[i];
+				Corth::LINK_PATH = argv[i];
 			}
 			else {
-				printf("Error: %s\n", "Expected path to linker to be specified after `-l`!");
+				printf("[ERR]: %s\n", "Expected path to linker to be specified after `-l`!");
 				return false;
 			}
 		}
 		else if (arg == "-lo" || arg == "--linker-options"){
 			if (i + 1 < argc) {
 				i++;
-				LINK_OPTS = argv[i];
+				Corth::LINK_OPTS = argv[i];
 			}
 			else {
-				printf("Error: %s\n", "Expected linker options to be specified after `-lo`!");
+				printf("[ERR]: %s\n", "Expected linker options to be specified after `-lo`!");
 				return false;
 			}
 		}
 		else if (arg == "-win" || arg == "-win64" ) {
-			RUN_PLATFORM = PLATFORM::WIN64;
+			Corth::RUN_PLATFORM = Corth::PLATFORM::WIN64;
 		}
 		else if (arg == "-linux" || arg == "-linux64") {
-			RUN_PLATFORM = PLATFORM::LINUX64;
+			Corth::RUN_PLATFORM = Corth::PLATFORM::LINUX64;
 		}
-		else if (arg == "-win32" || arg == "-m32") {
-			printf("Error: %s\n", "32-bit mode is not supported!");
+		else if (arg == "-win32" || arg == "-m32" || arg == "-linux32") {
+			printf("[ERR]: %s\n", "32-bit mode is not supported!");
 		}
 		else if (arg == "-com" || arg == "--compile") {
-			RUN_MODE = MODE::COMPILE;
+			Corth::RUN_MODE = Corth::MODE::COMPILE;
 		}
 		else if (arg == "-sim" || arg == "--simulate") {
-			RUN_MODE = MODE::SIMULATE;
+			Corth::RUN_MODE = Corth::MODE::SIMULATE;
 		}
 		else if (arg == "-gen" || arg == "--generate") {
-			RUN_MODE = MODE::GENERATE;
+			Corth::RUN_MODE = Corth::MODE::GENERATE;
 		}
 		else {
-			SOURCE_PATH = argv[i];
+			Corth::SOURCE_PATH = argv[i];
 		}
 	}
 
 	if (SOURCE_PATH.empty()) {
-		printf("Error: %s\n", "Expected source file path in command line arguments!");
-		Corth::PrintUsage();
+		printf("[ERR]: %s\n", "Expected source file path in command line arguments!");
 		return false;
 	}
 	
@@ -482,6 +480,7 @@ bool HandleCMDLineArgs(int argc, char** argv) {
 int main(int argc, char** argv) {
 	if (!HandleCMDLineArgs(argc, argv)){
 		// Non-graceful handling of command line arguments, abort execution.
+	    Corth::PrintUsage();
 		return -1;
 	}
 	
@@ -489,7 +488,7 @@ int main(int argc, char** argv) {
 	bool lexSuccessful = false;
 
     try {
-        prog.source = loadFromFile(SOURCE_PATH);
+        prog.source = loadFromFile(Corth::SOURCE_PATH);
         printf("%s\n", "Successfully loaded file.");
         Corth::Lex(prog);
         printf("%s\n", "Lexed file into tokens");
