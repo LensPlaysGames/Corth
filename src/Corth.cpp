@@ -19,7 +19,7 @@ namespace Corth {
 	void PrintUsage(){
 		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
 		printf("    %s\n", "Options:");
-        printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit");
+        printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
         printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths");
 		printf("        %s\n", "-com, --compile          | Compile program from source into executable");
 		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
@@ -371,7 +371,7 @@ std::string ASMB_PATH = "nasm";
 std::string LINK_PATH = "golink";
 
 std::string ASMB_OPTS = " -f win64 corth_program.asm";
-std::string LINK_OPTS = " /console /ENTRY:main kernel32.dll user32.dll msvcrt.dll corth_program.obj";
+std::string LINK_OPTS = " /console /ENTRY:main msvcrt.dll corth_program.obj";
 
 enum class MODE {
 	COMPILE,
