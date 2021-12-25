@@ -101,7 +101,7 @@ A lot of options will appear, and on Linux we will be using most of them.
   - Allows user to specify command line arguments that will be run with the linker.
 
 Basic Example (given `apt install nasm` was run and `ld` is installed by default): \
-`./Corth -com -a nasm -ao " -f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth"`
+`./Corth -com -a nasm -ao " -f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth`
 
 I know that is quite verbose, but it's what you get when you are compiling directly to assembly executables, haha.
 
