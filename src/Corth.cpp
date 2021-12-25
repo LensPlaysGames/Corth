@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <assert.h>
+#include <assert.h>    // I use assert to exit the program in the case it encounters an error.
 #include <string>
 #include <vector>
 
@@ -85,6 +85,10 @@ namespace Corth {
 		std::vector<Token> tokens;
 	};
 
+    void CorthStackError(){
+		printf("[ERR]: %s (%s)\n", "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+	}
+
     // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
 	void SimulateProgram(Program& prog) {
 		printf("\n%s\n\n", "Begin program simulation");
@@ -97,20 +101,30 @@ namespace Corth {
 			}
 			else if (tok.type == TokenType::OP) {
 				if (tok.text == "+") {
-					assert(stack.size() > 1);
-					int a = std::stoi(stack.back());
-					stack.pop_back();
-					int b = std::stoi(stack.back());
-					stack.pop_back();
-					stack.push_back(std::to_string(a + b));
+					if (stack.size() > 1) {
+						int a = std::stoi(stack.back());
+						stack.pop_back();
+						int b = std::stoi(stack.back());
+						stack.pop_back();
+						stack.push_back(std::to_string(a + b));
+					}
+					else {
+						CorthStackError();
+						assert(stack.size() > 1);
+					}
 				}
 				else if (tok.text == "-") {
-					assert(stack.size() > 1);
-					int b = std::stoi(stack.back());
-					stack.pop_back();					
-					int a = std::stoi(stack.back());
-					stack.pop_back();
-					stack.push_back(std::to_string(a - b));
+				    if(stack.size() > 1) {
+						int b = std::stoi(stack.back());
+						stack.pop_back();					
+						int a = std::stoi(stack.back());
+						stack.pop_back();
+						stack.push_back(std::to_string(a - b));
+					}
+					else {
+						CorthStackError();
+						assert(stack.size() > 1);
+					}
 				}
 				else if (tok.text == "*") {
                     if (stack.size() > 1) {
@@ -121,22 +135,33 @@ namespace Corth {
 						stack.push_back(std::to_string(a * b));
 					}
 					else {
-						printf("[ERR]: %s\n", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
-						assert(false);
+						CorthStackError();
+						assert(stack.size() > 1);
 					}
 				}
 				else if (tok.text == "/") {
-					assert(stack.size() > 1);
-					int b = std::stoi(stack.back());
-					stack.pop_back();
-					int a = std::stoi(stack.back());
-					stack.pop_back();
-					stack.push_back(std::to_string(a / b));
+					if (stack.size() > 1) {
+						int b = std::stoi(stack.back());
+						stack.pop_back();
+						int a = std::stoi(stack.back());
+						stack.pop_back();
+						stack.push_back(std::to_string(a / b));
+					}
+					else {
+						CorthStackError();
+						assert(stack.size() > 1);
+					}
 				}
 				else if (tok.text == "#") {
-                    assert(stack.size() > 0);
-					printf("%s\n", stack.back().c_str());
-					stack.pop_back();
+					if (stack.size() > 0) {
+						assert(stack.size() > 0);
+						printf("%s\n", stack.back().c_str());
+						stack.pop_back();
+					}
+					else {
+						CorthStackError();
+						assert(stack.size() > 0);
+					}
 				}
 			}
 		}
