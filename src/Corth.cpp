@@ -41,7 +41,7 @@ namespace Corth {
 		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
 		printf("    %s\n", "Options (latest over-rides):");
         printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
-        printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths");
+        printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths and options");
 		printf("        %s\n", "-com, --compile          | Compile program from source into executable");
 		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
 		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
@@ -395,8 +395,8 @@ std::string loadFromFile(std::string filePath) {
 
 bool HandleCMDLineArgs(int argc, char** argv) {
 	// Return value = whether execution will halt or not in main function
-	assert(static_cast<int>(MODE::COUNT) == 3);
-	assert(static_cast<int>(PLATFORM::COUNT) == 2);
+	assert(static_cast<int>(Corth::MODE::COUNT) == 3);
+	assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
   	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if (arg == "-h" || arg == "--help") {
@@ -469,7 +469,7 @@ bool HandleCMDLineArgs(int argc, char** argv) {
 		}
 	}
 
-	if (SOURCE_PATH.empty()) {
+	if (Corth::SOURCE_PATH.empty()) {
 		printf("[ERR]: %s\n", "Expected source file path in command line arguments!");
 		return false;
 	}
@@ -494,49 +494,51 @@ int main(int argc, char** argv) {
         printf("%s\n", "Lexed file into tokens");
         lexSuccessful = true;
 		if (Corth::verbose_logging){
-			PrintTokens(prog);
+			Corth::PrintTokens(prog);
 		}
     }
     catch (std::runtime_error e) {
-        printf("Error during loading file: %s\n", e.what());
+        printf("[ERR]: Could not load source file: %s\n", e.what());
+		Corth::PrintUsage();
         return -1;
     }
     catch (...) {
-        std::cout << "Error during loading file!";
+        std::cout << "[ERR]: Could not load source file at " + Corth::SOURCE_PATH + "!";
+		Corth::PrintUsage();
         return -1;
     }
 
 	if (lexSuccessful) {
-		assert(static_cast<int>(MODE::COUNT) == 3);
-		switch (RUN_MODE) {
-		case MODE::SIMULATE:
+		assert(static_cast<int>(Corth::MODE::COUNT) == 3);
+		switch (Corth::RUN_MODE) {
+		case Corth::MODE::SIMULATE:
 			SimulateProgram(prog);
 			break;
-		case MODE::GENERATE:
-			assert(static_cast<int>(PLATFORM::COUNT) == 2);
-			switch (RUN_PLATFORM) {
-			case PLATFORM::WIN64:
+		case Corth::MODE::GENERATE:
+			assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
+			switch (Corth::RUN_PLATFORM) {
+			case Corth::PLATFORM::WIN64:
 				#ifdef _WIN64
 				Corth::GenerateAssembly_NASM_win64(prog);
 				#endif
 				break;
-			case PLATFORM::LINUX64:
+			case Corth::PLATFORM::LINUX64:
 				#ifdef __linux__
 				Corth::GenerateAssembly_NASM_linux64(prog);
 				#endif
 				break;
 			}
 			break;
-        case MODE::COMPILE:
-			assert(static_cast<int>(PLATFORM::COUNT) == 2);
-			switch (RUN_PLATFORM) {
-			case PLATFORM::WIN64:
+        case Corth::MODE::COMPILE:
+			assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
+			switch (Corth::RUN_PLATFORM) {
+			case Corth::PLATFORM::WIN64:
 				#ifdef _WIN64
 				Corth::GenerateAssembly_NASM_win64(prog);
-				if (FileExists(ASMB_PATH)) {
-					if (FileExists(LINK_PATH)) {
-						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
-						std::string cmd_link = LINK_PATH + LINK_OPTS;
+				if (FileExists(Corth::ASMB_PATH)) {
+					if (FileExists(Corth::LINK_PATH)) {
+						std::string cmd_asmb = Corth::ASMB_PATH + Corth::ASMB_OPTS;
+						std::string cmd_link = Corth::LINK_PATH + Corth::LINK_OPTS;
 		
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						system(cmd_asmb.c_str());
@@ -547,23 +549,23 @@ int main(int argc, char** argv) {
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-					    printf("[ERR]: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
+					    printf("[ERR]: %s\n", ("Linker not found at " + Corth::LINK_PATH + "\n").c_str());
 						return -1;
 					}
 				}
 				else {
-				    printf("[ERR]: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
+				    printf("[ERR]: %s\n", ("Assembler not found at " + Corth::ASMB_PATH + "\n").c_str());
 					return -1;
 				}
 				#endif
 				break;
-			case PLATFORM::LINUX64:
+			case Corth::PLATFORM::LINUX64:
 				#ifdef __linux__
 				Corth::GenerateAssembly_NASM_linux64(prog);
-				if (!system(("which " + ASMB_PATH).c_str())) {
-					if (!system(("which " + LINK_PATH).c_str())) {
-						std::string cmd_asmb = ASMB_PATH + ASMB_OPTS;
-						std::string cmd_link = LINK_PATH + LINK_OPTS;
+				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+					if (!system(("which " + Corth::LINK_PATH).c_str())) {
+						std::string cmd_asmb = Corth::ASMB_PATH + Corth::ASMB_OPTS;
+						std::string cmd_link = Corth::LINK_PATH + Corth::LINK_OPTS;
 
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
@@ -575,12 +577,12 @@ int main(int argc, char** argv) {
 						printf("%s\n", "Executable built successfully!");
 					}
 					else {
-						printf("[ERR]: %s\n", ("Linker not found at " + LINK_PATH + "\n").c_str());
+						printf("[ERR]: %s\n", ("Linker not found at " + Corth::LINK_PATH + "\n").c_str());
 						return -1;
 					}
 				}
 				else {
-                    printf("[ERR]: %s\n", ("Assembler not found at " + ASMB_PATH + "\n").c_str());
+                    printf("[ERR]: %s\n", ("Assembler not found at " + Corth::ASMB_PATH + "\n").c_str());
                     return -1;
                 }
 				#endif
