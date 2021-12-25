@@ -62,18 +62,19 @@ namespace Corth {
 		std::vector<Token> tokens;
 	};
 
+    // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
 	void SimulateProgram(Program& prog) {
 		printf("\n%s\n\n", "Begin program simulation");
-		
+
 		std::vector<std::string> stack;
-		
+
 		for (auto& tok : prog.tokens) {
 			if (tok.type == TokenType::INT) {
 				stack.push_back(tok.text);
 			}
 			else if (tok.type == TokenType::OP) {
 				if (tok.text == "+") {
-					assert(stack.size() >= 2);
+					assert(stack.size() > 1);
 					int a = std::stoi(stack.back());
 					stack.pop_back();
 					int b = std::stoi(stack.back());
@@ -81,7 +82,7 @@ namespace Corth {
 					stack.push_back(std::to_string(a + b));
 				}
 				else if (tok.text == "-") {
-					assert(stack.size() >= 2);
+					assert(stack.size() > 1);
 					int b = std::stoi(stack.back());
 					stack.pop_back();					
 					int a = std::stoi(stack.back());
@@ -89,7 +90,7 @@ namespace Corth {
 					stack.push_back(std::to_string(a - b));
 				}
 				else if (tok.text == "*") {
-                    assert(stack.size() >= 2);
+                    assert(stack.size() > 1);
 					int a = std::stoi(stack.back());
 					stack.pop_back();
 					int b = std::stoi(stack.back());
@@ -97,7 +98,7 @@ namespace Corth {
 					stack.push_back(std::to_string(a * b));
 				}
 				else if (tok.text == "/") {
-					assert(stack.size() >= 2);
+					assert(stack.size() > 1);
 					int b = std::stoi(stack.back());
 					stack.pop_back();
 					int a = std::stoi(stack.back());
