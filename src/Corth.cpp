@@ -493,7 +493,7 @@ int main(int argc, char** argv) {
 	Corth::ASMB_PATH = "nasm";
 	Corth::ASMB_OPTS = "-f elf64";
 	Corth::LINK_PATH = "ld";
-	Corth::LINK_OPTS = "-dynamic-linker \lib64\ld-linux-x86-64.so.2 -lc -m elf_x86_64";
+	Corth::LINK_OPTS = "-dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64";
 	#endif
 	
 	if (!HandleCMDLineArgs(argc, argv)){
