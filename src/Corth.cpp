@@ -113,12 +113,17 @@ namespace Corth {
 					stack.push_back(std::to_string(a - b));
 				}
 				else if (tok.text == "*") {
-                    assert(stack.size() > 1);
-					int a = std::stoi(stack.back());
-					stack.pop_back();
-					int b = std::stoi(stack.back());
-                    stack.pop_back();
-					stack.push_back(std::to_string(a * b));
+                    if (stack.size() > 1) {
+						int a = std::stoi(stack.back());
+						stack.pop_back();
+						int b = std::stoi(stack.back());
+						stack.pop_back();
+						stack.push_back(std::to_string(a * b));
+					}
+					else {
+						printf("[ERR]: %s\n", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+						assert(false);
+					}
 				}
 				else if (tok.text == "/") {
 					assert(stack.size() > 1);
@@ -148,7 +153,8 @@ namespace Corth {
 
             // WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
-					 << "    ;; USING LINUX x64 CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9)\n"
+					 << "    ;; USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n"
+					 << "    ;; LINUX SYSTEM CALLS USE R10 INSTEAD OF RCX\n"
 					 << "    SECTION .data\n"
 					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
@@ -161,9 +167,9 @@ namespace Corth {
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL		
 			assert(static_cast<int>(TokenType::COUNT) == 3); 
-    		for (auto& tok : prog.tokens){
+    		for (auto& tok : prog.tokens) {
     			// Write assembly to opened file based on token type and value
-				if (tok.type == TokenType::INT){
+				if (tok.type == TokenType::INT) {
 					asm_file << "    ;; -- push INT --\n"
 							 << "    mov rax, " << tok.text << "\n"
 							 << "    push rax\n";
@@ -217,7 +223,7 @@ namespace Corth {
 		}
 	}
 
-	void GenerateAssembly_NASM_win64(Program& prog){
+	void GenerateAssembly_NASM_win64(Program& prog) {
 		// Loop through a lexed program and then generate assembly file from it.
 
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
@@ -228,7 +234,7 @@ namespace Corth {
 			
 			// WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
-					 << "    ;; USING WINDOWS x64 CALLING CONVENTION (RCX, RDX, R8, R9, ETC)\n"
+					 << "    ;; USING `WINDOWS x64` CALLING CONVENTION (RCX, RDX, R8, R9, ETC)\n"
 					 << "    SECTION .data\n"
 					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
@@ -323,6 +329,8 @@ namespace Corth {
 		tok.text.erase();
 	}
 
+	// TODO: Have a validation function to ensure the tokens would not produce invalid assembly (i.e. trying to pop from stack when you haven't pushed).
+	// I think this could be done by keeping a counter of the stack size and comparing against it to see if the token is workable, like in the simulation.
 	// Convert program source into tokens
     void Lex(Program& prog){
 		std::string src = prog.source;
