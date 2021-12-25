@@ -16,28 +16,11 @@
 namespace Corth {
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
-	std::string ASMB_PATH;
-	std::string LINK_PATH;
+	std::string ASMB_PATH = "";
+	std::string LINK_PATH = "";
 
-	std::string ASMB_OPTS;
-	std::string LINK_OPTS;
-
-    // PLATFORM SPECIFIC DEFAULTS
-	#ifdef _WIN64
-	// Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
-	ASMB_PATH = "\NASM\nasm.exe";
-	ASMB_OPTS = "-f win64";
-	
-	LINK_PATH = "\Golink\golink.exe";
-	LINK_OPTS = "/console /ENTRY:main msvcrt.dll";
-    #endif
-
-	#ifdef __linux__
-	ASMB_PATH = "nasm";
-	ASMB_OPTS = "-f elf64";
-	LINK_PATH = "ld";
-	LINK_OPTS = "-dynamic-linker \lib64\ld-linux-x86-64.so.2 -lc -m elf_x86_64";
-	#endif
+	std::string ASMB_OPTS = "";
+	std::string LINK_OPTS = "";
 
 	enum class MODE {
 		COMPILE,
@@ -497,6 +480,22 @@ bool HandleCMDLineArgs(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
+    // PLATFORM SPECIFIC DEFAULTS
+	#ifdef _WIN64
+	// Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
+	Corth::ASMB_PATH = "\\NASM\\nasm.exe";
+	Corth::ASMB_OPTS = "-f win64";
+	Corth::LINK_PATH = "\\Golink\\golink.exe";
+	Corth::LINK_OPTS = "/console /ENTRY:main msvcrt.dll";
+    #endif
+
+	#ifdef __linux__
+	Corth::ASMB_PATH = "nasm";
+	Corth::ASMB_OPTS = "-f elf64";
+	Corth::LINK_PATH = "ld";
+	Corth::LINK_OPTS = "-dynamic-linker \lib64\ld-linux-x86-64.so.2 -lc -m elf_x86_64";
+	#endif
+	
 	if (!HandleCMDLineArgs(argc, argv)){
 		// Non-graceful handling of command line arguments, abort execution.
 	    Corth::PrintUsage();
