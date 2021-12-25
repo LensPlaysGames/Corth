@@ -46,22 +46,29 @@ So, you've written a program, what do you do now that you want to run it?
 
 The easiest thing to do is to simulate the program. \
 To do this, simply use the `-sim` or `--simulate` command line argument i.e. \
-Windows: `Corth.exe -sim test.corth` \
-Linux: `./Corth -sim test.corth`
+Windows: `Path/To/Corth.exe -sim test.corth` \
+Linux: `./Path/To/Corth -sim test.corth`
 
 If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions down below).
 
-If you would like to compile the corth program into an executable file, there are some more steps.
+If you would like to compile the corth program into an executable file, there are a few more steps.
 
 First, you must ensure that you have [NASM](https://www.nasm.us/) installed somewhere on your machine. \
+On Windows you can [Download the installer from the official website](https://www.nasm.us/) \
+On Linux, run the following CMD: `apt install nasm` \
 NASM is the assembler that this project is built for. Eventually, different types of assembly will be able to be generated. \
-With NASM installed, keep in mind the path to the `nasm.exe` file itself. You will need it later.
+If you are on Windows and you didn't install it in the default directory the installer prompted, keep in mind the path to the 'nasm' executable file itself. You will need it later for the `-a` or `--assembler-path` command line option. \
+The only assembly syntax supported right now is NASM, but that will change in the future (i.e. [GAS](https://en.wikipedia.org/wiki/GNU_Assembler)).
 
 Second, you must ensure that you have some sort of linker on your machine that can link against the standard C runtime of whatever platform you're on. \
-For example, this might be GoLink on Windows. GoLink is easy to use and fast to setup. \
-On Linux, this is most likely `ld`, the GNU linker.
+For example, this might be [GoLink](http://godevtool.com/) on Windows. GoLink is easy to use and fast to setup; simply extract it and it's ready. \
+On Linux, this is most likely `ld`, the GNU linker; it comes with most linux distros by default.
 
-Once all the pre-requisites are installed, now comes time to use the CCLI, or Corth Command Line Interface.
+Once all the pre-requisites are installed, now comes time to use the CCLI, or Corth Command Line Interface. \
+Ideally, it will be very similar to the simulate command up above, but sometimes quite a few arguments need to be specified. \
+To avoid this as much as possible, Corth sets default values based on your operating system.
+
+##### Small bug warning -- On Linux, if you specify an output name to Corth with `-o`, it may not be reflected in the output executable of your linker! Look for `a.out` or similar.
 
 ### On Windows
 Open a terminal and navigate to the directory containing Corth.exe. \
@@ -72,11 +79,16 @@ Because there are a lot, I will tell you the ones you will most likely need righ
 - `-com` or `--compile`
   - Specifies that Corth needs to generate assembly, assemble it into machine code, then link it into an executable.
 - `-a` or `--assembler-path`
-  - This does what it sounds like, and allows the user to specify the path to the assembler `.exe` file to run.
-- `l` or `--linker-path`
-  - Specify the path to the linker `.exe` file to run.
+  - This does what it sounds like, and allows the user to specify the path to the assembler `.exe` file to run. Set this to the exact path of `nasm.exe` on your machine, including file name and extension. If you downloaded it at the default location, Corth's defaults should work as well, so ideally you won't need to specify this argument.
+- `-l` or `--linker-path`
+  - Specify the path to the linker `.exe` file to run. This will be the path to `golink.exe` including file name and extension. Again, if you downloaded at the default locations, everything should work fine without specifying any extra arguments.
+- `-gen` or `--generate`
+  - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
 
 Basic example: \
+`Corth.exe -com test.corth`
+
+or, if Corth is giving errors about not finding assembler/linker: \
 `Corth.exe -com -a /Path/To/NASM/nasm.exe -l /Path/To/GoLink/golink.exe test.corth`
 
 By default, the assembler and linker options are setup for Windows, using NASM and GoLink. \
@@ -86,24 +98,19 @@ If your situation is different, make sure to specify the correct options using `
 Open a terminal and navigate to the directory containing the Corth executable. \
 To familiarize yourself with the options of the CCLI, run the following command: \
 `./Corth -h` or `./Corth --help` \
-A lot of options will appear, and on Linux we will be using most of them.
+A lot of options will appear, but most will not be needed unless you are getting errors, as the defaults are platform-specific.
 - `-linux` or `-linux64`
   - Tell Corth to generate Linux assembly for NASM.
 - `-com` or `--compile`
   - Specifies compilation mode to Corth. This tells corth to generate assembly, assemble it, and link it into an executable.
-- `-a` or `--assembler-path`
-  - Allows user to specify path to assembler executable. Include file name! If executable is in PATH, just put the command itself.
-- `-ao` or `--assembler-options`
-  - Allows user to specify command line arguments that will be run with the assembler.
-- `-l` or `--linker-path`
-  - Allows user to specify path to linker executable. Include file name! If executable is in PATH, just put the command itself.
-- `-lo` or `--linker-options`
-  - Allows user to specify command line arguments that will be run with the linker.
+- `-gen` or `--generate`
+  - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
 
 Basic Example (given `apt install nasm` was run and `ld` is installed by default): \
-`./Corth -com -a nasm -ao " -f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth`
+`./Corth -com test.corth`
 
-I know that is quite verbose, but it's what you get when you are compiling directly to assembly executables, haha.
+Verbose Example: \
+`./Corth -com -a nasm -ao "-f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth`
 
 ### Common Errors:
 - "Assembler not found at x"
@@ -123,5 +130,3 @@ Run the following command in the repository directory: \
 `cmake -S . -B build/`
 
 This will use CMake to build a build system with the default generator on your platform.
-
-The only assembly syntax supported right now is NASM, but that will change in the future. \

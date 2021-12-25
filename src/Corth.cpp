@@ -15,11 +15,29 @@
 
 namespace Corth {
 	std::string SOURCE_PATH = "main.corth";
-	std::string ASMB_PATH = "nasm";
-	std::string LINK_PATH = "golink";
+	std::string OUTPUT_NAME = "corth_program";
+	std::string ASMB_PATH;
+	std::string LINK_PATH;
 
-	std::string ASMB_OPTS = " -f win64 corth_program.asm";
-	std::string LINK_OPTS = " /console /ENTRY:main msvcrt.dll corth_program.obj";
+	std::string ASMB_OPTS;
+	std::string LINK_OPTS;
+
+    // PLATFORM SPECIFIC DEFAULTS
+	#ifdef _WIN64
+	// Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
+	ASMB_PATH = "\NASM\nasm.exe";
+	ASMB_OPTS = "-f win64";
+	
+	LINK_PATH = "\Golink\golink.exe";
+	LINK_OPTS = "/console /ENTRY:main msvcrt.dll";
+    #endif
+
+	#ifdef __linux__
+	ASMB_PATH = "nasm";
+	ASMB_OPTS = "-f elf64";
+	LINK_PATH = "ld";
+	LINK_OPTS = "-dynamic-linker \lib64\ld-linux-x86-64.so.2 -lc -m elf_x86_64";
+	#endif
 
 	enum class MODE {
 		COMPILE,
@@ -139,7 +157,7 @@ namespace Corth {
 	}
 
 	void GenerateAssembly_NASM_linux64(Program& prog){
-		std::string asm_file_path = "corth_program.asm";
+		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
@@ -219,7 +237,7 @@ namespace Corth {
 	void GenerateAssembly_NASM_win64(Program& prog){
 		// Loop through a lexed program and then generate assembly file from it.
 
-		std::string asm_file_path = "corth_program.asm";
+		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
@@ -377,6 +395,7 @@ namespace Corth {
 bool FileExists(std::string filePath) {
 	// TODO: Check PATH variable
 	std::string path_var = getenv("PATH");
+	printf("WINDOWS PATH TEST: %s\n", path_var);
 
 	// Check path relative Corth.exe
 	std::ifstream file(filePath);
@@ -537,8 +556,12 @@ int main(int argc, char** argv) {
 				Corth::GenerateAssembly_NASM_win64(prog);
 				if (FileExists(Corth::ASMB_PATH)) {
 					if (FileExists(Corth::LINK_PATH)) {
-						std::string cmd_asmb = Corth::ASMB_PATH + Corth::ASMB_OPTS;
-						std::string cmd_link = Corth::LINK_PATH + Corth::LINK_OPTS;
+						/* Construct Commands
+						    Assembly is generated at `Corth::OUTPUT_NAME.asm`
+					        By default on win64, NASM generates an output `.obj` file of the same name as the input file.
+					        This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
+						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + Corth::OUTPUT_NAME + ".asm";
+						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + Corth::OUTPUT_NAME + ".obj";
 		
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						system(cmd_asmb.c_str());
@@ -564,8 +587,13 @@ int main(int argc, char** argv) {
 				Corth::GenerateAssembly_NASM_linux64(prog);
 				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
 					if (!system(("which " + Corth::LINK_PATH).c_str())) {
-						std::string cmd_asmb = Corth::ASMB_PATH + Corth::ASMB_OPTS;
-						std::string cmd_link = Corth::LINK_PATH + Corth::LINK_OPTS;
+						/* Construct Commands
+						    Assembly is generated at `Corth::OUTPUT_NAME.asm`
+							By default on linux, NASM generates an output `.o` file of the same name as the input file
+							This means the linker needs to link to `Corth::OUTPUT_NAME.o`
+						 */
+						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + CORTH::OUTPUT_NAME + ".asm";
+						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + CORTH::OUTPUT_NAME + ".o";
 
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
