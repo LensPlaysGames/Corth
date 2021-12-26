@@ -696,6 +696,10 @@ int main(int argc, char** argv) {
 					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
 					return -1;
 				}
+				#else
+				Corth::Error("_WIN64 is undefined. Incorrect platform selected using cmd-line flags?");
+				Corth::PrintUsage();
+				return -1;
 				#endif
 				break;
 			case Corth::PLATFORM::LINUX64:
@@ -729,6 +733,10 @@ int main(int argc, char** argv) {
 					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
                     return -1;
                 }
+				#else
+				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
+				Corth::PrintUsage();
+				return -1;
 				#endif
 				break;
 			}
