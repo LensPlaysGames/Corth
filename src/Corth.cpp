@@ -14,6 +14,10 @@
 #endif
 
 namespace Corth {
+	// This needs to be changed if operators are added or removed from Corth internally.
+	size_t OP_COUNT = 5;
+	
+	// Corth state (it may be a simple state machine, but it still is one :D)
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
@@ -72,11 +76,12 @@ namespace Corth {
 	public:
 		TokenType type;
 		std::string text;
-		size_t line_number {1};
+		size_t line_number;
 
 		Token(){
 			type = TokenType::WHITESPACE;
 			text = "";
+			line_number = 1;
 		}
 	};
 	
@@ -86,27 +91,46 @@ namespace Corth {
 	};
 
     void StackError(){
-		printf("[ERR]: %s (%s)\n", "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+		printf("\n[ERR]: %s (%s)\n", "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
 	}
 
 	void StackError(size_t line_num) {
-		printf("[ERR] LINE %zu: %s (%s)\n", line_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+		printf("\n[ERR] LINE %zu: %s (%s)\n", line_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
 	}
 
 	void Error(std::string msg) {
-		printf("[ERR]: %s\n", msg.c_str());
+		printf("\n[ERR]: %s\n", msg.c_str());
 	}
 
 	void Error(std::string msg, size_t line_num) {
-		printf("[ERR] LINE %zu: %s\n", line_num, msg.c_str());
+		printf("\n[ERR] LINE %zu: %s\n", line_num, msg.c_str());
 	}
 
 	void Error(std::string msg, std::exception e) {
-		printf("[ERR]: %s (%s)\n", msg.c_str(), e.what());
+		printf("\n[ERR]: %s (%s)\n", msg.c_str(), e.what());
 	}
 
-	void Warning(std::string msg, size_t line_num = 1) {
+	void Warning(std::string msg) {
+		printf("[WRN]: %s\n" msg.c_str());
+	}
+
+	void Warning(std::string msg, size_t line_num) {
 		printf("[WRN] LINE %zu: %s\n", line_num, msg.c_str());
+	}
+
+	bool iswhitespace(char& c){
+		return c == ' '     // spaces
+			|| c == '\t'    // tab
+			|| c == '\r'    // crlf
+			|| c == '\n';   // newline/linefeed
+	}
+
+	bool isoperator(char& c){
+		return c == '+'    // addition
+			|| c == '-'    // subtraction
+			|| c == '*'    // multiplication
+			|| c == '/'    // division
+			|| c == '#';   // dump (pop + print)
 	}
 
     // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
@@ -120,67 +144,74 @@ namespace Corth {
 				stack.push_back(tok.text);
 			}
 			else if (tok.type == TokenType::OP) {
-				if (tok.text == "+") {
-					if (stack.size() > 1) {
-						int a = std::stoi(stack.back());
-						stack.pop_back();
-						int b = std::stoi(stack.back());
-						stack.pop_back();
-						stack.push_back(std::to_string(a + b));
+				if (OP_COUNT == 5) {
+					if (tok.text == "+") {
+						if (stack.size() > 1) {
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a + b));
+						}
+						else {
+							StackError();
+							assert(stack.size() > 1);
+						}
 					}
-					else {
-						StackError();
-						assert(stack.size() > 1);
+					else if (tok.text == "-") {
+						if(stack.size() > 1) {
+							int b = std::stoi(stack.back());
+							stack.pop_back();					
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a - b));
+						}
+						else {
+							StackError();
+							assert(stack.size() > 1);
+						}
+					}
+					else if (tok.text == "*") {
+						if (stack.size() > 1) {
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a * b));
+						}
+						else {
+							StackError();
+							assert(stack.size() > 1);
+						}
+					}
+					else if (tok.text == "/") {
+						if (stack.size() > 1) {
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a / b));
+						}
+						else {
+							StackError();
+							assert(stack.size() > 1);
+						}
+					}
+					else if (tok.text == "#") {
+						if (stack.size() > 0) {
+							printf("%s\n", stack.back().c_str());
+							stack.pop_back();
+						}
+						else {
+							StackError();
+							assert(stack.size() > 0);
+						}
 					}
 				}
-				else if (tok.text == "-") {
-				    if(stack.size() > 1) {
-						int b = std::stoi(stack.back());
-						stack.pop_back();					
-						int a = std::stoi(stack.back());
-						stack.pop_back();
-						stack.push_back(std::to_string(a - b));
-					}
-					else {
-						StackError();
-						assert(stack.size() > 1);
-					}
-				}
-				else if (tok.text == "*") {
-                    if (stack.size() > 1) {
-						int a = std::stoi(stack.back());
-						stack.pop_back();
-						int b = std::stoi(stack.back());
-						stack.pop_back();
-						stack.push_back(std::to_string(a * b));
-					}
-					else {
-						StackError();
-						assert(stack.size() > 1);
-					}
-				}
-				else if (tok.text == "/") {
-					if (stack.size() > 1) {
-						int b = std::stoi(stack.back());
-						stack.pop_back();
-						int a = std::stoi(stack.back());
-						stack.pop_back();
-						stack.push_back(std::to_string(a / b));
-					}
-					else {
-						StackError();
-						assert(stack.size() > 1);
-					}
-				}
-				else if (tok.text == "#") {
-					if (stack.size() > 0) {
-						printf("%s\n", stack.back().c_str());
-						stack.pop_back();
-					}
-					else {
-						StackError();
-						assert(stack.size() > 0);
-					}
+				else {
+					// Exhaustive handling of operator count
+					Error("Exhaustive handling of operator count in SimulateProgram()", tok.line_number);
+					assert(OP_COUNT == 5);
 				}
 			}
 		}
@@ -188,6 +219,7 @@ namespace Corth {
 		printf("\n%s\n", "End program simulation");
 	}
 
+	// TODO: Convert GenerateAssembly return type from void to bool
 	void GenerateAssembly_NASM_linux64(Program& prog){
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
@@ -209,58 +241,69 @@ namespace Corth {
 					 << "    global _start\n"
 					 << "_start:\n";
 
-            // WRITE TOKENS TO ASM FILE MAIN LABEL		
-			assert(static_cast<int>(TokenType::COUNT) == 3); 
-    		for (auto& tok : prog.tokens) {
-    			// Write assembly to opened file based on token type and value
-				if (tok.type == TokenType::INT) {
-					asm_file << "    ;; -- push INT --\n"
-							 << "    mov rax, " << tok.text << "\n"
-							 << "    push rax\n";
+            // WRITE TOKENS TO ASM FILE MAIN LABEL
+			if (static_cast<int>(TokenType::COUNT) == 3) {
+				for (auto& tok : prog.tokens) {
+					// Write assembly to opened file based on token type and value
+					if (tok.type == TokenType::INT) {
+						asm_file << "    ;; -- push INT --\n"
+								 << "    mov rax, " << tok.text << "\n"
+								 << "    push rax\n";
+					}
+					else if (tok.type == TokenType::OP) {
+						if (OP_COUNT == 5) {
+							if (tok.text == "+") {
+								asm_file << "    ;; -- add --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    add rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "-") {
+								asm_file << "    ;; -- subtract --\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    sub rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "*") {
+								asm_file << "    ;; -- multiply --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    mul rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "/") {
+								asm_file << "    ;; -- divide --\n"
+										 << "    xor rdx, rdx\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    div rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "#") {
+								asm_file << "    ;; -- dump --\n"
+										 << "    lea rdi, [rel fmt]\n"
+										 << "    pop rsi\n"
+										 << "    mov rax, 0\n"
+										 << "    call printf\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number);
+							assert(OP_COUNT == 5);
+						}
+					}
 				}
-				else if (tok.type == TokenType::OP) {
-					if (tok.text == "+") {
-						asm_file << "    ;; -- add --\n"
-								 << "    pop rax\n"
-								 << "    pop rbx\n"
-								 << "    add rax, rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "-") {
-						asm_file << "    ;; -- subtract --\n"
-								 << "    pop rbx\n"
-								 << "    pop rax\n"
-								 << "    sub rax, rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "*") {
-						asm_file << "    ;; -- multiply --\n"
-								 << "    pop rax\n"
-								 << "    pop rbx\n"
-								 << "    mul rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "/") {
-						asm_file << "    ;; -- divide --\n"
-								 << "    xor rdx, rdx\n"
-								 << "    pop rbx\n"
-								 << "    pop rax\n"
-								 << "    div rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "#") {
-						asm_file << "    ;; -- dump --\n"
-								 << "    lea rdi, [rel fmt]\n"
-								 << "    pop rsi\n"
-								 << "    mov rax, 0\n"
-								 << "    call printf\n";
-					}
-				}
-    		}
-			// WRITE ASM FOOTER FOR GRACEFUL PROGRAM EXIT
-			asm_file << "    call exit\n";
+				// WRITE ASM FOOTER FOR GRACEFUL PROGRAM EXIT
+				asm_file << "    call exit\n";
 			
-			asm_file.close();
+				asm_file.close();
+			}
+			else {
+				Error("Exhaustive handling of TokenType count in GenerateAssembly_NASM_linux64()");
+				assert(static_cast<int>(TokenType::COUNT) == 3); 
+			}
 		}
 		else {
 			Error("Could not open file for writing. Missing permissions?");
@@ -269,7 +312,6 @@ namespace Corth {
 
 	void GenerateAssembly_NASM_win64(Program& prog) {
 		// Loop through a lexed program and then generate assembly file from it.
-
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
@@ -290,58 +332,69 @@ namespace Corth {
 					 << "main:\n";
 
 			// WRITE TOKENS TO ASM FILE MAIN LABEL
-			assert(static_cast<int>(TokenType::COUNT) == 3); // Exhaustive handling of implementation of token types
-    		for (auto& tok : prog.tokens){
-    			// Write assembly to opened file based on token type and value
-				if (tok.type == TokenType::INT){
-					asm_file << "    ;; -- push INT --\n"
-							 << "    mov rax, " << tok.text << "\n"
-							 << "    push rax\n";
+			if (static_cast<int>(TokenType::COUNT) == 3) {
+				for (auto& tok : prog.tokens){
+					// Write assembly to opened file based on token type and value
+					if (tok.type == TokenType::INT){
+						asm_file << "    ;; -- push INT --\n"
+								 << "    mov rax, " << tok.text << "\n"
+								 << "    push rax\n";
+					}
+					else if (tok.type == TokenType::OP) {
+						if (OP_COUNT == 5) {
+						if (tok.text == "+") {
+							asm_file << "    ;; -- add --\n"
+									 << "    pop rax\n"
+									 << "    pop rbx\n"
+									 << "    add rax, rbx\n"
+									 << "    push rax\n";
+						}
+						else if (tok.text == "-") {
+							asm_file << "    ;; -- subtract --\n"
+									 << "    pop rbx\n"
+									 << "    pop rax\n"
+									 << "    sub rax, rbx\n"
+									 << "    push rax\n";
+						}
+						else if (tok.text == "*") {
+							asm_file << "    ;; -- multiply --\n"
+									 << "    pop rax\n"
+									 << "    pop rbx\n"
+									 << "    mul rbx\n"
+									 << "    push rax\n";
+						}
+						else if (tok.text == "/") {
+							asm_file << "    ;; -- divide --\n"
+									 << "    xor rdx, rdx\n"
+									 << "    pop rbx\n"
+									 << "    pop rax\n"
+									 << "    div rbx\n"
+									 << "    push rax\n";
+						}
+						else if (tok.text == "#") {
+							asm_file << "    ;; -- dump --\n"
+									 << "    lea rcx, [rel fmt]\n"
+									 << "    pop rdx\n"
+									 << "    mov rax, 0\n"
+									 << "    call printf\n";
+						}
+						}
+						else {
+							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_win64()");
+							assert(OP_COUNT == 5);
+						}
+					}
 				}
-				else if (tok.type == TokenType::OP) {
-					if (tok.text == "+") {
-						asm_file << "    ;; -- add --\n"
-								 << "    pop rax\n"
-								 << "    pop rbx\n"
-								 << "    add rax, rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "-") {
-						asm_file << "    ;; -- subtract --\n"
-								 << "    pop rbx\n"
-								 << "    pop rax\n"
-								 << "    sub rax, rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "*") {
-						asm_file << "    ;; -- multiply --\n"
-								 << "    pop rax\n"
-								 << "    pop rbx\n"
-								 << "    mul rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "/") {
-						asm_file << "    ;; -- divide --\n"
-								 << "    xor rdx, rdx\n"
-								 << "    pop rbx\n"
-								 << "    pop rax\n"
-								 << "    div rbx\n"
-								 << "    push rax\n";
-					}
-					else if (tok.text == "#") {
-						asm_file << "    ;; -- dump --\n"
-								 << "    lea rcx, [rel fmt]\n"
-								 << "    pop rdx\n"
-								 << "    mov rax, 0\n"
-								 << "    call printf\n";
-					}
-				}
-    		}
-			// WRITE ASM FOOTER (EXIT GRACEFUL)
-			asm_file << "    call exit\n";
+				// WRITE ASM FOOTER (EXIT GRACEFUL)
+				asm_file << "    call exit\n";
 
-			asm_file.close();
-			printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
+				asm_file.close();
+				printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
+			}
+			else {
+				Error("Exhaustive handling of TokenType count in GenerateAssembly_NASM_win64()");
+				assert(static_cast<int>(TokenType::COUNT) == 3); // Exhaustive handling of implementation of token types
+			}
 		}
 		else {
 			Error("Could not open file for writing. Missing permissions?");
@@ -433,21 +486,6 @@ namespace Corth {
 		return true;
 	}
 
-	bool iswhitespace(char& c){
-		return c == ' '     // spaces
-			|| c == '\t'    // tab
-			|| c == '\r'    // crlf
-			|| c == '\n';   // newline/linefeed
-	}
-
-	bool isoperator(char& c){
-		return c == '+'    // addition
-			|| c == '-'    // subtraction
-			|| c == '*'    // multiplication
-			|| c == '/'    // division
-			|| c == '#';   // dump (pop + print)
-	}
-
 	void PushToken(std::vector<Token>& tokList, Token& tok){
 		// Add token to program if it is not whitespace
 		if (tok.type != TokenType::WHITESPACE) {
@@ -458,8 +496,6 @@ namespace Corth {
 		tok.text.erase();
 	}
 
-	// TODO: Have a validation function to ensure the tokens would not produce invalid assembly (i.e. trying to pop from stack when you haven't pushed).
-	// I think this could be done by keeping a counter of the stack size and comparing against it to see if the token is workable, like in the simulation.
 	// Convert program source into tokens
     void Lex(Program& prog){
 		std::string src = prog.source;
@@ -474,7 +510,7 @@ namespace Corth {
 
 			// Skip whitespace
 			if (iswhitespace(current)) {
-				if (tok.text == "\n") { tok.line_number++; }
+				if (current == '\n') { tok.line_number++;}
 			}
 			else if (isoperator(current)){
 				tok.type = TokenType::OP;
@@ -519,26 +555,63 @@ namespace Corth {
 		std::vector<Token>& toks = prog.tokens;
 		size_t stackSize = 0; // Used for protecting from stack overflow by popping too much (dumping over and over).
 
-		assert(static_cast<int>(TokenType::COUNT) == 3);
-
-		for (auto& tok : toks) {
-			if (tok.type == TokenType::WHITESPACE) {
-				Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number);
-			} else if (tok.type == TokenType::OP) {
-				// Most operators pop off the stack, so validate them
-				if (tok.text == "+") {
-					if (stackSize > 1) {
-						continue;
+		if (static_cast<int>(TokenType::COUNT) == 3) {
+			for (auto& tok : toks) {
+				if (tok.type == TokenType::WHITESPACE) {
+					Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number);
+				}
+				else if (tok.type == TokenType::INT) {
+					stackSize++;
+				}
+				else if (tok.type == TokenType::OP) {
+					if (OP_COUNT == 5) {
+						// Operators that pop two values off the stack and return one to it
+						if (tok.text == "+"
+							|| tok.text == "-"
+							|| tok.text == "*"
+							|| tok.text == "/")
+						{
+							if (stackSize > 1) {
+								stackSize--; // Two values removed, result added, net loss of one
+							}
+							else {
+								tok.type = TokenType::WHITESPACE;
+								StackError(tok.line_number);
+							}
+						}
+						// Operators that pop one value off the stack and return zero to it
+						else if (tok.text == "#") {
+							if (stackSize > 0) {
+								stackSize--;
+							}
+							else {
+								// This token could cause serious memory issues (by popping a value off the stack that doesn't exist)
+								// It is marked for removal by setting it's type to whitespace.
+								tok.type = TokenType::WHITESPACE;
+								StackError(tok.line_number);
+							}
+						}
 					}
 					else {
-						StackError(tok.line_number);
+						Error("Exhaustive handling of operator count in ValidateTokens()");
+						assert(OP_COUNT == 5);
 					}
 				}
 			}
-		}
+		
+			if (stackSize != 0) {
+				Warning("Validator: Best practices indicate stack should be empty at end of program.\nStack Size at End of Program: " + std::to_string(stackSize));
+			}
 
-		// Remove all un-neccessary tokens (just whitespace for now)
-		std::remove_if(toks.begin(), toks.end(), RemovableToken);
+			// Remove all un-neccessary tokens
+			std::remove_if(toks.begin(), toks.end(), RemovableToken);
+
+			printf("Tokens validated successfully");
+		}
+		else {
+			Error("Exhaustive handling of TokenType count in ValidateTokens()");
+			assert(static_cast<int>(TokenType::COUNT) == 3);
+		}
 	}
 }
 
@@ -619,6 +692,7 @@ int main(int argc, char** argv) {
 				
         printf("%s\n", "Successfully loaded file.");
         Corth::Lex(prog);
+		Corth::ValidateTokens(prog);
         printf("%s\n", "Lexed file into tokens");
         lexSuccessful = true;
 		if (Corth::verbose_logging){
