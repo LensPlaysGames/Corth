@@ -76,11 +76,13 @@ namespace Corth {
 		TokenType type;
 		std::string text;
 		size_t line_number;
+		size_t col_number;
 
 		Token(){
 			type = TokenType::WHITESPACE;
 			text = "";
 			line_number = 1;
+			col_number = 1;
 		}
 	};
 	
@@ -97,12 +99,20 @@ namespace Corth {
 		printf("\n[ERR] LINE %zu: %s (%s)\n", line_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
 	}
 
+	void StackError(size_t line_num, size_t column_num) {
+		printf("\n[ERR] LINE %zu, COL %zu: %s (%s)\n", line_num, column_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
+	}
+
 	void Error(std::string msg) {
 		printf("\n[ERR]: %s\n", msg.c_str());
 	}
 
 	void Error(std::string msg, size_t line_num) {
 		printf("\n[ERR] LINE %zu: %s\n", line_num, msg.c_str());
+	}
+
+	void Error(std::string msg, size_t line_num, size_t column_num) {
+		printf("\n[ERR] LINE %zu, COL %zu: %s\n", line_num, column_num, msg.c_str());
 	}
 
 	void Error(std::string msg, std::exception e) {
@@ -115,6 +125,10 @@ namespace Corth {
 
 	void Warning(std::string msg, size_t line_num) {
 		printf("[WRN] LINE %zu: %s\n", line_num, msg.c_str());
+	}
+
+	void Warning(std::string msg, size_t line_num, size_t column_num) {
+		printf("[WRN] LINE %zu, COL %zu: %s\n", line_num, column_num, msg.c_str());
 	}
 
 	bool iswhitespace(char& c){
@@ -153,7 +167,7 @@ namespace Corth {
 							stack.push_back(std::to_string(a + b));
 						}
 						else {
-							StackError();
+							StackError(tok.line_number, tok.col_number);
 							assert(stack.size() > 1);
 						}
 					}
@@ -166,7 +180,7 @@ namespace Corth {
 							stack.push_back(std::to_string(a - b));
 						}
 						else {
-							StackError();
+							StackError(tok.line_number, tok.col_number);
 							assert(stack.size() > 1);
 						}
 					}
@@ -179,7 +193,7 @@ namespace Corth {
 							stack.push_back(std::to_string(a * b));
 						}
 						else {
-							StackError();
+							StackError(tok.line_number, tok.col_number);
 							assert(stack.size() > 1);
 						}
 					}
@@ -192,7 +206,7 @@ namespace Corth {
 							stack.push_back(std::to_string(a / b));
 						}
 						else {
-							StackError();
+							StackError(tok.line_number, tok.col_number);
 							assert(stack.size() > 1);
 						}
 					}
@@ -202,7 +216,7 @@ namespace Corth {
 							stack.pop_back();
 						}
 						else {
-							StackError();
+							StackError(tok.line_number, tok.col_number);
 							assert(stack.size() > 0);
 						}
 					}
@@ -506,10 +520,15 @@ namespace Corth {
 
 		for(int i = 0; i < src_end; i++){
 			current = src[i];
+			
+			tok.col_number++;
 
 			// Skip whitespace
 			if (iswhitespace(current)) {
-				if (current == '\n') { tok.line_number++;}
+				if (current == '\n') {
+					tok.line_number++;
+					tok.col_number = 1;
+				}
 			}
 			else if (isoperator(current)){
 				tok.type = TokenType::OP;
@@ -557,7 +576,7 @@ namespace Corth {
 		if (static_cast<int>(TokenType::COUNT) == 3) {
 			for (auto& tok : toks) {
 				if (tok.type == TokenType::WHITESPACE) {
-					Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number);
+					Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number, tok.col_number);
 				}
 				else if (tok.type == TokenType::INT) {
 					stackSize++;
@@ -575,7 +594,7 @@ namespace Corth {
 							}
 							else {
 								tok.type = TokenType::WHITESPACE;
-								StackError(tok.line_number);
+								StackError(tok.line_number, tok.col_number);
 							}
 						}
 						// Operators that pop one value off the stack and return zero to it
@@ -587,7 +606,7 @@ namespace Corth {
 								// This token could cause serious memory issues (by popping a value off the stack that doesn't exist)
 								// It is marked for removal by setting it's type to whitespace.
 								tok.type = TokenType::WHITESPACE;
-								StackError(tok.line_number);
+								StackError(tok.line_number, tok.col_number);
 							}
 						}
 					}
@@ -605,7 +624,7 @@ namespace Corth {
 			// Remove all un-neccessary tokens
 			std::remove_if(toks.begin(), toks.end(), RemovableToken);
 
-			printf("Tokens validated successfully");
+			printf("Tokens validated");
 		}
 		else {
 			Error("Exhaustive handling of TokenType count in ValidateTokens()");
