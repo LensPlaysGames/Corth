@@ -546,7 +546,6 @@ bool FileExists(std::string filePath) {
 	// Check path relative Corth.exe
 	std::ifstream file(filePath);
 	if (file.is_open()) { file.close(); return true; }
-
     #ifdef _WIN64
 	// Get PATH system variable on Windows
 	std::vector<std::string> path_var;
@@ -573,6 +572,8 @@ bool FileExists(std::string filePath) {
 		if (f.is_open()) { f.close(); return true; }
 	}
 	#else
+	Corth::Error("Something went very, very wrong...\nIf you are on Linux may god have mercy on your soul.");
+	return false;
 	#endif
 
 	return false;
@@ -648,7 +649,7 @@ int main(int argc, char** argv) {
 				#ifdef _WIN64
 				Corth::GenerateAssembly_NASM_win64(prog);
 				#else
-				Corth::Error("_WIN64 is undefined. Incorrect platform selected using cmd-line flags?");
+				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
 				Corth::PrintUsage();
 				return -1;
 				#endif
@@ -697,7 +698,7 @@ int main(int argc, char** argv) {
 					return -1;
 				}
 				#else
-				Corth::Error("_WIN64 is undefined. Incorrect platform selected using cmd-line flags?");
+				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
 				Corth::PrintUsage();
 				return -1;
 				#endif
