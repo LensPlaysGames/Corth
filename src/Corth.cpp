@@ -13,6 +13,8 @@
 #else
 #endif
 
+/* TODO: Convert all auto-ranged for loops over program Tokens into iterator based loops (to be able to skip around for branching and loops within Corth). */
+
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
 	size_t OP_COUNT = 5;
