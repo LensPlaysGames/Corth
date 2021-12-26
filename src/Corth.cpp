@@ -39,7 +39,7 @@ namespace Corth {
 	bool verbose_logging = false;
 	
 	void PrintUsage(){
-		printf("%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
+		printf("\n%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
 		printf("    %s\n", "Options (latest over-rides):");
         printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
         printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths and options");
@@ -647,11 +647,19 @@ int main(int argc, char** argv) {
 			case Corth::PLATFORM::WIN64:
 				#ifdef _WIN64
 				Corth::GenerateAssembly_NASM_win64(prog);
+				#else
+				Corth::Error("_WIN64 is undefined. Incorrect platform selected using cmd-line flags?");
+				Corth::PrintUsage();
+				return -1;
 				#endif
 				break;
 			case Corth::PLATFORM::LINUX64:
 				#ifdef __linux__
 				Corth::GenerateAssembly_NASM_linux64(prog);
+				#else
+				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
+				Corth::PrintUsage();
+				return -1;
 				#endif
 				break;
 			}
