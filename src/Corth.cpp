@@ -624,7 +624,7 @@ namespace Corth {
 			// Remove all un-neccessary tokens
 			std::remove_if(toks.begin(), toks.end(), RemovableToken);
 
-			printf("Tokens validated");
+			printf("%s\n", "Tokens validated");
 		}
 		else {
 			Error("Exhaustive handling of TokenType count in ValidateTokens()");
