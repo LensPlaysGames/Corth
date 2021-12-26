@@ -39,10 +39,9 @@ This program would compile to nothing but the boiler-plate assembly, as the vali
 
 ## Proposed Features:
 - Keywords
-  - Reserved words that the compiler will give special meaning (i.e. `if`, `for`, etc)
+  - Reserved words that the compiler will give special meaning (i.e. `if`, `for`, etc).
   - Proposed Keywords:
-    - Operator replacements (give the option to use either a `+` or "plus")
-
+    - Operator replacements (give the option to use either a `+` or "plus", etc).
 - Add compiler flag/option
 - Update the PrintUsage() to accurately depict the different flags and options as well as the difference between them.
   - A flag is a command line argument that has inherent meaning itself, and does not require an additional argument (i.e. `-v` or -sim)).

@@ -1,6 +1,8 @@
 
 # Corth
-Corth is like Porth, which is like Forth, but it's in Python, but it's in C++, and it compiles directly to executable on multiple platforms (not MacOS (yet)).
+It's like [Porth](https://gitlab.com/tsoding/porth/-/tree/master/), which is like [Forth](https://www.forth.com/forth/) but written in Python, but written in C++. But I don't actually know for sure since I never programmed in Porth or Forth, I only heard that they are some sort of stack-based programming language. Corth is also stack-based programming language. Which makes it just like Porth, just like Forth, am I rite?
+
+Also, it compiles directly to executable on multiple platforms (not MacOS (yet)).
 
 ---
 
