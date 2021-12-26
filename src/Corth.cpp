@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>    // I use assert to exit the program in the case it encounters an error.
 #include <string>
+#include <sstream>
 #include <vector>
 
 #ifdef __linux__
@@ -542,18 +543,38 @@ namespace Corth {
 }
 
 bool FileExists(std::string filePath) {
-	// TODO: Check PATH variable
-	size_t buf_sz = 2048;
-	char* buf[2048];
-	_dupenv_s(buf, &buf_sz, "PATH");
-	printf("%s\n", "WINDOWS PATH TEST");
-	for (auto& var : buf) {
-		printf("%s\n", var);
-	}
-
 	// Check path relative Corth.exe
 	std::ifstream file(filePath);
 	if (file.is_open()) { file.close(); return true; }
+
+    #ifdef _WIN64
+	// Get PATH system variable on Windows
+	std::vector<std::string> path_var;
+	size_t buf_sz = 2048;
+	char* buf[2048];
+	if (_dupenv_s(buf, &buf_sz, "PATH")) {
+		Corth::Error("Could not access PATH system variable");
+	}
+	std::string tmp;
+	std::string path_var_str(buf[0], buf_sz);
+	std::stringstream path_var_ss(path_var_str);
+	while (std::getline(path_var_ss, tmp, ';')) {
+		if (tmp.back() != '\\' || tmp.back() != '/') {
+			tmp.append(1, '/');
+		}
+	   	path_var.push_back(tmp);
+    }
+
+    // Check windows PATH system variable
+	for (auto& path : path_var) {
+		std::string test(path + filePath);
+		if (Corth::verbose_logging) { printf("Testing %s\n", test.c_str()); }
+		std::ifstream f(test);
+		if (f.is_open()) { f.close(); return true; }
+	}
+	#else
+	#endif
+
 	return false;
 }
 
@@ -647,8 +668,8 @@ int main(int argc, char** argv) {
 						    Assembly is generated at `Corth::OUTPUT_NAME.asm`
 					        By default on win64, NASM generates an output `.obj` file of the same name as the input file.
 					        This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
-						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + Corth::OUTPUT_NAME + ".asm";
-						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + Corth::OUTPUT_NAME + ".obj";
+						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + " " + Corth::OUTPUT_NAME + ".asm";
+						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + " " + Corth::OUTPUT_NAME + ".obj";
 		
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						system(cmd_asmb.c_str());
@@ -679,8 +700,8 @@ int main(int argc, char** argv) {
 							By default on linux, NASM generates an output `.o` file of the same name as the input file
 							This means the linker needs to link to `Corth::OUTPUT_NAME.o`
 						 */
-						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + Corth::OUTPUT_NAME + ".asm";
-						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + Corth::OUTPUT_NAME + ".o";
+						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + " " + Corth::OUTPUT_NAME + ".asm";
+						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + " " + Corth::OUTPUT_NAME + ".o";
 
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());

@@ -88,8 +88,11 @@ Because there are a lot, I will tell you the ones you will most likely need righ
 Basic example: \
 `Corth.exe -com test.corth`
 
-or, if Corth is giving errors about not finding assembler/linker: \
+Or, if Corth is giving errors about not finding assembler/linker: \
 `Corth.exe -com -a /Path/To/NASM/nasm.exe -l /Path/To/GoLink/golink.exe test.corth`
+
+Alternatively, you could add the directory containing the executable to your system's [PATH environment variable](https://www.c-sharpcorner.com/article/add-a-directory-to-path-environment-variable-in-windows-10/): \
+`Corth.exe -com -a nasm.exe -l golink.exe test.corth`
 
 By default, the assembler and linker options are setup for Windows, using NASM and GoLink. \
 If your situation is different, make sure to specify the correct options using `-ao` and `-lo` respectively.
