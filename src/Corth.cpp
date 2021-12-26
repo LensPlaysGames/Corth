@@ -22,7 +22,6 @@ namespace Corth {
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
 	std::string LINK_PATH = "";
-
 	std::string ASMB_OPTS = "";
 	std::string LINK_OPTS = "";
 
@@ -111,7 +110,7 @@ namespace Corth {
 	}
 
 	void Warning(std::string msg) {
-		printf("[WRN]: %s\n" msg.c_str());
+		printf("[WRN]: %s\n", msg.c_str());
 	}
 
 	void Warning(std::string msg, size_t line_num) {

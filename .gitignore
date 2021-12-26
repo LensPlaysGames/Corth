@@ -41,5 +41,4 @@ build/
 
 # Backups
 *~
-src/print.c
 *.backup
