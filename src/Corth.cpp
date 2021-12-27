@@ -288,7 +288,7 @@ namespace Corth {
 								 << "    push rax\n";
 					}
 					else if (tok.type == TokenType::OP) {
-						if (OP_COUNT == 5) {
+						if (OP_COUNT == 6) {
 							if (tok.text == "+") {
 								asm_file << "    ;; -- add --\n"
 										 << "    pop rax\n"
@@ -322,7 +322,11 @@ namespace Corth {
 								asm_file << "    ;; -- equality condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
-										 << "    
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmove rcx, rdx\n"
+										 << "    push rcx\n";
 							}
 							else if (tok.text == "#") {
 								asm_file << "    ;; -- dump --\n"
@@ -334,7 +338,7 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number);
-							assert(OP_COUNT == 5);
+							assert(OP_COUNT == 6);
 						}
 					}
 				}
