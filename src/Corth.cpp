@@ -63,14 +63,16 @@ namespace Corth {
         WHITESPACE,
         INT,
         OP,
+		KEYWORD,
 		COUNT
     };
 
 	std::string TokenTypeStr(TokenType& t) {
-		assert(static_cast<int>(TokenType::COUNT) == 3);
-		if (t == TokenType::WHITESPACE) { return "WHITESPACE"; }
-		else if (t == TokenType::INT) { return "INTEGER"; }
-		else if (t == TokenType::OP) { return "OPERATOR"; }
+		assert(static_cast<int>(TokenType::COUNT) == 4);
+		if (t == TokenType::WHITESPACE)   { return "WHITESPACE"; }
+		else if (t == TokenType::INT)     { return "INTEGER"; }
+		else if (t == TokenType::OP)      { return "OPERATOR"; }
+		else if (t == TokenType::KEYWORD) { return "KEYWORD"; }
 		return "ERROR: UNREACHABLE";
 	}
 	
@@ -78,6 +80,7 @@ namespace Corth {
 	public:
 		TokenType type;
 		std::string text;
+		std::string data;
 		size_t line_number;
 		size_t col_number;
 
@@ -113,149 +116,180 @@ namespace Corth {
 		printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
 	}
 
+	void DoLog(std::string msg, std::string prefix = "[LOG]", std::string suffix = "\n") {
+		printf((prefix + ": %s" + suffix).c_str(), msg.c_str());
+	}
+
+	void DoLog(std::string msg, size_t line_num, std::string prefix = "[LOG]", std::string suffix = "\n") {
+		printf((prefix + " LINE %zu: %s" + suffix).c_str(), line_num, msg.c_str());
+	}
+
+	void DoLog(std::string msg, size_t line_num, size_t column_num, std::string prefix = "[LOG]", std::string suffix = "\n") {
+		printf((prefix + " LINE %zu, COL %zu: %s" + suffix).c_str(), line_num, column_num, msg.c_str());
+	}
+
 	void Error(std::string msg) {
-		printf("\n[ERR]: %s\n", msg.c_str());
+		DoLog(msg, "\n[ERR]");
 	}
 
 	void Error(std::string msg, size_t line_num) {
-		printf("\n[ERR] LINE %zu: %s\n", line_num, msg.c_str());
+		DoLog(msg, line_num, "\n[ERR]");
 	}
 
 	void Error(std::string msg, size_t line_num, size_t column_num) {
-		printf("\n[ERR] LINE %zu, COL %zu: %s\n", line_num, column_num, msg.c_str());
+		DoLog(msg, line_num, column_num, "\n[ERR]");
 	}
 
 	void Error(std::string msg, std::exception e) {
-		printf("\n[ERR]: %s (%s)\n", msg.c_str(), e.what());
+		DoLog(msg + " (" + e.what() + ")", "\n[ERR]");
 	}
 
 	void StackError(){
 		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?");
 	}
 
-	void StackError(size_t line_num) {
-		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num);
-	}
+    void StackError(size_t line_num) {
+        Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num);
+    }
 
     void StackError(size_t line_num, size_t column_num) {
-		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num, column_num);
-	}
+        Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num, column_num);
+    }
 
-	void Warning(std::string msg) {
-		printf("[WRN]: %s\n", msg.c_str());
-	}
+    void Warning(std::string msg) {
+		DoLog(msg, "[WRN]");
+    }
 
-	void Warning(std::string msg, size_t line_num) {
-		printf("[WRN] LINE %zu: %s\n", line_num, msg.c_str());
-	}
+    void Warning(std::string msg, size_t line_num) {
+		DoLog(msg, line_num, "[WRN]");
+    }
 
-	void Warning(std::string msg, size_t line_num, size_t column_num) {
-		printf("[WRN] LINE %zu, COL %zu: %s\n", line_num, column_num, msg.c_str());
-	}
+    void Warning(std::string msg, size_t line_num, size_t column_num) {
+		DoLog(msg, line_num, column_num, "[WRN]");
+    }
 
-	// TODO: Convert a bunch of `printf`s into a bunch of `Log`s
+    // TODO: Convert a bunch of `printf`s into a bunch of `Log`s
 
-	void DbgLog(std::string msg) {
-		printf("[DBG]: %s\n", msg.c_str());
-	}
+    void DbgLog(std::string msg) {
+		DoLog(msg, "[DBG]");
+    }
 
-	void Log(std::string msg) {
-		printf("[LOG]: %s\n", msg.c_str());
-	}
+    void DbgLog(std::string msg, size_t line_num) {
+		DoLog(msg, line_num, "[DBG]");
+    }
+
+    void DbgLog(std::string msg, size_t line_num, size_t column_num) {
+		DoLog(msg, line_num, column_num, "[DBG]");
+    }
+
+    void Log(std::string msg) {
+        DoLog(msg);
+    }
+
+	void Log(std::string msg, size_t line_num) {
+        DoLog(msg, line_num);
+    }
+
+	void Log(std::string msg, size_t line_num, size_t column_num) {
+		DoLog(msg, line_num, column_num);
+    }
 
     // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
-	void SimulateProgram(Program& prog) {
-		printf("\n%s\n\n", "Begin program simulation");
+    void SimulateProgram(Program& prog) {
+		DoLog("Begin program simulation", "\n[SIM]", "\n\n");
+        std::vector<std::string> stack;
 
-		std::vector<std::string> stack;
+        size_t instr_ptr = 0;
+        size_t instr_ptr_max = prog.tokens.size();
+        while (instr_ptr < instr_ptr_max) {
+            Token& tok = prog.tokens[instr_ptr];
+            if (tok.type == TokenType::INT) {
+                stack.push_back(tok.text);
+            }
+            else if (tok.type == TokenType::OP) {
+                if (OP_COUNT == 6) {
+                    if (tok.text == "+") {
+                        if (stack.size() > 1) {
+                            int a = std::stoi(stack.back());
+                            stack.pop_back();
+                            int b = std::stoi(stack.back());
+                            stack.pop_back();
+                            stack.push_back(std::to_string(a + b));
+                        }
+                        else {
+                            StackError(tok.line_number, tok.col_number);
+                            assert(stack.size() > 1);
+                        }
+                    }
+                    else if (tok.text == "-") {
+                        if(stack.size() > 1) {
+                            int b = std::stoi(stack.back());
+                            stack.pop_back();                   
+                            int a = std::stoi(stack.back());
+                            stack.pop_back();
+                            stack.push_back(std::to_string(a - b));
+                        }
+                        else {
+                            StackError(tok.line_number, tok.col_number);
+                            assert(stack.size() > 1);
+                        }
+                    }
+                    else if (tok.text == "*") {
+                        if (stack.size() > 1) {
+                            int a = std::stoi(stack.back());
+                            stack.pop_back();
+                            int b = std::stoi(stack.back());
+                            stack.pop_back();
+                            stack.push_back(std::to_string(a * b));
+                        }
+                        else {
+                            StackError(tok.line_number, tok.col_number);
+                            assert(stack.size() > 1);
+                        }
+                    }
+                    else if (tok.text == "/") {
+                        if (stack.size() > 1) {
+                            int b = std::stoi(stack.back());
+                            stack.pop_back();
+                            int a = std::stoi(stack.back());
+                            stack.pop_back();
+                            stack.push_back(std::to_string(a / b));
+                        }
+                        else {
+                            StackError(tok.line_number, tok.col_number);
+                            assert(stack.size() > 1);
+                        }
+                    }
+                    else if (tok.text == "=") {
+                        if (stack.size() > 1) {
+                            int a = std::stoi(stack.back());
+                            stack.pop_back();
+                            int b = std::stoi(stack.back());
+                            stack.pop_back();
+                            stack.push_back(std::to_string(a == b));
+                        }
+                    }
+                    else if (tok.text == "#") {
+                        if (stack.size() > 0) {
+                            printf("%s\n", stack.back().c_str());
+                            stack.pop_back();
+                        }
+                        else {
+                            StackError(tok.line_number, tok.col_number);
+                            assert(stack.size() > 0);
+                        }
+                    }
+                }
+                else {
+                    // Exhaustive handling of operator count
+                    Error("Exhaustive handling of operator count in SimulateProgram()", tok.line_number);
+                    assert(OP_COUNT == 6);
+                }
+            }
+            instr_ptr++;
+        }
 
-		for (auto& tok : prog.tokens) {
-			if (tok.type == TokenType::INT) {
-				stack.push_back(tok.text);
-			}
-			else if (tok.type == TokenType::OP) {
-				if (OP_COUNT == 6) {
-					if (tok.text == "+") {
-						if (stack.size() > 1) {
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a + b));
-						}
-						else {
-							StackError(tok.line_number, tok.col_number);
-							assert(stack.size() > 1);
-						}
-					}
-					else if (tok.text == "-") {
-						if(stack.size() > 1) {
-							int b = std::stoi(stack.back());
-							stack.pop_back();					
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a - b));
-						}
-						else {
-							StackError(tok.line_number, tok.col_number);
-							assert(stack.size() > 1);
-						}
-					}
-					else if (tok.text == "*") {
-						if (stack.size() > 1) {
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a * b));
-						}
-						else {
-							StackError(tok.line_number, tok.col_number);
-							assert(stack.size() > 1);
-						}
-					}
-					else if (tok.text == "/") {
-						if (stack.size() > 1) {
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a / b));
-						}
-						else {
-							StackError(tok.line_number, tok.col_number);
-							assert(stack.size() > 1);
-						}
-					}
-					else if (tok.text == "=") {
-						if (stack.size() > 1) {
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a == b));
-						}
-					}
-					else if (tok.text == "#") {
-						if (stack.size() > 0) {
-							printf("%s\n", stack.back().c_str());
-							stack.pop_back();
-						}
-						else {
-							StackError(tok.line_number, tok.col_number);
-							assert(stack.size() > 0);
-						}
-					}
-				}
-				else {
-					// Exhaustive handling of operator count
-					Error("Exhaustive handling of operator count in SimulateProgram()", tok.line_number);
-					assert(OP_COUNT == 6);
-				}
-			}
-		}
-
-		printf("\n%s\n", "End program simulation");
+        DoLog("End program simulation", "\n[SIM]", "\n\n");
 	}
 
 	// TODO: Convert GenerateAssembly return type from void to bool
@@ -412,9 +446,11 @@ namespace Corth {
 					 << "main:\n";
 
 			// WRITE TOKENS TO ASM FILE MAIN LABEL
-			if (static_cast<int>(TokenType::COUNT) == 3) {
-				for (auto& tok : prog.tokens){
-					// Write assembly to opened file based on token type and value
+			if (static_cast<int>(TokenType::COUNT) == 4) {
+				size_t instr_ptr = 0;
+				size_t instr_ptr_max = prog.tokens.size();
+				while (instr_ptr < instr_ptr_max) {
+					Token& tok = prog.tokens[instr_ptr];
 					if (tok.type == TokenType::INT){
 						asm_file << "    ;; -- push INT --\n"
 								 << "    mov rax, " << tok.text << "\n"
@@ -422,58 +458,81 @@ namespace Corth {
 					}
 					else if (tok.type == TokenType::OP) {
 						if (OP_COUNT == 6) {
-						if (tok.text == "+") {
-							asm_file << "    ;; -- add --\n"
-									 << "    pop rax\n"
-									 << "    pop rbx\n"
-									 << "    add rax, rbx\n"
-									 << "    push rax\n";
-						}
-						else if (tok.text == "-") {
-							asm_file << "    ;; -- subtract --\n"
-									 << "    pop rbx\n"
-									 << "    pop rax\n"
-									 << "    sub rax, rbx\n"
-									 << "    push rax\n";
-						}
-						else if (tok.text == "*") {
-							asm_file << "    ;; -- multiply --\n"
-									 << "    pop rax\n"
-									 << "    pop rbx\n"
-									 << "    mul rbx\n"
-									 << "    push rax\n";
-						}
-						else if (tok.text == "/") {
-							asm_file << "    ;; -- divide --\n"
-									 << "    xor rdx, rdx\n"
-									 << "    pop rbx\n"
-									 << "    pop rax\n"
-									 << "    div rbx\n"
-									 << "    push rax\n";
-						}
-						else if (tok.text == "=") {
-							asm_file << "    ;; -- equality condition --\n"
-									 << "    mov rcx, 0\n"
-									 << "    mov rdx, 1\n"
-									 << "    pop rax\n"
-									 << "    pop rbx\n"
-									 << "    cmp rax, rbx\n"
-									 << "    cmove rcx, rdx\n"
-									 << "    push rcx\n";
-						}
-						else if (tok.text == "#") {
-							asm_file << "    ;; -- dump --\n"
-									 << "    lea rcx, [rel fmt]\n"
-									 << "    pop rdx\n"
-									 << "    mov rax, 0\n"
-									 << "    call printf\n";
-						}
+							if (tok.text == "+") {
+								asm_file << "    ;; -- add --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    add rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "-") {
+								asm_file << "    ;; -- subtract --\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    sub rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "*") {
+								asm_file << "    ;; -- multiply --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    mul rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "/") {
+								asm_file << "    ;; -- divide --\n"
+										 << "    xor rdx, rdx\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    div rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "=") {
+								asm_file << "    ;; -- equality condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmove rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == "#") {
+								asm_file << "    ;; -- dump --\n"
+										 << "    lea rcx, [rel fmt]\n"
+										 << "    pop rdx\n"
+										 << "    mov rax, 0\n"
+										 << "    call printf\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_win64()");
 							assert(OP_COUNT == 6);
 						}
 					}
+					else if (tok.type == TokenType::KEYWORD) {
+						if (KEYWORD_COUNT == 2) {
+							if (tok.text == "if") {
+								// Need to pop from stack, compare, and jump to end if it is zero
+								// This means end needs to generate a UNIQUE label to jump to
+								// Get conditional value from stack, if false jump to end label
+								asm_file << "    ;; -- if --\n"
+										 << "    pop rax\n"
+										 << "    cmp rax, 0\n"
+										 << "    je endif_" << instr_ptr << "\n";
+									
+							}
+							else if (tok.text == "endif") {
+								asm_file << "    ;; -- endif --\n"
+										 << "endif_" << instr_ptr << ":\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
+							assert(KEYWORD_COUNT == 2);
+						}
+					}
+					instr_ptr++;
 				}
 				// EXIT GRACEFUL
 				asm_file << "    mov rcx, 0\n"
@@ -487,7 +546,7 @@ namespace Corth {
 			}
 			else {
 				Error("Exhaustive handling of TokenType count in GenerateAssembly_NASM_win64()");
-				assert(static_cast<int>(TokenType::COUNT) == 3); // Exhaustive handling of implementation of token types
+				assert(static_cast<int>(TokenType::COUNT) == 4); // Exhaustive handling of implementation of token types
 			}
 		}
 		else {
@@ -628,7 +687,7 @@ namespace Corth {
 				tok.text.append(1, current);
 				// Handle multi-digit numbers
 				while (i < src_end) {
-					// Look ahead for digit.
+					// Look ahead for digit
 					i++;
 					current = src[i];
 					if (isdigit(current)) { tok.text.append(1, current); }
@@ -638,8 +697,18 @@ namespace Corth {
 				PushToken(toks, tok);
             }
 			else if (isalpha(current)) {
-				std::string possible_keyword;
-				possible_keyword.append(1, current);
+				tok.type = TokenType::KEYWORD;
+			    tok.text.append(1, current);
+				// Handle multiple-alpha keywords
+				while (i < src_end) {
+					// Look ahead for alpha
+					i++;
+					current = src[i];
+					if (isalpha(current)) {tok.text.append(1, current); }
+					else { break; }
+				}
+				i--; // Undo lookahead.
+				PushToken(toks, tok);
             }
 		}
 	}
@@ -661,11 +730,11 @@ namespace Corth {
 		return true;
 	}
 
-	void ValidateTokens(Program& prog) {
+	void ValidateTokens_Stack(Program& prog) {
 		std::vector<Token>& toks = prog.tokens;
 		size_t stackSize = 0; // Used for protecting from stack overflow by popping too much (dumping over and over).
 
-		if (static_cast<int>(TokenType::COUNT) == 3) {
+		if (static_cast<int>(TokenType::COUNT) == 4) {
 			for (auto& tok : toks) {
 				if (tok.type == TokenType::WHITESPACE) {
 					Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number, tok.col_number);
@@ -708,21 +777,80 @@ namespace Corth {
 						assert(OP_COUNT == 6);
 					}
 				}
+				else if (tok.type == TokenType::KEYWORD) {
+					if (KEYWORD_COUNT == 2) {
+						if (tok.text == "if") {
+							// if will pop from the stack to check the condition to see if it needs to jump or not
+							if (stackSize > 0) {
+								stackSize--;
+							}
+							else {
+								// This token could cause serious memory issues (by popping a value off the stack that doesn't exist)
+								// It is marked for removal by setting it's type to whitespace.
+								tok.type = TokenType::WHITESPACE;
+								StackError(tok.line_number, tok.col_number);
+							}
+						}
+						else if (tok.text == "endif") {
+							continue;
+						}
+					}
+				}
 			}
 		
 			if (stackSize != 0) {
 				Warning("Validator: Best practices indicate stack should be empty at end of program.\nStack Size at End of Program: " + std::to_string(stackSize));
+			
 			}
-
-			// Remove all un-neccessary tokens
-			std::remove_if(toks.begin(), toks.end(), RemovableToken);
-
-			printf("%s\n", "Tokens validated");
+			else {
+				Error("Exhaustive handling of TokenType count in ValidateTokens()");
+				assert(static_cast<int>(TokenType::COUNT) == 4);
+			}
 		}
-		else {
-			Error("Exhaustive handling of TokenType count in ValidateTokens()");
-			assert(static_cast<int>(TokenType::COUNT) == 3);
+	}
+
+	void ValidateTokens_Blocks(Program& prog) {
+		// This function ensures any tokens that start or stop blocks are correctly refernced
+		// For example, an `if` statement needs to know where to jump to if it is false.
+		// Another example: `endwhile` statement needs to know where to jump back to.
+
+		size_t instr_ptr = 0;
+		size_t instr_ptr_max = prog.tokens.size();
+		while (instr_ptr < instr_ptr_max) {
+			Token& tok = prog.tokens[instr_ptr];
+			if (KEYWORD_COUNT == 2) {
+				if (tok.text == "if") {
+					while (instr_ptr < instr_ptr_max) {
+						// Loop through the rest of the tokens until an endif is found.
+						// If one isn't found, error.
+						// If one is, give if token a reference to this instruction pointer in it's `data` field
+						instr_ptr++;
+						if (prog.tokens[instr_ptr].type == TokenType::KEYWORD && prog.tokens[instr_ptr].text == "endif") {
+							// Success! Cross reference `if` block with `endif`
+							if (verbose_logging) { Log("Block `if` successfully cross-referenced with `endif`", tok.line_number, tok.col_number); }
+							tok.data = instr_ptr;
+						}
+					}
+				}
+			}
+			else {
+				Error("Exhaustive handling of keyword count in ValidateTokens_Blocks()", tok.line_number, tok.col_number);
+				assert(KEYWORD_COUNT == 2);
+			}
+			instr_ptr++;
 		}
+	}
+	
+	void ValidateTokens(Program& prog) {
+		// Stack protection
+		ValidateTokens_Stack(prog);
+
+		// Cross-reference blocks (give `if` tokens a reference to it's `endif` counterpart
+
+		// Remove all un-neccessary tokens
+		std::remove_if(toks.begin(), toks.end(), RemovableToken);
+
+		printf("%s\n", "Tokens validated");
 	}
 }
 
