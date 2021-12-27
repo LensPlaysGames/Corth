@@ -48,34 +48,32 @@ Expected output: \
 Let's break down how it works piece-by-piece:
 | Step | Code | Description                                                                                                                     |
 |------|------|---------------------------------------------------------------------------------------------------------------------------------|
-|    1 |`500` | A value is pushed on to the stack, meaning stacked on top.                                                                      |
-|    2 | `80` | Another value is pushed on to the stack.                                                                                        |
-|    3 |  `-` | The `-` symbol will pop the two most-recent values off the stack, subtract them, then push the difference on to the stack.      |
+|    1 |`500 80 -` | Push two values on to the stack, subtract them, then push the result on to the stack.                                      |
 |    4 |`420` | Push `420` onto the stack                                                                                                       |
 |    5 |  `=` | Use the equality comparison operator; it pops two values off the stack, compares them, then pushes back a `1` if they are equal or a `0` if they aren't.|
-|    6 |<code style="color:purple">if</code>| Pop the condition just pushed onto the stack, jump to <code style="color:purple">else</code>/<code style="color:purple">endif</code> if it is false, otherwise fall-through.|
+|    6 |<code style="color:purple">if</code>| Pop the condition just pushed onto the stack, jump to <code style="color:purple">else</code>/<code style="color:purple">endif</code> if it is false, otherwise, like in this case, fall-through to next instruction.|
 |    7 |`69 #`| Push a value onto the stack, then dump it to console output.                                                                    |
-|    8 |<code style="color:purple">else</code>| Label to jump to if <code style="color:purple">if</code> condition is false.                    |
-|    9 |`420 #`| Push a value onto the stack, then dump it to console output.                                                                   |
-|   10 |<code style="color:purple">endif</code>| Label to jump to if <code style="color:purple">if</code> condition is false and no <code style="color:purple">else</code> label is present.|
+|    8 |<code style="color:purple">else</code>| Label to jump to if <code style="color:purple">if</code> condition is false. Label to jump over to <code style="color:purple">endif</code> if <code style="color:purple">if</code> condition is true.|
+|    9 |`420 #`| This would push a value onto the stack, then dump it to console output, however it will be jumped over due to the <code style="color:purple">if</code> condition evaluating to true.|
+|   10 |<code style="color:purple">endif</code>| Label to jump to if <code style="color:purple">if</code> condition is false and no <code style="color:purple">else</code> label is present or if <code style="color:purple">if</code> condition is true and an <code style="color:purple">else</code> label is present.|
 
 ### Definitions:
 #### Operators
 An operator will take value(s) from the stack and optionally push some back on.
 The amount of values removed/added from/to the stack by a given operator can be seen by the 'pop' and 'push' amount in the following table.
 
-| Operator | Meaning              |  Pop | Push | Description                                                                                                 |
-|:--------:|:---------------------|-----:|-----:|:------------------------------------------------------------------------------------------------------------|
-|    `#`   | Dump                 |    1 |    0 | Humankind's best friend; pops a value off the stack, then prints that to the console.                       |
-|    `+`   | Addition             |    2 |    1 | Pops two values off the stack, then pushes the sum.                                                         |
-|    `-`   | Subtraction          |    2 |    1 | Pops two values off the stack, then pushes the difference.                                                  |
-|    `*`   | Multiplication       |    2 |    1 | Pops two values off the stack, then pushes the product.                                                     |
-|    `/`   | Division             |    2 |    1 | Pops two values off the stack, then pushes the quotient.                                                    |
-|    `=`   | Equality Comparison  |    2 |    1 | Pops two values off the stack, pushes `1` if they are equal to each other, `0` if not.                      |
-|    `>`   | Greater-than         |    2 |    1 | Pops two values off the stack, pushes `1` if the former is greater than the latter, `0` if not.             |
-|    `<`   | Less-than            |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.                |
-|   `>=`   | Greater-than-or-equal|    2 |    1 | Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not. |
-|   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.   |
+| Operator | Meaning              |  Pop | Push | Description                                                                                                   |
+|:--------:|:---------------------|-----:|-----:|:--------------------------------------------------------------------------------------------------------------|
+|    `#`   | Dump                 |    1 |    0 | Humankind's best friend; pops a value off the stack, then prints that to the console.                         |
+|    `+`   | Addition             |    2 |    1 | Pops two values off the stack, then pushes the sum.                                                           |
+|    `-`   | Subtraction          |    2 |    1 | Pops two values off the stack, then pushes the difference.                                                    |
+|    `*`   | Multiplication       |    2 |    1 | Pops two values off the stack, then pushes the product.                                                       |
+|    `/`   | Division             |    2 |    1 | Pops two values off the stack, then pushes the quotient.                                                      |
+|    `=`   | Equality Comparison  |    2 |    1 | Pops two values off the stack, pushes `1` if they are equal to each other, `0` if not.                        |
+|    `>`   | Greater-than         |    2 |    1 | Pops two values off the stack, pushes `1` if the former is greater than the latter, `0` if not.               |
+|    `<`   | Less-than            |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.                  |
+|   `>=`   | Greater-than-or-equal|    2 |    1 | Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not.   |
+|   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.     |
 
 #### Keywords
 | Keyword | Meaning |  Pop | Push | Description |
