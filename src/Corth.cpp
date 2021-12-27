@@ -108,7 +108,7 @@ namespace Corth {
 		std::vector<Token> tokens;
 	};
 
-	void PrintUsage(){
+	void PrintUsage() {
 		printf("\n%s\n", "Usage: `Corth.exe <flags> <options> Path/To/File.corth`");
 		printf("    %s\n", "Flags:");
         printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
@@ -158,7 +158,7 @@ namespace Corth {
 		DoLog(msg + " (" + e.what() + ")", "\n[ERR]");
 	}
 
-	void StackError(){
+	void StackError() {
 		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?");
 	}
 
@@ -338,7 +338,7 @@ namespace Corth {
 	}
 
 	// TODO: Convert GenerateAssembly return type from void to bool
-	void GenerateAssembly_NASM_linux64(Program& prog){
+	void GenerateAssembly_NASM_linux64(Program& prog) {
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
@@ -441,7 +441,7 @@ namespace Corth {
 										 << "    push rcx\n";
 							}
 							else if (tok.text == ">=") {
-								asm_file << "    ;; -- greater than condition --\n"
+								asm_file << "    ;; -- greater than or equal condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
 										 << "    pop rbx\n"
@@ -642,7 +642,7 @@ namespace Corth {
 										 << "    push rcx\n";
 							}
 							else if (tok.text == ">=") {
-								asm_file << "    ;; -- greater than condition --\n"
+								asm_file << "    ;; -- greater than or equal condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
 										 << "    pop rbx\n"
@@ -722,7 +722,7 @@ namespace Corth {
 			if (arg == "-h" || arg == "--help") {
 				return false;
 			}
-			else if (arg == "-v" || arg == "--verbose"){
+			else if (arg == "-v" || arg == "--verbose") {
 				Log("Verbose logging enabled");
 				verbose_logging = true;
 			}
@@ -746,7 +746,7 @@ namespace Corth {
 					return false;
 				}
 			}
-			else if (arg == "-ao" || arg == "--assembler-options"){
+			else if (arg == "-ao" || arg == "--assembler-options") {
 				if (i + 1 < argc) {
 					i++;
 					ASMB_OPTS = argv[i];
@@ -766,7 +766,7 @@ namespace Corth {
 					return false;
 				}
 			}
-			else if (arg == "-lo" || arg == "--linker-options"){
+			else if (arg == "-lo" || arg == "--linker-options") {
 				if (i + 1 < argc) {
 					i++;
 					LINK_OPTS = argv[i];
@@ -830,14 +830,14 @@ namespace Corth {
 		return true;
 	}
 
-	bool iswhitespace(char& c){
+	bool iswhitespace(char& c) {
 		return c == ' '     // spaces
 			|| c == '\t'    // tab
 			|| c == '\r'    // crlf
 			|| c == '\n';   // newline/linefeed
 	}
 
-	void PushToken(std::vector<Token>& tokList, Token& tok){
+	void PushToken(std::vector<Token>& tokList, Token& tok) {
 		// Add token to program if it is not whitespace
 		if (tok.type != TokenType::WHITESPACE) {
 			tokList.push_back(tok);
@@ -848,7 +848,7 @@ namespace Corth {
 	}
 
 	// Convert program source into tokens
-    void Lex(Program& prog){
+    void Lex(Program& prog) {
 		std::string src = prog.source;
 		size_t src_end = src.size();
 
@@ -856,7 +856,7 @@ namespace Corth {
 		Token tok;
 		char current = src[0];
 
-		for(int i = 0; i < src_end; i++){
+		for(int i = 0; i < src_end; i++) {
 			current = src[i];
 			
 			tok.col_number++;
@@ -868,7 +868,7 @@ namespace Corth {
 					tok.col_number = 1;
 				}
 			}
-			else if (isoperator(current)){
+			else if (isoperator(current)) {
                 tok.type = TokenType::OP;
 				tok.text.append(1, current);
 				// Look-ahead to check for multi-character operators
@@ -935,7 +935,7 @@ namespace Corth {
 		printf("%s\n", "TOKENS:");
 		size_t instr_ptr = 0;
 		size_t instr_ptr_max = p.tokens.size();
-		for (size_t instr_ptr = 0; instr_ptr < instr_ptr_max; instr_ptr++){
+		for (size_t instr_ptr = 0; instr_ptr < instr_ptr_max; instr_ptr++) {
 			std::cout << "    " << instr_ptr << ": ";
 			PrintToken(p.tokens[instr_ptr]);
 		}
