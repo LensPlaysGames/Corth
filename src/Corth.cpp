@@ -44,13 +44,17 @@ namespace Corth {
 	bool verbose_logging = false;
 	
 	void PrintUsage(){
-		printf("\n%s\n", "Usage: `Corth.exe <options> Path/To/File.corth`");
-		printf("    %s\n", "Options (latest over-rides):");
+		printf("\n%s\n", "Usage: `Corth.exe <flags> <options> Path/To/File.corth`");
+		printf("    %s\n", "Flags:");
         printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
-        printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit. Requires over-riding assembler and linker paths and options");
-		printf("        %s\n", "-com, --compile          | Compile program from source into executable");
+		printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit.");
+		//printf("        %s\n", "-mac, -apple             | Generate assembly for MacOS 64-bit.");
+        printf("        %s\n", "-com, --compile          | Compile program from source into executable");
 		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
 		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
+		printf("    %s\n", "Options (latest over-rides):");
+		printf("        %s\n", "Usage: <option> <input>");
+		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes.");
 		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
         printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");

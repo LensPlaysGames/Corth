@@ -21,7 +21,8 @@ Corth has a built-in validator that will not allow you to do things that may cra
 It will trigger whenever you try to pop off the stack before pushing anything, for example. \
 `#`
 
-This program would compile to nothing but the boiler-plate assembly, as the validator would remove invalid tokens (such as the `dump` operator trying to pop off the stack before anything was pushed on to it).
+This program would compile to nothing but the boiler-plate assembly, as the validator would remove invalid tokens (such as the `dump` operator trying to pop off the stack before anything was pushed on to it). \
+While it would compile, it would generate a warning while doing so, stating that the stack protection was invoked by the validator.
 
 ## Operators:
 |Operator|Meaning|Description|
@@ -42,7 +43,10 @@ This program would compile to nothing but the boiler-plate assembly, as the vali
   - Reserved words that the compiler will give special meaning (i.e. `if`, `for`, etc).
   - Proposed Keywords:
     - Operator replacements (give the option to use either a `+` or "plus", etc).
-- Add compiler flag/option
-- Update the PrintUsage() to accurately depict the different flags and options as well as the difference between them.
+	- Conditional branching (if-else-endif)
+
+## Added Features:
+- [DONE] Update the PrintUsage() to accurately depict the different flags and options as well as the difference between them.
   - A flag is a command line argument that has inherent meaning itself, and does not require an additional argument (i.e. `-v` or -sim)).
   - An option is a command line argument that requires an input following it (i.e. `-a nasm` or `-l ld`).
+  - DONE: 16:13 on 2021-26-12
