@@ -371,8 +371,25 @@ namespace Corth {
 							}
 						}
 						else {
-							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number);
+							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
 							assert(OP_COUNT == 6);
+						}
+					}
+					else if (tok.type == TokenType::KEYWORD) {
+						if (KEYWORD_COUNT == 2) {
+							if (tok.text == "if") {
+							    asm_file << "    ;; -- if --\n"
+										 << "    pop rax\n"
+										 << "    cmp rax, 0\n"
+										 << "    je addr_" << tok.data << "\n";
+							}
+							else if (tok.text == "endif") {
+								asm_file << "    ;; -- endif --\n"
+										 << "addr_" << instr_ptr << "\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
 						}
 					}
 				}
@@ -519,12 +536,12 @@ namespace Corth {
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
 										 << "    cmp rax, 0\n"
-										 << "    je endif_" << tok.data << "\n";
+										 << "    je addr_" << tok.data << "\n";
 									
 							}
 							else if (tok.text == "endif") {
 								asm_file << "    ;; -- endif --\n"
-										 << "endif_" << instr_ptr << ":\n";
+										 << "addr_" << instr_ptr << ":\n";
 							}
 						}
 						else {
