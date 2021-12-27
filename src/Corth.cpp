@@ -126,7 +126,7 @@ namespace Corth {
 		printf("    %s\n", "Options (latest over-rides):");
 		printf("        %s\n", "Usage: <option> <input>");
 		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes");
-		printf("        %s\n", "-o, --output-name        | Specify name of generated files. Unexpected behaviour on Linux; use -add-ao/-add-lo to specify output file name manually");
+		printf("        %s\n", "-o, --output-name        | Specify name of generated files. On Linux, affects only generated assembly file; use -add-ao/-add-lo to specify output object and executable file name manually");
 		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include extension)");
         printf("        %s\n", "-l, --linker-path        | Specify path to linker (include extension)");
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");

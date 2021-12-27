@@ -53,10 +53,11 @@ Linux: `./Path/To/Corth -sim test.corth`
 
 If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions down below).
 
-If you would like to compile the corth program into an executable file, there are a few more steps.
+If you would like to compile a corth program into an executable file, there are a few more steps.
 
 First, you must ensure that you have [NASM](https://www.nasm.us/) installed somewhere on your machine. \
-On Windows you can [Download the installer from the official website](https://www.nasm.us/) \
+On Windows you can [download the installer from the official website](https://www.nasm.us/) \
+On Mac, you can [download the
 On Linux, run the following CMD: `apt install nasm` \
 NASM is the assembler that this project is built for. Eventually, different types of assembly will be able to be generated. \
 If you are on Windows and you didn't install it in the default directory the installer prompted, keep in mind the path to the 'nasm' executable file itself. You will need it later for the `-a` or `--assembler-path` command line option. \
@@ -70,7 +71,8 @@ Once all the pre-requisites are installed, now comes time to use the CCLI, or Co
 Ideally, it will be very similar to the simulate command up above, but sometimes quite a few arguments need to be specified. \
 To avoid this as much as possible, Corth sets default values based on your operating system.
 
-##### Small bug warning -- On Linux, if you specify an output name to Corth with `-o`, it may not be reflected in the output executable of your linker! Look for `a.out` or similar.
+##### Warning! -- On Linux, if you specify an output name to Corth with `-o`, it will only affect the generated assembly file name, not the output object or executable file. Look for `a.out` or similar. This may over-write previously-compiled-programs, so be careful! To accurately rename the output executable, pass the corresponding option to your linker with `-add-lo <option>`. \
+For example: `-add-lo "-o my_program"`
 
 ### On Windows
 Open a terminal and navigate to the directory containing Corth.exe. \
@@ -90,7 +92,7 @@ Because there are a lot, I will tell you the ones you will most likely need righ
   - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
 
 Basic example: \
-`Corth.exe -com test.corth`
+`Corth.exe -com -o my_program test.corth`
 
 Or, if Corth is giving errors about not finding assembler/linker: \
 `Corth.exe -com -a /Path/To/NASM/nasm.exe -l /Path/To/GoLink/golink.exe test.corth`
@@ -113,10 +115,14 @@ A lot of options will appear, but most will not be needed unless you are getting
 - `-gen` or `--generate`
   - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
 - `-o` or `--output-name`
-  - Specify the name of the generated assembly, object, and executable files. WARNING! There is currently a bug on linux where the output executable name will not change from "a.out". This means no matter what you pass here, the executable file will be over-written every time. I am working on fixing this issue.
+  - Specify the name of the generated assembly files.
+- `-add-ao` or `-add-asm-opt`
+  - Append a command line argument to assembler options
+- `-add-lo` or `-add-link-opt`
+  - Append a command line argument to linker options
 
 Basic Example (given `apt install nasm` was run and `ld` is installed by default): \
-`./Corth -com test.corth`
+`./Corth -com -o my_program -add-lo "-o my_program" test.corth`
 
 Verbose Example: \
 `./Corth -com -a nasm -ao "-f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth`
@@ -138,4 +144,11 @@ First, on any platform, clone this repository to your local machine.
 Run the following command in the repository directory: \
 `cmake -S . -B build/`
 
-This will use CMake to build a build system with the default generator on your platform.
+This will use CMake to build a build system with the default generator on your platform. \
+Once complete, open the build directory, and build Corth using the build system you just generated.
+
+Windows example: \
+Open Visual Studio solution and build with `F6`
+
+Linux example: \
+Open terminal, run `make`
