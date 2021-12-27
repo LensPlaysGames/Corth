@@ -35,12 +35,13 @@ Stack breakdown by step:
 #### Best practices in Corth indicate that the stack should be empty by the end of the program.
 
 Let's look at a slightly more complicated example program: \
-<code>500 80 - 420 <span style="color:purple">if</span></code> \
+<code>500 80 - 420 = <span style="color:purple">if</span></code> \
 <code>&nbsp;&nbsp;69 #</code> \
 <code style="color:purple">else</code> \
-<code>%nbsp;%nbsp;420 #</code> \
+<code>&nbsp;&nbsp;420 #</code> \
 <code style="color:purple">endif</code>
 
+This program should first evaulate `500 - 80`, then compare if that sum is equal to `420`. If true, print <samp>69</samp>. If false, print <samp>420</samp>. \
 Expected output: \
 <samp>69</samp>
 
@@ -50,7 +51,13 @@ Let's break down how it works piece-by-piece:
 |    1 |`500` | A value is pushed on to the stack, meaning stacked on top.                                                                      |
 |    2 | `80` | Another value is pushed on to the stack.                                                                                        |
 |    3 |  `-` | The `-` symbol will pop the two most-recent values off the stack, subtract them, then push the difference on to the stack.      |
-|    4 |`420` | The `#` symbol will dump from the stack, aka pop a value off and then print it to the console.                                  |
+|    4 |`420` | Push `420` onto the stack                                                                                                       |
+|    5 |  `=` | Use the equality comparison operator; it pops two values off the stack, compares them, then pushes back a `1` if they are equal or a `0` if they aren't.|
+|    6 |<code style="color:purple">if</code>| Pop the condition just pushed onto the stack, jump to <code style="color:purple">else</code>/<code style="color:purple">endif</code> if it is false, otherwise fall-through.|
+|    7 |`69 #`| Push a value onto the stack, then dump it to console output.                                                                    |
+|    8 |<code style="color:purple">else</code>| Label to jump to if <code style="color:purple">if</code> condition is false.                    |
+|    9 |`420 #`| Push a value onto the stack, then dump it to console output.                                                                   |
+|   10 |<code style="color:purple">endif</code>| Label to jump to if <code style="color:purple">if</code> condition is false and no <code style="color:purple">else</code> label is present.|
 
 ### Definitions:
 #### Operators
