@@ -441,6 +441,7 @@ namespace Corth {
 		}
 		else {
 			Error("Could not open file for writing. Missing permissions?");
+			assert(asm_file);
 		}
 	}
 
@@ -472,6 +473,7 @@ namespace Corth {
 		}
         else {
 			Error("Could not open file for writing. Missing permissions?");
+			assert(asm_file);
 		}
 	}
 
@@ -604,6 +606,7 @@ namespace Corth {
 		}
 		else {
 			Error("Could not open file for writing. Missing permissions?");
+			assert(asm_file);
 		}
 	}
 
