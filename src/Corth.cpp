@@ -15,38 +15,16 @@
 
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
-	size_t OP_COUNT = 6;
+	size_t OP_COUNT = 10;
 	bool isoperator(char& c){
 		return c == '+'    // addition
 			|| c == '-'    // subtraction
 			|| c == '*'    // multiplication
 			|| c == '/'    // division
-			|| c == '='    // boolean comparison (equal)
+			|| c == '='    // equality comparison
+			|| c == '<'    // less than (or equal) comparison
+			|| c == '>'    // greater than (or equal) comparison
 			|| c == '#';   // dump (pop + print)
-	}
-
-	// This needs to be changed if keywords are added or removed from Corth internally.
-	// TODO: Actually use the list of keywords rather than hardcode strings everywhere.
-	size_t KEYWORD_COUNT = 3;
-	std::vector<std::string> keywords {
-		"if",
-		"else",
-		"endif"
-	};
-	enum class Keyword {
-		IF,
-		ELSE,
-		ENDIF,
-		COUNT
-	};
-	std::string GetKeywordStr(Keyword word) {
-		assert(static_cast<int>(Keyword::COUNT) == 3);
-		switch (word) {
-		case Keyword::IF: { return "if"; }
-        case Keyword::ELSE: { return "else"; }
-        case Keyword::ENDIF: { return "endif"; }
-		default: return "ERROR: UNREACHABLE";
-		}
 	}
 	
 	// Corth state (it may be a simple state machine, but it still is one :D)
@@ -74,6 +52,23 @@ namespace Corth {
 	};
 	PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
 	bool verbose_logging = false;
+
+	enum class Keyword {
+		IF,
+		ELSE,
+		ENDIF,
+		COUNT
+	};
+	
+	std::string GetKeywordStr(Keyword word) {
+		assert(static_cast<int>(Keyword::COUNT) == 3);
+		switch (word) {
+		case Keyword::IF: { return "if"; }
+        case Keyword::ELSE: { return "else"; }
+        case Keyword::ENDIF: { return "endif"; }
+		default: return "ERROR: UNREACHABLE";
+		}
+	}
 
     enum class TokenType {
         WHITESPACE,
@@ -225,7 +220,7 @@ namespace Corth {
 					stack.push_back(prog.tokens[instr_ptr].text);
 				}
 				else if (prog.tokens[instr_ptr].type == TokenType::OP) {
-					if (OP_COUNT == 6) {
+					if (OP_COUNT == 10) {
 						if (prog.tokens[instr_ptr].text == "+") {
 							int a = std::stoi(stack.back());
 							stack.pop_back();
@@ -261,6 +256,34 @@ namespace Corth {
 							stack.pop_back();
 							stack.push_back(std::to_string(a == b));
 						}
+						else if (prog.tokens[instr_ptr].text == "<") {
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a < b));
+						}
+						else if (prog.tokens[instr_ptr].text == ">") {
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a > b));
+						}
+						else if (prog.tokens[instr_ptr].text == "<=") {
+						    int b = std::stoi(stack.back());
+							stack.pop_back();
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a <= b));
+						}
+						else if (prog.tokens[instr_ptr].text == ">=") {
+						    int b = std::stoi(stack.back());
+							stack.pop_back();
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a >= b));
+						}
 						else if (prog.tokens[instr_ptr].text == "#") {
 							printf("%s\n", stack.back().c_str());
 							stack.pop_back();
@@ -269,7 +292,7 @@ namespace Corth {
 					else {
 						// Exhaustive handling of operator count
 						Error("Exhaustive handling of operator count in SimulateProgram()", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-						assert(OP_COUNT == 6);
+						assert(OP_COUNT == 10);
 					}
 				}
 				else if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
@@ -347,7 +370,7 @@ namespace Corth {
 								 << "    push rax\n";
 					}
 					else if (tok.type == TokenType::OP) {
-						if (OP_COUNT == 6) {
+						if (OP_COUNT == 10) {
 							if (tok.text == "+") {
 								asm_file << "    ;; -- add --\n"
 										 << "    pop rax\n"
@@ -387,6 +410,46 @@ namespace Corth {
 										 << "    cmove rcx, rdx\n"
 										 << "    push rcx\n";
 							}
+							else if (tok.text == "<") {
+								asm_file << "    ;; -- less than condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovl rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == ">") {
+								asm_file << "    ;; -- greater than condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovg rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == "<=") {
+								asm_file << "    ;; -- less than or equal condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovle rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == ">=") {
+								asm_file << "    ;; -- greater than condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovge rcx, rdx\n"
+										 << "    push rcx\n";
+							}
 							else if (tok.text == "#") {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rdi, [rel fmt]\n"
@@ -397,7 +460,7 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(OP_COUNT == 6);
+							assert(OP_COUNT == 10);
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
@@ -508,7 +571,7 @@ namespace Corth {
 								 << "    push rax\n";
 					}
 					else if (tok.type == TokenType::OP) {
-						if (OP_COUNT == 6) {
+						if (OP_COUNT == 10) {
 							if (tok.text == "+") {
 								asm_file << "    ;; -- add --\n"
 										 << "    pop rax\n"
@@ -548,6 +611,46 @@ namespace Corth {
 										 << "    cmove rcx, rdx\n"
 										 << "    push rcx\n";
 							}
+							else if (tok.text == "<") {
+								asm_file << "    ;; -- less than condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovl rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == ">") {
+								asm_file << "    ;; -- greater than condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovg rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == "<=") {
+								asm_file << "    ;; -- less than or equal condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovle rcx, rdx\n"
+										 << "    push rcx\n";
+							}
+							else if (tok.text == ">=") {
+								asm_file << "    ;; -- greater than condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    cmp rax, rbx\n"
+										 << "    cmovge rcx, rdx\n"
+										 << "    push rcx\n";
+							}
 							else if (tok.text == "#") {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rcx, [rel fmt]\n"
@@ -558,7 +661,7 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_win64()");
-							assert(OP_COUNT == 6);
+							assert(OP_COUNT == 10);
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
@@ -766,8 +869,26 @@ namespace Corth {
 				}
 			}
 			else if (isoperator(current)){
-				tok.type = TokenType::OP;
+                tok.type = TokenType::OP;
 				tok.text.append(1, current);
+				// Look-ahead to check for multi-character operators
+				i++;
+				current = src[i];
+				// Comparison operators (lt or equal, gt or equal)
+				if (current == '=') {
+					tok.text.append(1, current);
+				}
+				else if (tok.text == "/" && current == '/') {
+					// This is a comment until new-line or end of file
+					tok.type = TokenType::WHITESPACE;
+					while (i < src_end) {
+						i++;
+						current = src[i];
+						if (current == '\n') {
+							break;
+						}
+					}
+				}
 				PushToken(toks, tok);
 			}
 			else if (isdigit(current)) {
@@ -841,13 +962,17 @@ namespace Corth {
 					stackSize++;
 				}
 				else if (tok.type == TokenType::OP) {
-					if (OP_COUNT == 6) {
+					if (OP_COUNT == 10) {
 						// Operators that pop two values off the stack and return one to it
 						if (tok.text == "+"
 							|| tok.text == "-"
 							|| tok.text == "*"
 							|| tok.text == "/"
-							|| tok.text == "=" )
+							|| tok.text == "="
+							|| tok.text == "<"
+							|| tok.text == ">"
+							|| tok.text == "<="
+							|| tok.text == ">=")
 						{
 							if (stackSize > 1) {
 								stackSize--; // Two values removed, result added, net loss of one
@@ -872,7 +997,7 @@ namespace Corth {
 					}
 					else {
 						Error("Exhaustive handling of operator count in ValidateTokens_Stack()");
-						assert(OP_COUNT == 6);
+						assert(OP_COUNT == 10);
 					}
 				}
 				else if (tok.type == TokenType::KEYWORD) {
