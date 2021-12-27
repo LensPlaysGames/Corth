@@ -13,8 +13,6 @@
 #else
 #endif
 
-/* TODO: Convert all auto-ranged for loops over program Tokens into iterator based loops (to be able to skip around for branching and loops within Corth). */
-
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
 	size_t OP_COUNT = 6;
@@ -28,14 +26,30 @@ namespace Corth {
 	}
 
 	// This needs to be changed if keywords are added or removed from Corth internally.
-	size_t KEYWORD_COUNT = 2;
+	// TODO: Actually use the list of keywords rather than hardcode strings everywhere.
+	size_t KEYWORD_COUNT = 3;
 	std::vector<std::string> keywords {
 		"if",
+		"else",
 		"endif"
 	};
+	enum class Keyword {
+		IF,
+		ELSE,
+		ENDIF,
+		COUNT
+	};
+	std::string GetKeywordStr(Keyword word) {
+		assert(static_cast<int>(Keyword::COUNT) == 3);
+		switch (word) {
+		case Keyword::IF: { return "if"; }
+        case Keyword::ELSE: { return "else"; }
+        case Keyword::ENDIF: { return "endif"; }
+		default: return "ERROR: UNREACHABLE";
+		}
+	}
 	
 	// Corth state (it may be a simple state machine, but it still is one :D)
-	// TODO: Add `-o` flag to allow output name to be changed.
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
@@ -109,8 +123,9 @@ namespace Corth {
 		printf("    %s\n", "Options (latest over-rides):");
 		printf("        %s\n", "Usage: <option> <input>");
 		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes.");
-		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
-        printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
+		printf("        %s\n", "-o, --output-name        | Specify name of generated files (exclude extension) WARNING: unexpected behaviour on linux");
+		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include extension)");
+        printf("        %s\n", "-l, --linker-path        | Specify path to linker (include extension)");
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
         printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
 		printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
@@ -196,100 +211,105 @@ namespace Corth {
 
     // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
     void SimulateProgram(Program& prog) {
-		DoLog("Begin program simulation", "\n[SIM]", "\n\n");
-        std::vector<std::string> stack;
+		if (static_cast<int>(TokenType::COUNT) == 4) {
+			DoLog("Begin program simulation", "\n[SIM]", "\n\n");
+			std::vector<std::string> stack;
+			std::vector<std::string> ctx_stack;
 
-        size_t instr_ptr = 0;
-        size_t instr_ptr_max = prog.tokens.size();
-        while (instr_ptr < instr_ptr_max) {
-            Token& tok = prog.tokens[instr_ptr];
-            if (tok.type == TokenType::INT) {
-                stack.push_back(tok.text);
-            }
-            else if (tok.type == TokenType::OP) {
-                if (OP_COUNT == 6) {
-                    if (tok.text == "+") {
-                        if (stack.size() > 1) {
-                            int a = std::stoi(stack.back());
-                            stack.pop_back();
-                            int b = std::stoi(stack.back());
-                            stack.pop_back();
-                            stack.push_back(std::to_string(a + b));
-                        }
-                        else {
-                            StackError(tok.line_number, tok.col_number);
-                            assert(stack.size() > 1);
-                        }
-                    }
-                    else if (tok.text == "-") {
-                        if(stack.size() > 1) {
-                            int b = std::stoi(stack.back());
-                            stack.pop_back();                   
-                            int a = std::stoi(stack.back());
-                            stack.pop_back();
-                            stack.push_back(std::to_string(a - b));
-                        }
-                        else {
-                            StackError(tok.line_number, tok.col_number);
-                            assert(stack.size() > 1);
-                        }
-                    }
-                    else if (tok.text == "*") {
-                        if (stack.size() > 1) {
-                            int a = std::stoi(stack.back());
-                            stack.pop_back();
-                            int b = std::stoi(stack.back());
-                            stack.pop_back();
-                            stack.push_back(std::to_string(a * b));
-                        }
-                        else {
-                            StackError(tok.line_number, tok.col_number);
-                            assert(stack.size() > 1);
-                        }
-                    }
-                    else if (tok.text == "/") {
-                        if (stack.size() > 1) {
-                            int b = std::stoi(stack.back());
-                            stack.pop_back();
-                            int a = std::stoi(stack.back());
-                            stack.pop_back();
-                            stack.push_back(std::to_string(a / b));
-                        }
-                        else {
-                            StackError(tok.line_number, tok.col_number);
-                            assert(stack.size() > 1);
-                        }
-                    }
-                    else if (tok.text == "=") {
-                        if (stack.size() > 1) {
-                            int a = std::stoi(stack.back());
-                            stack.pop_back();
-                            int b = std::stoi(stack.back());
-                            stack.pop_back();
-                            stack.push_back(std::to_string(a == b));
-                        }
-                    }
-                    else if (tok.text == "#") {
-                        if (stack.size() > 0) {
-                            printf("%s\n", stack.back().c_str());
-                            stack.pop_back();
-                        }
-                        else {
-                            StackError(tok.line_number, tok.col_number);
-                            assert(stack.size() > 0);
-                        }
-                    }
-                }
-                else {
-                    // Exhaustive handling of operator count
-                    Error("Exhaustive handling of operator count in SimulateProgram()", tok.line_number);
-                    assert(OP_COUNT == 6);
-                }
-            }
-            instr_ptr++;
-        }
+			size_t instr_ptr = 0;
+			size_t instr_ptr_max = prog.tokens.size();
+			while (instr_ptr < instr_ptr_max) {
+				if (prog.tokens[instr_ptr].type == TokenType::INT) {
+					stack.push_back(prog.tokens[instr_ptr].text);
+				}
+				else if (prog.tokens[instr_ptr].type == TokenType::OP) {
+					if (OP_COUNT == 6) {
+						if (prog.tokens[instr_ptr].text == "+") {
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a + b));
+						}
+						else if (prog.tokens[instr_ptr].text == "-") {
+							int b = std::stoi(stack.back());
+							stack.pop_back();                   
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a - b));
+						}
+						else if (prog.tokens[instr_ptr].text == "*") {
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a * b));
+						}
+						else if (prog.tokens[instr_ptr].text == "/") {
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a / b));
+						}
+						else if (prog.tokens[instr_ptr].text == "=") {
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a == b));
+						}
+						else if (prog.tokens[instr_ptr].text == "#") {
+							printf("%s\n", stack.back().c_str());
+							stack.pop_back();
+						}
+					}
+					else {
+						// Exhaustive handling of operator count
+						Error("Exhaustive handling of operator count in SimulateProgram()", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
+						assert(OP_COUNT == 6);
+					}
+				}
+				else if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
+					if (static_cast<int>(Keyword::COUNT) == 3) {
+						if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)) {
+							std::string a = stack.back();
+							stack.pop_back();
+							ctx_stack.push_back(a);
+							if (std::stoi(a) == 0) {
+								// Skip to `else`/`endif` if condition is false
+								instr_ptr = std::stoi(prog.tokens[instr_ptr].data);
+								continue;
+							}
+						}
+						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)) {
+							// If the previous if block (guaranteed as tokens are validated before simulation) evaluated true, skip else block.
+							bool prev_if_condition = std::stoi(ctx_stack.back());
+							ctx_stack.pop_back();
+							if (prev_if_condition == 1) {
+								instr_ptr = std::stoi(prog.tokens[instr_ptr].data);
+								continue;
+							}
+						}
+						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
+					        // Do nothing
+						}
+					}
+					else {
+						Error("Exhaustive handling of keyword count in SimulateProgram()", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
+						assert(static_cast<int>(Keyword::COUNT) == 3);
+					}						
+				}
+				instr_ptr++;
+			}
 
-        DoLog("End program simulation", "\n[SIM]", "\n\n");
+			DoLog("End program simulation", "\n[SIM]", "\n\n");
+
+		}
+		else {
+			Error("Exhaustive handling of TokenType count in SimulateProgram()");
+			assert(static_cast<int>(TokenType::COUNT) == 4);
+		}
 	}
 
 	// TODO: Convert GenerateAssembly return type from void to bool
@@ -298,7 +318,7 @@ namespace Corth {
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
-			printf("%s\n", "Generating NASM elf64 assembly");
+			Log("Generating NASM elf64 assembly");
 
             // WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
@@ -379,20 +399,26 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (KEYWORD_COUNT == 2) {
-							if (tok.text == "if") {
+						if (static_cast<int>(Keyword::COUNT) == 3) {
+							if (tok.text == GetKeywordStr(Keyword::IF)) {
 							    asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
 										 << "    cmp rax, 0\n"
 										 << "    je addr_" << tok.data << "\n";
 							}
-							else if (tok.text == "endif") {
+							else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
+								asm_file << "    ;; -- else --\n"
+										 << "    jmp addr_" << tok.data << "\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
 								asm_file << "    ;; -- endif --\n"
-										 << "addr_" << instr_ptr << "\n";
+										 << "addr_" << instr_ptr << ":\n";
 							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
+							assert(static_cast<int>(Keyword::COUNT) == 3);
 						}
 					}
 					instr_ptr++;
@@ -400,7 +426,7 @@ namespace Corth {
 				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
 				asm_file << "    mov rdi, 0\n"
 						 << "    call exit\n"
-						 << "\n\n"
+						 << "\n"
 						 << "    SECTION .data\n"
 						 << "    fmt db '%u', 0x0a, 0\n";
 			
@@ -421,7 +447,7 @@ namespace Corth {
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
-			printf("%s\n", "Generating NASM mac64 assembly");
+			Log("Generating NASM mac64 assembly");
 
 			/* MacOS assembly
 			    I know it sounds scary, but it's really not too bad.
@@ -453,7 +479,7 @@ namespace Corth {
 		std::fstream asm_file;
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
-    		printf("%s\n", "Generating NASM win64 assembly");
+    		Log("Generating NASM win64 assembly");
 			
 			// WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
@@ -532,8 +558,8 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (KEYWORD_COUNT == 2) {
-							if (tok.text == "if") {
+						if (static_cast<int>(Keyword::COUNT) == 3) {
+							if (tok.text == GetKeywordStr(Keyword::IF)) {
 								// Need to pop from stack, compare, and jump to end if it is zero
 								// This means end needs to generate a UNIQUE label to jump to
 								// Get conditional value from stack, if false jump to end label
@@ -541,16 +567,20 @@ namespace Corth {
 										 << "    pop rax\n"
 										 << "    cmp rax, 0\n"
 										 << "    je addr_" << tok.data << "\n";
-									
 							}
-							else if (tok.text == "endif") {
+							else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
+								asm_file << "    ;; -- else --\n"
+										 << "    jmp addr_" << tok.data << "\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
 								asm_file << "    ;; -- endif --\n"
 										 << "addr_" << instr_ptr << ":\n";
 							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
-							assert(KEYWORD_COUNT == 2);
+							assert(static_cast<int>(Keyword::COUNT) == 3);
 						}
 					}
 					instr_ptr++;
@@ -563,7 +593,7 @@ namespace Corth {
 						 << "    fmt db '%u', 0x0a, 0\n";
 
 				asm_file.close();
-				printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
+				Log("NASM win64 assembly generated at " + asm_file_path);
 			}
 			else {
 				Error("Exhaustive handling of TokenType count in GenerateAssembly_NASM_win64()");
@@ -587,6 +617,16 @@ namespace Corth {
 			else if (arg == "-v" || arg == "--verbose"){
 				printf("%s\n", "Verbose logging enabled");
 				verbose_logging = true;
+			}
+			else if (arg == "-o" || arg == "--output-name") {
+				if (i + 1 < argc) {
+					i++;
+					OUTPUT_NAME = argv[i];
+				}
+				else {
+					Error("Expected name of output file to be specified after `-o`!");
+					return false;
+				}
 			}
 			else if (arg == "-a" || arg == "--assembler-path") {
 				if (i + 1 < argc) {
@@ -745,9 +785,11 @@ namespace Corth {
 
 	void PrintTokens(Program& p) {
 		printf("%s\n", "TOKENS:");
-		for (auto& tok : p.tokens){
-			std::cout << "    ";
-			PrintToken(tok);
+		size_t instr_ptr = 0;
+		size_t instr_ptr_max = p.tokens.size();
+		for (size_t instr_ptr = 0; instr_ptr < instr_ptr_max; instr_ptr++){
+			std::cout << "    " << instr_ptr << ": ";
+			PrintToken(p.tokens[instr_ptr]);
 		}
 	}
 
@@ -802,13 +844,13 @@ namespace Corth {
 						}
 					}
 					else {
-						Error("Exhaustive handling of operator count in ValidateTokens()");
+						Error("Exhaustive handling of operator count in ValidateTokens_Stack()");
 						assert(OP_COUNT == 6);
 					}
 				}
 				else if (tok.type == TokenType::KEYWORD) {
-					if (KEYWORD_COUNT == 2) {
-						if (tok.text == "if") {
+					if (static_cast<int>(Keyword::COUNT) == 3) {
+						if (tok.text == GetKeywordStr(Keyword::IF)) {
 							// if will pop from the stack to check the condition to see if it needs to jump or not
 							if (stackSize > 0) {
 								stackSize--;
@@ -820,9 +862,16 @@ namespace Corth {
 								StackError(tok.line_number, tok.col_number);
 							}
 						}
-						else if (tok.text == "endif") {
+							else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
 							continue;
 						}
+                            else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
+							continue;
+						}
+					}
+					else {
+						Error("Exhaustive handling of keyword count in ValidateTokens_Stack()");
+						assert(static_cast<int>(Keyword::COUNT) == 3);
 					}
 				}
 			}
@@ -837,45 +886,68 @@ namespace Corth {
 		}
 	}
 
+	bool ValidateIfElseBlock(Program& prog, size_t& instr_ptr, size_t instr_ptr_max) {
+	    // Assume that current token at instruction pointer is an if or an else
+		size_t block_instr_ptr = instr_ptr;
+
+		// Look-ahead for an else block or an endif
+		if (static_cast<int>(Keyword::COUNT) == 3) {
+			while (instr_ptr < instr_ptr_max) {
+				instr_ptr++;
+				
+				if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
+					if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)) {
+						// Recursively validate nested if
+						ValidateIfElseBlock(prog, instr_ptr, instr_ptr_max);
+					}
+                    else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)) {
+						if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::IF)) {
+							// Upon an `if` reaching an `else`, the `if` data field should be updated to the `else` instr_ptr
+							prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
+							// Recursively validate else block
+							return ValidateIfElseBlock(prog, instr_ptr, instr_ptr_max);
+						}
+						else {
+							Error("`else` keyword can only be used within `if` blocks", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
+							return false;
+						}
+					}
+					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
+						prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
+						return true;
+					}
+				} 
+			}
+		}
+        else {
+            Error("Exhaustive handling of keyword count in ValidateIfElseBlock()");
+            assert(static_cast<int>(Keyword::COUNT) == 3);
+        }	
+		
+		return false;
+	}
+
 	// This function ensures any tokens that start or stop blocks are correctly refernced
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
 		// This seems like too much nesting, but I can't seem to wrap my head around a different way of doing it.
 		// If you would, kindly make a pull request fixing this stupidity and I will gladly accept it and merge it if it works :)
-		if (KEYWORD_COUNT == 2) {
+		if (static_cast<int>(Keyword::COUNT) == 3) {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
                 if (prog.tokens[instr_ptr].text == "if") {
-					size_t if_instr_ptr = instr_ptr;
-					bool found_endif = false;
-					// Loop through the rest of the tokens until an endif is found.
-					// If one isn't found, error.
-					// If one is, give if token a reference to this instruction pointer in it's `data` field
-                    while (instr_ptr < instr_ptr_max) {
-						if (prog.tokens[instr_ptr].type == TokenType::KEYWORD && prog.tokens[instr_ptr].text == "endif") {
-							// Success! Cross reference `if` block with `endif`
-							if (verbose_logging) { Log("Block `if` successfully cross-referenced with `endif`", prog.tokens[if_instr_ptr].line_number, prog.tokens[if_instr_ptr].col_number); }
-							prog.tokens[if_instr_ptr].data = std::to_string(instr_ptr);
-							found_endif = true;
-							break;
-						}
-						instr_ptr++;
-					}
-
-					if (!found_endif) {
-						// Did not find endif block before end of tokens
-						Error("Validator: `if` keyword missing `endif` block-ending-symbol", prog.tokens[if_instr_ptr].line_number, prog.tokens[if_instr_ptr].col_number);
-						assert(found_endif);
-					}
-                }
+					ValidateIfElseBlock(prog, instr_ptr, instr_ptr_max);
+					// Undo look-ahead
+					instr_ptr--;
+				}
 				instr_ptr++;
 			}
 		}
 		else {
 			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks()");
-			assert(KEYWORD_COUNT == 2);
+			assert(static_cast<int>(Keyword::COUNT) == 3);
 		}
 	}
 	
@@ -967,15 +1039,12 @@ int main(int argc, char** argv) {
 
     try {
         prog.source = loadFromFile(Corth::SOURCE_PATH);
-				
-        printf("%s\n", "Successfully loaded file.");
+		if (Corth::verbose_logging) { Corth::Log("Load file: successful"); }
         Corth::Lex(prog);
 		Corth::ValidateTokens(prog);
-        printf("%s\n", "Lexed file into tokens");
+		if (Corth::verbose_logging) { Corth::Log("Lexed file into tokens: successful"); }
         lexSuccessful = true;
-		if (Corth::verbose_logging){
-			Corth::PrintTokens(prog);
-		}
+		if (Corth::verbose_logging) { Corth::PrintTokens(prog); }
     }
     catch (std::runtime_error e) {
 		Corth::Error("Could not load source file!", e);

@@ -84,6 +84,8 @@ Because there are a lot, I will tell you the ones you will most likely need righ
   - This does what it sounds like, and allows the user to specify the path to the assembler `.exe` file to run. Set this to the exact path of `nasm.exe` on your machine, including file name and extension. If you downloaded it at the default location, Corth's defaults should work as well, so ideally you won't need to specify this argument.
 - `-l` or `--linker-path`
   - Specify the path to the linker `.exe` file to run. This will be the path to `golink.exe` including file name and extension. Again, if you downloaded at the default locations, everything should work fine without specifying any extra arguments.
+- `-o` or `--output-name`
+  - Specify the name of the generated assembly, object, and executable files.
 - `-gen` or `--generate`
   - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
 
@@ -110,6 +112,8 @@ A lot of options will appear, but most will not be needed unless you are getting
   - Specifies compilation mode to Corth. This tells corth to generate assembly, assemble it, and link it into an executable.
 - `-gen` or `--generate`
   - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
+- `-o` or `--output-name`
+  - Specify the name of the generated assembly, object, and executable files. WARNING! There is currently a bug on linux where the output executable name will not change from "a.out". This means no matter what you pass here, the executable file will be over-written every time. I am working on fixing this issue.
 
 Basic Example (given `apt install nasm` was run and `ld` is installed by default): \
 `./Corth -com test.corth`
