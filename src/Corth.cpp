@@ -313,7 +313,7 @@ namespace Corth {
 					 << "_start:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
-			if (static_cast<int>(TokenType::COUNT) == 3) {
+			if (static_cast<int>(TokenType::COUNT) == 4) {
 				size_t instr_ptr = 0;
 				size_t instr_ptr_max = prog.tokens.size();
 				while (instr_ptr < instr_ptr_max) {
@@ -408,7 +408,7 @@ namespace Corth {
 			}
 			else {
 				Error("Exhaustive handling of TokenType count in GenerateAssembly_NASM_linux64()");
-				assert(static_cast<int>(TokenType::COUNT) == 3); 
+				assert(static_cast<int>(TokenType::COUNT) == 4); 
 			}
 		}
 		else {
