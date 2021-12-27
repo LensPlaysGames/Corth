@@ -1,4 +1,4 @@
-;;; corth-mode.el --- Major Mode for editing Porth source code -*- lexical-binding: t -*-
+;;; corth-mode.el --- Major Mode for editing Corth source code -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Rylan Kellogg <lensisme@gmail.com>
 
@@ -53,6 +53,7 @@
   (setq font-lock-defaults '(corth-highlights))
   (set-syntax-table corth-mode-syntax-table))
 
+;; Automatically load mode for any file with the `.corth` extension
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.corth\\'" . corth-mode))
 (provide 'corth-mode)

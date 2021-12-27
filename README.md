@@ -1,4 +1,3 @@
-
 # Corth
 It's like [Porth](https://gitlab.com/tsoding/porth/-/tree/master/), which is like [Forth](https://www.forth.com/forth/) but written in Python, but written in C++. But I don't actually know for sure since I never programmed in Porth or Forth, I only heard that they are some sort of stack-based programming language. Corth is also stack-based programming language. Which makes it just like Porth, just like Forth, am I rite?
 
@@ -10,19 +9,22 @@ Also, it compiles directly to executable on multiple platforms (not MacOS (yet))
 Corth, like Porth (like Forth), is a stack based language. \
 This means that in order to do any operation, a value must be pushed onto the stack. \
 Think of this as a literal stack of objects. \
-Likely, the operation will take it's arguments from the top of the stack, or `pop` from the stack.
+Likely, the operation will take it's arguments from the top of the stack, or `pop` from the stack, and sometimes it will return a value or two back onto it.
 
 Take a look at this example in Corth: \
 `34 35 + #` \
-It is a basic Corth program that will add two numbers together, and then display the sum to the console. \
-The expected output for the above program when run is `69` \
+It is a basic Corth program that will add two numbers together, and then display the sum to the console.
+
+Expected output for the above program when run: \
+<samp>69</samp>
+
 Let's break down how it works piece-by-piece:
-|Step|Code|Description|
-|---|---|---|
-|1|`34`| A value is pushed on to the stack, meaning stacked on top. |
-|2|`35`| Another value is pushed on to the stack. |
-|3|`+`| The `+` symbol will pop the two most-recent values off the stack, add them, then push the sum on to the stack. |
-|4|`#`| The `#` symbol will dump from the stack, aka pop a value off and then print it to the console. |
+| Step | Code | Description                                                                                                                     |
+|------|------|---------------------------------------------------------------------------------------------------------------------------------|
+|    1 | `34` | A value is pushed on to the stack, meaning stacked on top.                                                                      |
+|    2 | `35` | Another value is pushed on to the stack.                                                                                        |
+|    3 |  `+` | The `+` symbol will pop the two most-recent values off the stack, add them, then push the sum on to the stack.                  |
+|    4 |  `#` | The `#` symbol will dump from the stack, aka pop a value off and then print it to the console.                                  |
 
 Stack breakdown by step:
 1. { 34 }
@@ -30,16 +32,50 @@ Stack breakdown by step:
 3. { 69 }
 4. { }
 
-Best practices in Corth indicate that the stack should be empty by the end of the program.
+#### Best practices in Corth indicate that the stack should be empty by the end of the program.
+
+Let's look at a slightly more complicated example program: \
+<code>500 80 - 420 <span style="color:purple">if</span></code> \
+<code>&nbsp;&nbsp;69 #</code> \
+<code style="color:purple">else</code> \
+<code>%nbsp;%nbsp;420 #</code> \
+<code style="color:purple">endif</code>
+
+Expected output: \
+<samp>69</samp>
+
+Let's break down how it works piece-by-piece:
+| Step | Code | Description                                                                                                                     |
+|------|------|---------------------------------------------------------------------------------------------------------------------------------|
+|    1 |`500` | A value is pushed on to the stack, meaning stacked on top.                                                                      |
+|    2 | `80` | Another value is pushed on to the stack.                                                                                        |
+|    3 |  `-` | The `-` symbol will pop the two most-recent values off the stack, subtract them, then push the difference on to the stack.      |
+|    4 |`420` | The `#` symbol will dump from the stack, aka pop a value off and then print it to the console.                                  |
 
 ### Definitions:
-| Operator | Meaning | Description |
-|---|---|---|
-|`#`| Dump | Humankind's best friend; pops the most recent value off the stack, then prints that to the console. |
-|`+`| Addition | Pops the two most-recent values off the stack, then pushes the sum. |
-|`-`| Subtraction | Pops the two most-recent values off the stack, then pushes the difference. |
-|`*`| Multiplication | Pops the two most-recent values off the stack, then pushes the product. |
-|`/`| Division | Pops the two most-recent values off the stack, then pushes the quotient. |
+#### Operators
+An operator will take value(s) from the stack and optionally push some back on.
+The amount of values removed/added from/to the stack by a given operator can be seen by the 'pop' and 'push' amount in the following table.
+
+| Operator | Meaning              |  Pop | Push | Description                                                                                                 |
+|:--------:|:---------------------|-----:|-----:|:------------------------------------------------------------------------------------------------------------|
+|    `#`   | Dump                 |    1 |    0 | Humankind's best friend; pops a value off the stack, then prints that to the console.                       |
+|    `+`   | Addition             |    2 |    1 | Pops two values off the stack, then pushes the sum.                                                         |
+|    `-`   | Subtraction          |    2 |    1 | Pops two values off the stack, then pushes the difference.                                                  |
+|    `*`   | Multiplication       |    2 |    1 | Pops two values off the stack, then pushes the product.                                                     |
+|    `/`   | Division             |    2 |    1 | Pops two values off the stack, then pushes the quotient.                                                    |
+|    `=`   | Equality Comparison  |    2 |    1 | Pops two values off the stack, pushes `1` if they are equal to each other, `0` if not.                      |
+|    `>`   | Greater-than         |    2 |    1 | Pops two values off the stack, pushes `1` if the former is greater than the latter, `0` if not.             |
+|    `<`   | Less-than            |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.                |
+|   `>=`   | Greater-than-or-equal|    2 |    1 | Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not. |
+|   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.   |
+
+#### Keywords
+| Keyword | Meaning |  Pop | Push | Description |
+|:-------:|:--------|-----:|-----:|:------------|
+|<code style="color:purple">if</code>|Conditional Branch|1|0|Pops a value off the stack, then jumps to <code style="color:purple">else</code>/<code style="color:purple">endif</code>, unless value is true.|
+|<code style="color:purple">else</code>|Conditional Branch|0|0|Only used between <code style="color:purple">if</code> and <code style="color:purple">endif</code> keywords to provide an alternate branch; what will be ran if <code style="color:purple">if</code> condition is false.|
+|<code style="color:purple">endif</code>|Block Ending Symbol|0|0|Required block-ending-symbol for <code style="color:purple">if</code> keyword.|
 
 ---
 
@@ -57,7 +93,7 @@ If you would like to compile a corth program into an executable file, there are 
 
 First, you must ensure that you have [NASM](https://www.nasm.us/) installed somewhere on your machine. \
 On Windows you can [download the installer from the official website](https://www.nasm.us/) \
-On Mac, you can [download the
+On Mac, you can [download the necessary binaries from the official website][https://www.nasm.us/) \
 On Linux, run the following CMD: `apt install nasm` \
 NASM is the assembler that this project is built for. Eventually, different types of assembly will be able to be generated. \
 If you are on Windows and you didn't install it in the default directory the installer prompted, keep in mind the path to the 'nasm' executable file itself. You will need it later for the `-a` or `--assembler-path` command line option. \
