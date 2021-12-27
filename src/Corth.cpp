@@ -440,7 +440,7 @@ namespace Corth {
 			}
 		}
 		else {
-			Error("Could not open file for writing. Missing permissions?");
+			Error("Could not open file for writing. Does directory exist?");
 			assert(asm_file);
 		}
 	}
@@ -472,7 +472,7 @@ namespace Corth {
 					 << "    fmt db '%u', 0x0a, 0\n";
 		}
         else {
-			Error("Could not open file for writing. Missing permissions?");
+			Error("Could not open file for writing. Does directory exist?");
 			assert(asm_file);
 		}
 	}
@@ -605,7 +605,7 @@ namespace Corth {
 			}
 		}
 		else {
-			Error("Could not open file for writing. Missing permissions?");
+			Error("Could not open file for writing. Does directory exist?");
 			assert(asm_file);
 		}
 	}
