@@ -519,7 +519,7 @@ namespace Corth {
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
 										 << "    cmp rax, 0\n"
-										 << "    je endif_" << instr_ptr << "\n";
+										 << "    je endif_" << tok.data << "\n";
 									
 							}
 							else if (tok.text == "endif") {
@@ -714,7 +714,12 @@ namespace Corth {
 	}
 
 	void PrintToken(Token& t) {
-		printf("TOKEN(%s, %s)\n", TokenTypeStr(t.type).c_str(), t.text.c_str());		
+		if (t.data.empty()) {
+			printf("TOKEN(%s, %s)\n", TokenTypeStr(t.type).c_str(), t.text.c_str());
+		}
+		else {
+			printf("TOKEN(%s, %s, %s)\n", TokenTypeStr(t.type).c_str(), t.text.c_str(), t.data.c_str());
+		}			
 	}
 
 	void PrintTokens(Program& p) {
@@ -730,10 +735,13 @@ namespace Corth {
 		return true;
 	}
 
+	// This function simulates the program running on its most basic level: adding and removing from the stack.
+	// A read-access violation can occur if trying to pop off the stack without pushing something on first.
+	// To prevent this violation during runtime of Corth, this function catches over-popping before it can happen.
 	void ValidateTokens_Stack(Program& prog) {
 		std::vector<Token>& toks = prog.tokens;
-		size_t stackSize = 0; // Used for protecting from stack overflow by popping too much (dumping over and over).
-
+		// Amount of things on virtual stack
+		size_t stackSize = 0;
 		if (static_cast<int>(TokenType::COUNT) == 4) {
 			for (auto& tok : toks) {
 				if (tok.type == TokenType::WHITESPACE) {
@@ -800,44 +808,53 @@ namespace Corth {
 		
 			if (stackSize != 0) {
 				Warning("Validator: Best practices indicate stack should be empty at end of program.\nStack Size at End of Program: " + std::to_string(stackSize));
-			
 			}
-			else {
-				Error("Exhaustive handling of TokenType count in ValidateTokens()");
-				assert(static_cast<int>(TokenType::COUNT) == 4);
-			}
+		}
+		else {
+			Error("Exhaustive handling of TokenType count in ValidateTokens_Stack()");
+			assert(static_cast<int>(TokenType::COUNT) == 4);
 		}
 	}
 
+	// This function ensures any tokens that start or stop blocks are correctly refernced
+	// For example, an `if` statement needs to know where to jump to if it is false.
+	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		// This function ensures any tokens that start or stop blocks are correctly refernced
-		// For example, an `if` statement needs to know where to jump to if it is false.
-		// Another example: `endwhile` statement needs to know where to jump back to.
-
-		size_t instr_ptr = 0;
-		size_t instr_ptr_max = prog.tokens.size();
-		while (instr_ptr < instr_ptr_max) {
-			Token& tok = prog.tokens[instr_ptr];
-			if (KEYWORD_COUNT == 2) {
-				if (tok.text == "if") {
-					while (instr_ptr < instr_ptr_max) {
-						// Loop through the rest of the tokens until an endif is found.
-						// If one isn't found, error.
-						// If one is, give if token a reference to this instruction pointer in it's `data` field
-						instr_ptr++;
+		// This seems like too much nesting, but I can't seem to wrap my head around a different way of doing it.
+		// If you would, kindly make a pull request fixing this stupidity and I will gladly accept it and merge it if it works :)
+		if (KEYWORD_COUNT == 2) {
+			size_t instr_ptr = 0;
+			size_t instr_ptr_max = prog.tokens.size();
+			while (instr_ptr < instr_ptr_max) {
+                if (prog.tokens[instr_ptr].text == "if") {
+					size_t if_instr_ptr = instr_ptr;
+					bool found_endif = false;
+					// Loop through the rest of the tokens until an endif is found.
+					// If one isn't found, error.
+					// If one is, give if token a reference to this instruction pointer in it's `data` field
+                    while (instr_ptr < instr_ptr_max) {
 						if (prog.tokens[instr_ptr].type == TokenType::KEYWORD && prog.tokens[instr_ptr].text == "endif") {
 							// Success! Cross reference `if` block with `endif`
-							if (verbose_logging) { Log("Block `if` successfully cross-referenced with `endif`", tok.line_number, tok.col_number); }
-							tok.data = instr_ptr;
+							if (verbose_logging) { Log("Block `if` successfully cross-referenced with `endif`", prog.tokens[if_instr_ptr].line_number, prog.tokens[if_instr_ptr].col_number); }
+							prog.tokens[if_instr_ptr].data = std::to_string(instr_ptr);
+							found_endif = true;
+							break;
 						}
+						instr_ptr++;
 					}
-				}
+
+					if (!found_endif) {
+						// Did not find endif block before end of tokens
+						Error("Validator: `if` keyword missing `endif` block-ending-symbol", prog.tokens[if_instr_ptr].line_number, prog.tokens[if_instr_ptr].col_number);
+						assert(found_endif);
+					}
+                }
+				instr_ptr++;
 			}
-			else {
-				Error("Exhaustive handling of keyword count in ValidateTokens_Blocks()", tok.line_number, tok.col_number);
-				assert(KEYWORD_COUNT == 2);
-			}
-			instr_ptr++;
+		}
+		else {
+			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks()");
+			assert(KEYWORD_COUNT == 2);
 		}
 	}
 	
@@ -846,11 +863,12 @@ namespace Corth {
 		ValidateTokens_Stack(prog);
 
 		// Cross-reference blocks (give `if` tokens a reference to it's `endif` counterpart
+		ValidateTokens_Blocks(prog);
 
 		// Remove all un-neccessary tokens
-		std::remove_if(toks.begin(), toks.end(), RemovableToken);
+		std::remove_if(prog.tokens.begin(), prog.tokens.end(), RemovableToken);
 
-		printf("%s\n", "Tokens validated");
+		if (verbose_logging) { Log("Tokens validated"); }
 	}
 }
 
