@@ -20,6 +20,7 @@ namespace Corth {
 	size_t OP_COUNT = 5;
 	
 	// Corth state (it may be a simple state machine, but it still is one :D)
+	// TODO: Add `-o` flag to allow output name to be changed.
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
@@ -97,18 +98,6 @@ namespace Corth {
 		std::vector<Token> tokens;
 	};
 
-    void StackError(){
-		printf("\n[ERR]: %s (%s)\n", "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
-	}
-
-	void StackError(size_t line_num) {
-		printf("\n[ERR] LINE %zu: %s (%s)\n", line_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
-	}
-
-	void StackError(size_t line_num, size_t column_num) {
-		printf("\n[ERR] LINE %zu, COL %zu: %s (%s)\n", line_num, column_num, "Stack Protection Invoked!", "Did you forget to put the operator after the operands (ie. `5 5 +` not `5 + 5`)?");
-	}
-
 	void Error(std::string msg) {
 		printf("\n[ERR]: %s\n", msg.c_str());
 	}
@@ -125,6 +114,18 @@ namespace Corth {
 		printf("\n[ERR]: %s (%s)\n", msg.c_str(), e.what());
 	}
 
+	void StackError(){
+		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?");
+	}
+
+	void StackError(size_t line_num) {
+		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num);
+	}
+
+    void StackError(size_t line_num, size_t column_num) {
+		Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num, column_num);
+	}
+
 	void Warning(std::string msg) {
 		printf("[WRN]: %s\n", msg.c_str());
 	}
@@ -135,6 +136,16 @@ namespace Corth {
 
 	void Warning(std::string msg, size_t line_num, size_t column_num) {
 		printf("[WRN] LINE %zu, COL %zu: %s\n", line_num, column_num, msg.c_str());
+	}
+
+	// TODO: Convert a bunch of `printf`s into a bunch of `Log`s
+
+	void DbgLog(std::string msg) {
+		printf("[DBG]: %s\n", msg.c_str());
+	}
+
+	void Log(std::string msg) {
+		printf("[LOG]: %s\n", msg.c_str());
 	}
 
 	bool iswhitespace(char& c){
@@ -325,6 +336,18 @@ namespace Corth {
 			}
 		}
 		else {
+			Error("Could not open file for writing. Missing permissions?");
+		}
+	}
+
+	void GenerateAssembly_NASM_mac64(Program& prog) {
+		std::string asm_file_path = OUTPUT_NAME + ".asm";
+		std::fstream asm_file;
+		asm_file.open(asm_file_path.c_str(), std::ios::out);
+		if (asm_file) {
+			printf("%s\n", "Generating NASM mac64 assembly");
+		}
+        else {
 			Error("Could not open file for writing. Missing permissions?");
 		}
 	}
