@@ -17,7 +17,22 @@
 
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
-	size_t OP_COUNT = 5;
+	size_t OP_COUNT = 6;
+	bool isoperator(char& c){
+		return c == '+'    // addition
+			|| c == '-'    // subtraction
+			|| c == '*'    // multiplication
+			|| c == '/'    // division
+			|| c == '='    // boolean comparison (equal)
+			|| c == '#';   // dump (pop + print)
+	}
+
+	// This needs to be changed if keywords are added or removed from Corth internally.
+	size_t KEYWORD_COUNT = 2;
+	std::vector<std::string> keywords {
+		"if",
+		"endif"
+	};
 	
 	// Corth state (it may be a simple state machine, but it still is one :D)
 	// TODO: Add `-o` flag to allow output name to be changed.
@@ -43,25 +58,6 @@ namespace Corth {
 	};
 	PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
 	bool verbose_logging = false;
-	
-	void PrintUsage(){
-		printf("\n%s\n", "Usage: `Corth.exe <flags> <options> Path/To/File.corth`");
-		printf("    %s\n", "Flags:");
-        printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
-		printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit.");
-		//printf("        %s\n", "-mac, -apple             | Generate assembly for MacOS 64-bit.");
-        printf("        %s\n", "-com, --compile          | Compile program from source into executable");
-		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
-		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
-		printf("    %s\n", "Options (latest over-rides):");
-		printf("        %s\n", "Usage: <option> <input>");
-		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes.");
-		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
-        printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
-		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
-        printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
-		printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
-	}
 
     enum class TokenType {
         WHITESPACE,
@@ -97,6 +93,25 @@ namespace Corth {
 		std::string source;
 		std::vector<Token> tokens;
 	};
+
+	void PrintUsage(){
+		printf("\n%s\n", "Usage: `Corth.exe <flags> <options> Path/To/File.corth`");
+		printf("    %s\n", "Flags:");
+        printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
+		printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit.");
+		//printf("        %s\n", "-mac, -apple             | Generate assembly for MacOS 64-bit.");
+        printf("        %s\n", "-com, --compile          | Compile program from source into executable");
+		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
+		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
+		printf("    %s\n", "Options (latest over-rides):");
+		printf("        %s\n", "Usage: <option> <input>");
+		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes.");
+		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include .exe)");
+        printf("        %s\n", "-l, --linker-path        | Specify path to linker (include .exe)");
+		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
+        printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
+		printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
+	}
 
 	void Error(std::string msg) {
 		printf("\n[ERR]: %s\n", msg.c_str());
@@ -148,21 +163,6 @@ namespace Corth {
 		printf("[LOG]: %s\n", msg.c_str());
 	}
 
-	bool iswhitespace(char& c){
-		return c == ' '     // spaces
-			|| c == '\t'    // tab
-			|| c == '\r'    // crlf
-			|| c == '\n';   // newline/linefeed
-	}
-
-	bool isoperator(char& c){
-		return c == '+'    // addition
-			|| c == '-'    // subtraction
-			|| c == '*'    // multiplication
-			|| c == '/'    // division
-			|| c == '#';   // dump (pop + print)
-	}
-
     // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
 	void SimulateProgram(Program& prog) {
 		printf("\n%s\n\n", "Begin program simulation");
@@ -174,7 +174,7 @@ namespace Corth {
 				stack.push_back(tok.text);
 			}
 			else if (tok.type == TokenType::OP) {
-				if (OP_COUNT == 5) {
+				if (OP_COUNT == 6) {
 					if (tok.text == "+") {
 						if (stack.size() > 1) {
 							int a = std::stoi(stack.back());
@@ -227,6 +227,15 @@ namespace Corth {
 							assert(stack.size() > 1);
 						}
 					}
+					else if (tok.text == "=") {
+						if (stack.size() > 1) {
+							int a = std::stoi(stack.back());
+							stack.pop_back();
+							int b = std::stoi(stack.back());
+							stack.pop_back();
+							stack.push_back(std::to_string(a == b));
+						}
+					}
 					else if (tok.text == "#") {
 						if (stack.size() > 0) {
 							printf("%s\n", stack.back().c_str());
@@ -241,7 +250,7 @@ namespace Corth {
 				else {
 					// Exhaustive handling of operator count
 					Error("Exhaustive handling of operator count in SimulateProgram()", tok.line_number);
-					assert(OP_COUNT == 5);
+					assert(OP_COUNT == 6);
 				}
 			}
 		}
@@ -261,8 +270,6 @@ namespace Corth {
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
 					 << "    ;; USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n"
 					 << "    ;; LINUX SYSTEM CALLS USE R10 INSTEAD OF RCX\n"
-					 << "    SECTION .data\n"
-					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
                      << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS\n"
 					 << "    extern exit\n"
@@ -311,6 +318,12 @@ namespace Corth {
 										 << "    div rbx\n"
 										 << "    push rax\n";
 							}
+							else if (tok.text == "=") {
+								asm_file << "    ;; -- equality condition --\n"
+										 << "    mov rcx, 0\n"
+										 << "    mov rdx, 1\n"
+										 << "    
+							}
 							else if (tok.text == "#") {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rdi, [rel fmt]\n"
@@ -325,8 +338,12 @@ namespace Corth {
 						}
 					}
 				}
-				// WRITE ASM FOOTER FOR GRACEFUL PROGRAM EXIT
-				asm_file << "    call exit\n";
+				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
+				asm_file << "    mov rdi, 0\n"
+						 << "    call exit\n"
+						 << "\n\n"
+						 << "    SECTION .data\n"
+						 << "    fmt db '%u', 0x0a, 0\n";
 			
 				asm_file.close();
 			}
@@ -346,6 +363,25 @@ namespace Corth {
 		asm_file.open(asm_file_path.c_str(), std::ios::out);
 		if (asm_file) {
 			printf("%s\n", "Generating NASM mac64 assembly");
+
+			/* MacOS assembly
+			    I know it sounds scary, but it's really not too bad.
+				It supports NASM, and can be linked using gcc which comes with XCode, the built in IDE.
+			    The calling convention is familiar (System V AMD64 ABI), so that's a win.
+				The weird thing is all external symbols must be prefaced by an `_`. Why are you like this, Apple?
+			 */
+
+			// WRITE HEADER
+			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    ;; USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n";
+
+
+
+			// WRITE FOOTER (GRACEFUL EXIT AND CONSTANTS)
+			asm_file << "    ;; -- TODO: graceful exit --\n"
+					 << "\n\n"
+					 << "    SECTION .data\n"
+					 << "    fmt db '%u', 0x0a, 0\n";
 		}
         else {
 			Error("Could not open file for writing. Missing permissions?");
@@ -363,8 +399,6 @@ namespace Corth {
 			// WRITE HEADER TO ASM FILE
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
 					 << "    ;; USING `WINDOWS x64` CALLING CONVENTION (RCX, RDX, R8, R9, ETC)\n"
-					 << "    SECTION .data\n"
-					 << "    fmt db '%u', 0x0a, 0\n"
 					 << "    SECTION .text\n"
                      << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS (LINK AGAINST MSVCRT.DLL)\n"
 					 << "    extern printf\n"
@@ -383,7 +417,7 @@ namespace Corth {
 								 << "    push rax\n";
 					}
 					else if (tok.type == TokenType::OP) {
-						if (OP_COUNT == 5) {
+						if (OP_COUNT == 6) {
 						if (tok.text == "+") {
 							asm_file << "    ;; -- add --\n"
 									 << "    pop rax\n"
@@ -413,6 +447,16 @@ namespace Corth {
 									 << "    div rbx\n"
 									 << "    push rax\n";
 						}
+						else if (tok.text == "=") {
+							asm_file << "    ;; -- equality condition --\n"
+									 << "    mov rcx, 0\n"
+									 << "    mov rdx, 1\n"
+									 << "    pop rax\n"
+									 << "    pop rbx\n"
+									 << "    cmp rax, rbx\n"
+									 << "    cmove rcx, rdx\n"
+									 << "    push rcx\n";
+						}
 						else if (tok.text == "#") {
 							asm_file << "    ;; -- dump --\n"
 									 << "    lea rcx, [rel fmt]\n"
@@ -423,12 +467,16 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_win64()");
-							assert(OP_COUNT == 5);
+							assert(OP_COUNT == 6);
 						}
 					}
 				}
-				// WRITE ASM FOOTER (EXIT GRACEFUL)
-				asm_file << "    call exit\n";
+				// EXIT GRACEFUL
+				asm_file << "    mov rcx, 0\n"
+						 << "    call exit\n"
+						 << "\n\n"
+						 << "    SECTION .data\n"
+						 << "    fmt db '%u', 0x0a, 0\n";
 
 				asm_file.close();
 				printf("NASM win64 assembly generated at %s\n", asm_file_path.c_str());
@@ -528,6 +576,13 @@ namespace Corth {
 		return true;
 	}
 
+	bool iswhitespace(char& c){
+		return c == ' '     // spaces
+			|| c == '\t'    // tab
+			|| c == '\r'    // crlf
+			|| c == '\n';   // newline/linefeed
+	}
+
 	void PushToken(std::vector<Token>& tokList, Token& tok){
 		// Add token to program if it is not whitespace
 		if (tok.type != TokenType::WHITESPACE) {
@@ -578,6 +633,10 @@ namespace Corth {
 				i--; // Undo lookahead.
 				PushToken(toks, tok);
             }
+			else if (isalpha(current)) {
+				std::string possible_keyword;
+				possible_keyword.append(1, current);
+            }
 		}
 	}
 
@@ -611,12 +670,13 @@ namespace Corth {
 					stackSize++;
 				}
 				else if (tok.type == TokenType::OP) {
-					if (OP_COUNT == 5) {
+					if (OP_COUNT == 6) {
 						// Operators that pop two values off the stack and return one to it
 						if (tok.text == "+"
 							|| tok.text == "-"
 							|| tok.text == "*"
-							|| tok.text == "/")
+							|| tok.text == "/"
+							|| tok.text == "=" )
 						{
 							if (stackSize > 1) {
 								stackSize--; // Two values removed, result added, net loss of one
@@ -641,7 +701,7 @@ namespace Corth {
 					}
 					else {
 						Error("Exhaustive handling of operator count in ValidateTokens()");
-						assert(OP_COUNT == 5);
+						assert(OP_COUNT == 6);
 					}
 				}
 			}
