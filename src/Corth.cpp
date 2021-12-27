@@ -314,7 +314,10 @@ namespace Corth {
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
 			if (static_cast<int>(TokenType::COUNT) == 3) {
-				for (auto& tok : prog.tokens) {
+				size_t instr_ptr = 0;
+				size_t instr_ptr_max = prog.tokens.size();
+				while (instr_ptr < instr_ptr_max) {
+					Token& tok = prog.tokens[instr_ptr];
 					// Write assembly to opened file based on token type and value
 					if (tok.type == TokenType::INT) {
 						asm_file << "    ;; -- push INT --\n"
@@ -392,6 +395,7 @@ namespace Corth {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
 						}
 					}
+					instr_ptr++;
 				}
 				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
 				asm_file << "    mov rdi, 0\n"
