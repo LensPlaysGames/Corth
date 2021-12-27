@@ -615,8 +615,8 @@ namespace Corth {
 								asm_file << "    ;; -- less than condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
-										 << "    pop rax\n"
 										 << "    pop rbx\n"
+										 << "    pop rax\n"
 										 << "    cmp rax, rbx\n"
 										 << "    cmovl rcx, rdx\n"
 										 << "    push rcx\n";
@@ -625,8 +625,8 @@ namespace Corth {
 								asm_file << "    ;; -- greater than condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
-										 << "    pop rax\n"
 										 << "    pop rbx\n"
+										 << "    pop rax\n"
 										 << "    cmp rax, rbx\n"
 										 << "    cmovg rcx, rdx\n"
 										 << "    push rcx\n";
@@ -635,8 +635,8 @@ namespace Corth {
 								asm_file << "    ;; -- less than or equal condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
-										 << "    pop rax\n"
 										 << "    pop rbx\n"
+										 << "    pop rax\n"
 										 << "    cmp rax, rbx\n"
 										 << "    cmovle rcx, rdx\n"
 										 << "    push rcx\n";
@@ -645,8 +645,8 @@ namespace Corth {
 								asm_file << "    ;; -- greater than condition --\n"
 										 << "    mov rcx, 0\n"
 										 << "    mov rdx, 1\n"
-										 << "    pop rax\n"
 										 << "    pop rbx\n"
+										 << "    pop rax\n"
 										 << "    cmp rax, rbx\n"
 										 << "    cmovge rcx, rdx\n"
 										 << "    push rcx\n";
