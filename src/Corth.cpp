@@ -56,6 +56,8 @@ namespace Corth {
 	std::string LINK_PATH = "";
 	std::string ASMB_OPTS = "";
 	std::string LINK_OPTS = "";
+	std::string ASMB_NAME = "";
+	std::string LINK_NAME = "";
 
 	enum class MODE {
 		COMPILE,
@@ -120,15 +122,17 @@ namespace Corth {
         printf("        %s\n", "-com, --compile          | Compile program from source into executable");
 		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
 		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
+        printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
 		printf("    %s\n", "Options (latest over-rides):");
 		printf("        %s\n", "Usage: <option> <input>");
-		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes.");
-		printf("        %s\n", "-o, --output-name        | Specify name of generated files (exclude extension) WARNING: unexpected behaviour on linux");
+		printf("        %s\n", "If the <input> contains spaces, be sure to surround it by double quotes");
+		printf("        %s\n", "-o, --output-name        | Specify name of generated files. Unexpected behaviour on Linux; use -add-ao/-add-lo to specify output file name manually");
 		printf("        %s\n", "-a, --assembler-path     | Specify path to assembler (include extension)");
         printf("        %s\n", "-l, --linker-path        | Specify path to linker (include extension)");
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
         printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
-		printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
+		printf("        %s\n", "-add-ao, --add-asm-opt   | Append a command line argument to assembler options");
+        printf("        %s\n", "-add-lo, --add-link-opt  | Append a command line argument to assembler options");
 	}
 
 	void DoLog(std::string msg, std::string prefix = "[LOG]", std::string suffix = "\n") {
@@ -182,8 +186,6 @@ namespace Corth {
     void Warning(std::string msg, size_t line_num, size_t column_num) {
 		DoLog(msg, line_num, column_num, "[WRN]");
     }
-
-    // TODO: Convert a bunch of `printf`s into a bunch of `Log`s
 
     void DbgLog(std::string msg) {
 		DoLog(msg, "[DBG]");
@@ -615,7 +617,7 @@ namespace Corth {
 				return false;
 			}
 			else if (arg == "-v" || arg == "--verbose"){
-				printf("%s\n", "Verbose logging enabled");
+				Log("Verbose logging enabled");
 				verbose_logging = true;
 			}
 			else if (arg == "-o" || arg == "--output-name") {
@@ -665,6 +667,28 @@ namespace Corth {
 				}
 				else {
 					Error("Expected linker options to be specified after `-lo`!");
+					return false;
+				}
+			}
+			else if (arg == "-add-ao" || arg == "--add-asm-opt") {
+				if (i + 1 < argc) {
+					i++;
+					ASMB_OPTS.append(1, ' ');
+					ASMB_OPTS += argv[i];
+				}
+				else {
+					Error("Expected an assembler command line option to be specified after `-add-ao`!");
+					return false;
+				}
+			}
+			else if (arg == "-add-lo" || arg == "--add-link-opt") {
+				if (i + 1 < argc) {
+					i++;
+					LINK_OPTS.append(1, ' ');
+					LINK_OPTS += argv[i];					
+				}
+				else {
+					Error("Expected a linker command line option to be specified after `-add-lo`!");
 					return false;
 				}
 			}
@@ -969,6 +993,7 @@ bool FileExists(std::string filePath) {
 	// Check path relative Corth.exe
 	std::ifstream file(filePath);
 	if (file.is_open()) { file.close(); return true; }
+	
     #ifdef _WIN64
 	// Get PATH system variable on Windows
 	std::vector<std::string> path_var;
@@ -977,6 +1002,7 @@ bool FileExists(std::string filePath) {
 	if (_dupenv_s(buf, &buf_sz, "PATH")) {
 		Corth::Error("Could not access PATH system variable");
 	}
+	// Split path by semi-colon, and ensure there is a slash at the end of every split.
 	std::string tmp;
 	std::string path_var_str(buf[0], buf_sz);
 	std::stringstream path_var_ss(path_var_str);
@@ -987,16 +1013,14 @@ bool FileExists(std::string filePath) {
 	   	path_var.push_back(tmp);
     }
 
-    // Check windows PATH system variable
+    // Check each path in Windows PATH variable if file exists
 	for (auto& path : path_var) {
 		std::string test(path + filePath);
-		if (Corth::verbose_logging) { printf("Testing %s\n", test.c_str()); }
+		if (Corth::verbose_logging) { Corth::Log("Testing " + test); }
 		std::ifstream f(test);
 		if (f.is_open()) { f.close(); return true; }
 	}
 	#else
-	Corth::Error("Something went very, very wrong...\nIf you are on Linux may god have mercy on your soul.");
-	return false;
 	#endif
 
 	return false;
