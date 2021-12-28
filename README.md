@@ -74,13 +74,23 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |    `<`   | Less-than            |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.                  |
 |   `>=`   | Greater-than-or-equal|    2 |    1 | Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not.   |
 |   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.     |
+|<code style="color:purple">dup</code>| Duplicate|1|2| Pops one value off the stack, then pushes it back on twice.                                              |
 
 #### Keywords
 | Keyword | Meaning |  Pop | Push | Description |
 |:-------:|:--------|-----:|-----:|:------------|
-|<code style="color:purple">if</code>|Conditional Branch|1|0|Pops a value off the stack, then jumps to <code style="color:purple">else</code>/<code style="color:purple">endif</code>, unless value is true.|
+|<code style="color:purple">if</code>|Conditional Branch|1|0|Pops a value off the stack, then jumps to <code style="color:purple">else</code>/<code style="color:purple">endif</code>, unless popped value is true.|
 |<code style="color:purple">else</code>|Conditional Branch|0|0|Only used between <code style="color:purple">if</code> and <code style="color:purple">endif</code> keywords to provide an alternate branch; what will be ran if <code style="color:purple">if</code> condition is false.|
 |<code style="color:purple">endif</code>|Block Ending Symbol|0|0|Required block-ending-symbol for <code style="color:purple">if</code> keyword.|
+|<code style="color:purple">dup</code>|Operator|0|0|Pops one value off the stack, then pushes it back twice.|
+
+Currently, very rudimentary while loops are implemented, however I do not recommend using them unless in this very specific format (feel free to change the condition and what-not): \
+`0 while dup 10 < do` \
+&nbsp;&nbsp;`dup #` \
+&nbsp;&nbsp;`1 +` \
+`endwhile` \
+All this does is print the numbers 0 through 9 to the console. \
+The problem with adding anything else to the loop is that the call to `printf` in the C-RunTime by the `dump` operator isn't stack-safe (apparently).
 
 ---
 
