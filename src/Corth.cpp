@@ -57,16 +57,20 @@ namespace Corth {
 		IF,
 		ELSE,
 		ENDIF,
+		DUP,
 		COUNT
 	};
 	
 	std::string GetKeywordStr(Keyword word) {
-		assert(static_cast<int>(Keyword::COUNT) == 3);
+		assert(static_cast<int>(Keyword::COUNT) == 4);
 		switch (word) {
-		case Keyword::IF: { return "if"; }
-        case Keyword::ELSE: { return "else"; }
-        case Keyword::ENDIF: { return "endif"; }
-		default: return "ERROR: UNREACHABLE";
+		case Keyword::IF:       { return "if"; }
+        case Keyword::ELSE:     { return "else"; }
+        case Keyword::ENDIF:    { return "endif"; }
+		case Keyword::DUP:      { return "dup"; }
+		default:
+			assert(false);
+			return "ERROR IN GetKeywordStr: UNREACHABLE";
 		}
 	}
 
@@ -84,7 +88,8 @@ namespace Corth {
 		else if (t == TokenType::INT)     { return "INTEGER"; }
 		else if (t == TokenType::OP)      { return "OPERATOR"; }
 		else if (t == TokenType::KEYWORD) { return "KEYWORD"; }
-		return "ERROR: UNREACHABLE";
+		assert(false);
+		return "ERROR IN TokenTypeStr: UNREACHABLE";
 	}
 	
 	struct Token {
@@ -296,7 +301,7 @@ namespace Corth {
 					}
 				}
 				else if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
-					if (static_cast<int>(Keyword::COUNT) == 3) {
+					if (static_cast<int>(Keyword::COUNT) == 4) {
 						if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)) {
 							std::string a = stack.back();
 							stack.pop_back();
@@ -319,10 +324,17 @@ namespace Corth {
 						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
 					        // Do nothing
 						}
+						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DUP)) {
+							// Duplicate top-most item on stack
+							std::string a = stack.back();
+							stack.pop_back();
+							stack.push_back(a);
+							stack.push_back(a);
+						}
 					}
 					else {
 						Error("Exhaustive handling of keyword count in SimulateProgram()", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-						assert(static_cast<int>(Keyword::COUNT) == 3);
+						assert(static_cast<int>(Keyword::COUNT) == 4);
 					}						
 				}
 				instr_ptr++;
@@ -464,7 +476,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 3) {
+						if (static_cast<int>(Keyword::COUNT) == 4) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 							    asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -480,10 +492,16 @@ namespace Corth {
 								asm_file << "    ;; -- endif --\n"
 										 << "addr_" << instr_ptr << ":\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+								asm_file << "    ;; -- dup --\n"
+										 << "    pop rax\n"
+										 << "    push rax\n"
+										 << "    push rax\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(static_cast<int>(Keyword::COUNT) == 3);
+							assert(static_cast<int>(Keyword::COUNT) == 4);
 						}
 					}
 					instr_ptr++;
@@ -665,7 +683,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 3) {
+						if (static_cast<int>(Keyword::COUNT) == 4) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 								// Need to pop from stack, compare, and jump to end if it is zero
 								// This means end needs to generate a UNIQUE label to jump to
@@ -684,10 +702,16 @@ namespace Corth {
 								asm_file << "    ;; -- endif --\n"
 										 << "addr_" << instr_ptr << ":\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+								asm_file << "    ;; -- dup --\n"
+										 << "    pop rax\n"
+										 << "    push rax\n"
+										 << "    push rax\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
-							assert(static_cast<int>(Keyword::COUNT) == 3);
+							assert(static_cast<int>(Keyword::COUNT) == 4);
 						}
 					}
 					instr_ptr++;
@@ -1001,7 +1025,7 @@ namespace Corth {
 					}
 				}
 				else if (tok.type == TokenType::KEYWORD) {
-					if (static_cast<int>(Keyword::COUNT) == 3) {
+					if (static_cast<int>(Keyword::COUNT) == 4) {
 						if (tok.text == GetKeywordStr(Keyword::IF)) {
 							// if will pop from the stack to check the condition to see if it needs to jump or not
 							if (stackSize > 0) {
@@ -1014,16 +1038,28 @@ namespace Corth {
 								StackError(tok.line_number, tok.col_number);
 							}
 						}
-							else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
+						else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
 							continue;
 						}
-                            else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
+						else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
 							continue;
+						}
+						else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+							// dup will pop from the stack then push that value back twice
+							if (stackSize > 0) {
+								stackSize++;
+							}
+							else {
+								// This token could cause serious memory issues (by popping a value off the stack that doesn't exist)
+								// It is marked for removal by setting it's type to whitespace.
+								tok.type = TokenType::WHITESPACE;
+								StackError(tok.line_number, tok.col_number);
+							}
 						}
 					}
 					else {
 						Error("Exhaustive handling of keyword count in ValidateTokens_Stack()");
-						assert(static_cast<int>(Keyword::COUNT) == 3);
+						assert(static_cast<int>(Keyword::COUNT) == 4);
 					}
 				}
 			}
@@ -1043,7 +1079,7 @@ namespace Corth {
 		size_t block_instr_ptr = instr_ptr;
 
 		// Look-ahead for an else block or an endif
-		if (static_cast<int>(Keyword::COUNT) == 3) {
+		if (static_cast<int>(Keyword::COUNT) == 4) {
 			while (instr_ptr < instr_ptr_max) {
 				instr_ptr++;
 				
@@ -1072,8 +1108,8 @@ namespace Corth {
 			}
 		}
         else {
-            Error("Exhaustive handling of keyword count in ValidateIfElseBlock()");
-            assert(static_cast<int>(Keyword::COUNT) == 3);
+            Error("Exhaustive handling of keyword count in ValidateIfElseBlock(); keep in mind that not all keywords form if/else blocks, and therefore may not need implementation");
+            assert(static_cast<int>(Keyword::COUNT) == 4);
         }	
 		
 		return false;
@@ -1085,7 +1121,7 @@ namespace Corth {
 	void ValidateTokens_Blocks(Program& prog) {
 		// This seems like too much nesting, but I can't seem to wrap my head around a different way of doing it.
 		// If you would, kindly make a pull request fixing this stupidity and I will gladly accept it and merge it if it works :)
-		if (static_cast<int>(Keyword::COUNT) == 3) {
+		if (static_cast<int>(Keyword::COUNT) == 4) {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
@@ -1098,8 +1134,8 @@ namespace Corth {
 			}
 		}
 		else {
-			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks()");
-			assert(static_cast<int>(Keyword::COUNT) == 3);
+			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
+			assert(static_cast<int>(Keyword::COUNT) == 4);
 		}
 	}
 	
