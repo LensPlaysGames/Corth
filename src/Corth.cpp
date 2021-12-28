@@ -15,6 +15,7 @@
 
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
+	// I may want to switch to an enum with COUNT in the future, but this is okay for now.
 	size_t OP_COUNT = 10;
 	bool isoperator(char& c){
 		return c == '+'    // addition
@@ -377,7 +378,11 @@ namespace Corth {
 		}
 	}
 
-	// TODO: Convert GenerateAssembly return type from void to bool
+	/* TODO: Convert GenerateAssembly return type from void to bool
+	    It would also be cool if I just used a struct for argument registers.
+	    I could then just fill in an extra field within a program based on operating system
+	    and have one function to write NASM assembly (for windows and linux,
+	    mac requires extra faff like underscores before calls to external symbols). */
 	void GenerateAssembly_NASM_linux64(Program& prog) {
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
@@ -583,11 +588,11 @@ namespace Corth {
 				The weird thing is all external symbols must be prefaced by an `_`. Why are you like this, Apple?
 			 */
 
-			// WRITE HEADER
+			// TODO: WRITE HEADER
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
 					 << "    ;; USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n";
 
-
+			// TODO: WRITE TOKENS
 
 			// WRITE FOOTER (GRACEFUL EXIT AND CONSTANTS)
 			asm_file << "    ;; -- TODO: graceful exit --\n"
@@ -989,6 +994,7 @@ namespace Corth {
 				PushToken(toks, tok);
             }
 			else if (isalpha(current)) {
+				// TODO: Validate keywords before setting type by checking if they are within valid keywords array/list/vector?
 				tok.type = TokenType::KEYWORD;
 			    tok.text.append(1, current);
 				// Handle multiple-alpha keywords
