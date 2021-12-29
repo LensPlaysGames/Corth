@@ -67,17 +67,18 @@ namespace Corth {
 
 	bool iskeyword(std::string word) {
 		assert(static_cast<int>(Keyword::COUNT) == 7);
-		switch (word) {
-		case "if": { return Keyword::IF; }
-		case "else": { return Keyword::ELSE; }
-		case "endif": { return Keyword::ENDIF; }
-		case "dup": { return Keyword::DUP; }
-		case "while": { return Keyword::WHILE; }
-		case "do": { return Keyword::DO; }
-		case "endwhile": { return Keyword::ENDWHILE; }
-		default:
-			assert(false);
-			return "ERROR IN iskeyword: UNREACHABLE";
+		if (word == "if"
+			|| word == "else"
+			|| word == "endif"
+			|| word == "dup"
+			|| word == "while"
+			|| word == "do"
+			|| word == "endwhile")
+		{
+			return true;
+		}
+		else {
+			return false;
 		}
 	}
 
