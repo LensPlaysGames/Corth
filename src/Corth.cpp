@@ -65,6 +65,22 @@ namespace Corth {
 		COUNT
 	};
 
+	bool iskeyword(std::string word) {
+		assert(static_cast<int>(Keyword::COUNT) == 7);
+		switch (word) {
+		case "if": { return Keyword::IF; }
+		case "else": { return Keyword::ELSE; }
+		case "endif": { return Keyword::ENDIF; }
+		case "dup": { return Keyword::DUP; }
+		case "while": { return Keyword::WHILE; }
+		case "do": { return Keyword::DO; }
+		case "endwhile": { return Keyword::ENDWHILE; }
+		default:
+			assert(false);
+			return "ERROR IN iskeyword: UNREACHABLE";
+		}
+	}
+
 	// This function outlines the corth source input and the output it will generate.
 	// case <output>: { return "<input>"; }
 	std::string GetKeywordStr(Keyword word) {
@@ -972,7 +988,10 @@ namespace Corth {
 					while (i < src_end) {
 						i++;
 						current = src[i];
+						tok.col_number++;
 						if (current == '\n') {
+							tok.line_number++;
+							tok.col_number = 1;
 							break;
 						}
 					}
@@ -987,6 +1006,7 @@ namespace Corth {
 					// Look ahead for digit
 					i++;
 					current = src[i];
+					tok.col_number++;
 					if (isdigit(current)) { tok.text.append(1, current); }
 					else { break; }
 				}
@@ -994,17 +1014,27 @@ namespace Corth {
 				PushToken(toks, tok);
             }
 			else if (isalpha(current)) {
-				// TODO: Validate keywords before setting type by checking if they are within valid keywords array/list/vector?
-				tok.type = TokenType::KEYWORD;
 			    tok.text.append(1, current);
 				// Handle multiple-alpha keywords
 				while (i < src_end) {
 					// Look ahead for alpha
 					i++;
 					current = src[i];
+					tok.col_number++;
 					if (isalpha(current)) {tok.text.append(1, current); }
 					else { break; }
 				}
+
+				// If the token is not a keyword, output a warning and
+				// keep this token's type as whitespace
+				// (effectively ensuring it will be removed)
+				if (iskeyword(tok.text)) {
+					tok.type = TokenType::KEYWORD;
+				}
+				else {
+					Warning("Unidentified keyword: " + tok.text, tok.line_number, tok.col_number);
+				}
+				
 				i--; // Undo lookahead.
 				PushToken(toks, tok);
             }
