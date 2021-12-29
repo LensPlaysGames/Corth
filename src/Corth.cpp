@@ -516,7 +516,8 @@ namespace Corth {
 										 << "    lea rdi, [rel fmt]\n"
 										 << "    pop rsi\n"
 										 << "    mov rax, 0\n"
-										 << "    call printf\n";
+										 << "    call printf\n"
+										 << "    pop rax\n";
 							}
 						}
 						else {
@@ -739,7 +740,7 @@ namespace Corth {
 										 << "    pop rdx\n"
 										 << "    mov rax, 0\n"
 										 << "    call printf\n"
-										 << "    pop rax\n"; // I think printf pushes something on stack, this should undo it
+										 << "    pop rax\n";
 							}
 						}
 						else {
