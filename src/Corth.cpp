@@ -16,7 +16,7 @@
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
 	// I may want to switch to an enum with COUNT in the future, but this is okay for now.
-	size_t OP_COUNT = 10;
+	const size_t OP_COUNT = 10;
 	bool isoperator(char& c){
 		return c == '+'    // addition
 			|| c == '-'    // subtraction
@@ -29,6 +29,8 @@ namespace Corth {
 	}
 	
 	// Corth state (it may be a simple state machine, but it still is one :D)
+	const unsigned int MEM_CAPACITY = 720000; // Allocate 720000 kilobytes to the program by default. This is accessible using the `mem` keyword
+	
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
@@ -59,9 +61,9 @@ namespace Corth {
 		ELSE,
 		ENDIF,
 		DUP,
-		WHILE,
-		DO,
-		ENDWHILE,
+		MEM,
+		LOADB,
+		STOREB,
 		COUNT
 	};
 
@@ -71,9 +73,9 @@ namespace Corth {
 			|| word == "else"
 			|| word == "endif"
 			|| word == "dup"
-			|| word == "while"
-			|| word == "do"
-			|| word == "endwhile")
+			|| word == "mem"
+			|| word == "loadb"
+			|| word == "storeb")
 		{
 			return true;
 		}
@@ -87,13 +89,13 @@ namespace Corth {
 	std::string GetKeywordStr(Keyword word) {
 		assert(static_cast<int>(Keyword::COUNT) == 7);
 		switch (word) {
-		case Keyword::IF:       { return "if"; }
-        case Keyword::ELSE:     { return "else"; }
-        case Keyword::ENDIF:    { return "endif"; }
-		case Keyword::DUP:      { return "dup"; }
-		case Keyword::WHILE:    { return "while"; }
-		case Keyword::DO:       { return "do"; }
-		case Keyword::ENDWHILE: { return "endwhile"; }
+		case Keyword::IF:       { return "if";       }
+        case Keyword::ELSE:     { return "else";     }
+        case Keyword::ENDIF:    { return "endif";    }
+		case Keyword::DUP:      { return "dup";      }
+		case Keyword::MEM:      { return "mem";      }
+		case Keyword::LOADB:    { return "loadb";    }
+		case Keyword::STOREB:   { return "storeb";   }
 		default:
 			assert(false);
 			return "ERROR IN GetKeywordStr: UNREACHABLE";
@@ -236,164 +238,6 @@ namespace Corth {
 	void Log(std::string msg, size_t line_num, size_t column_num) {
 		DoLog(msg, line_num, column_num);
     }
-
-    // TODO: Make it so a line number could be specified and the execution will halt at that line with a printout of the stack
-    void SimulateProgram(Program& prog) {
-		if (static_cast<int>(TokenType::COUNT) == 4) {
-			DoLog("Begin program simulation", "\n[SIM]", "\n\n");
-			std::vector<std::string> stack;
-			std::vector<std::string> ctx_stack;
-
-			size_t instr_ptr = 0;
-			size_t instr_ptr_max = prog.tokens.size();
-			while (instr_ptr < instr_ptr_max) {
-				if (prog.tokens[instr_ptr].type == TokenType::INT) {
-					stack.push_back(prog.tokens[instr_ptr].text);
-				}
-				else if (prog.tokens[instr_ptr].type == TokenType::OP) {
-					if (OP_COUNT == 10) {
-						if (prog.tokens[instr_ptr].text == "+") {
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a + b));
-						}
-						else if (prog.tokens[instr_ptr].text == "-") {
-							int b = std::stoi(stack.back());
-							stack.pop_back();                   
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a - b));
-						}
-						else if (prog.tokens[instr_ptr].text == "*") {
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a * b));
-						}
-						else if (prog.tokens[instr_ptr].text == "/") {
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a / b));
-						}
-						else if (prog.tokens[instr_ptr].text == "=") {
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a == b));
-						}
-						else if (prog.tokens[instr_ptr].text == "<") {
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a < b));
-						}
-						else if (prog.tokens[instr_ptr].text == ">") {
-							int b = std::stoi(stack.back());
-							stack.pop_back();
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a > b));
-						}
-						else if (prog.tokens[instr_ptr].text == "<=") {
-						    int b = std::stoi(stack.back());
-							stack.pop_back();
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a <= b));
-						}
-						else if (prog.tokens[instr_ptr].text == ">=") {
-						    int b = std::stoi(stack.back());
-							stack.pop_back();
-							int a = std::stoi(stack.back());
-							stack.pop_back();
-							stack.push_back(std::to_string(a >= b));
-						}
-						else if (prog.tokens[instr_ptr].text == "#") {
-							printf("%s\n", stack.back().c_str());
-							stack.pop_back();
-						}
-					}
-					else {
-						// Exhaustive handling of operator count
-						Error("Exhaustive handling of operator count in SimulateProgram()", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-						assert(OP_COUNT == 10);
-					}
-				}
-				else if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
-					if (static_cast<int>(Keyword::COUNT) == 7) {
-						if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)) {
-							std::string a = stack.back();
-							stack.pop_back();
-							ctx_stack.push_back(a);
-							if (std::stoi(a) == 0) {
-								// Skip to `else`/`endif` if condition is false
-								instr_ptr = std::stoi(prog.tokens[instr_ptr].data);
-								continue;
-							}
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)) {
-							// If the previous if block (guaranteed as tokens are validated before simulation) evaluated true, skip else block.
-							bool prev_if_condition = std::stoi(ctx_stack.back());
-							ctx_stack.pop_back();
-							if (prev_if_condition == 1) {
-								instr_ptr = std::stoi(prog.tokens[instr_ptr].data);
-								continue;
-							}
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
-					        // Do nothing
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DUP)) {
-							// Duplicate top-most item on stack
-							std::string a = stack.back();
-							stack.pop_back();
-							stack.push_back(a);
-							stack.push_back(a);
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
-							// Do nothing?
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-							std::string a = stack.back();
-							stack.pop_back();
-							ctx_stack.push_back(a);
-							if (std::stoi(a) == 0) {
-								instr_ptr = std::stoi(prog.tokens[instr_ptr].data);
-								continue;
-							}
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDWHILE)) {
-							bool prev_while_condition = std::stoi(ctx_stack.back());
-							ctx_stack.pop_back();
-							if (prev_while_condition == 1) {
-								instr_ptr = std::stoi(prog.tokens[instr_ptr].data);
-								continue;
-							}
-						}
-					}
-					else {
-						Error("Exhaustive handling of keyword count in SimulateProgram()", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-						assert(static_cast<int>(Keyword::COUNT) == 7);
-					}						
-				}
-				instr_ptr++;
-			}
-
-			DoLog("End program simulation", "\n[SIM]", "\n\n");
-
-		}
-		else {
-			Error("Exhaustive handling of TokenType count in SimulateProgram()");
-			assert(static_cast<int>(TokenType::COUNT) == 4);
-		}
-	}
 
 	/* TODO: Convert GenerateAssembly return type from void to bool
 	    It would also be cool if I just used a struct for argument registers.
@@ -549,20 +393,38 @@ namespace Corth {
 										 << "    push rax\n"
 										 << "    push rax\n";
 							}
-							else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
-								asm_file << "    ;; -- while --\n"
-										 << "addr_" << instr_ptr << ":\n";
+							// else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
+							// 	asm_file << "    ;; -- while --\n"
+							// 			 << "addr_" << instr_ptr << ":\n";
+							// }
+							// else if (tok.text == GetKeywordStr(Keyword::DO)) {
+							// 	asm_file << "    ;; -- do --\n"
+							// 			 << "    pop rax\n"
+							// 			 << "    cmp rax, 0\n"
+							// 			 << "    je addr_" << tok.data << "\n";
+							// }
+							// else if (tok.text == GetKeywordStr(Keyword::ENDWHILE)) {
+							// 	asm_file << "    ;; -- endwhile --\n"
+							// 			 << "    jmp addr_" << tok.data << "\n"
+							// 			 << "addr_" << instr_ptr << ":\n";
+							// }
+							else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+								asm_file << "    ;; -- mem --\n"
+										 << "    push mem\n";
+								// Pushes the relative address of allocated memory onto the stack
 							}
-							else if (tok.text == GetKeywordStr(Keyword::DO)) {
-								asm_file << "    ;; -- do --\n"
+							else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+								asm_file << "    ;; -- load byte --\n"
 										 << "    pop rax\n"
-										 << "    cmp rax, 0\n"
-										 << "    je addr_" << tok.data << "\n";
+										 << "    xor rbx, rbx\n"
+										 << "    mov bl, [rax]\n"
+										 << "    push rbx\n";
 							}
-							else if (tok.text == GetKeywordStr(Keyword::ENDWHILE)) {
-								asm_file << "    ;; -- endwhile --\n"
-										 << "    jmp addr_" << tok.data << "\n"
-										 << "addr_" << instr_ptr << ":\n";
+							else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+								asm_file << "    ;; -- store byte --\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    mov [rax], bl\n";
 							}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
@@ -571,12 +433,15 @@ namespace Corth {
 					}
 					instr_ptr++;
 				}
-				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
+				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
 				asm_file << "    mov rdi, 0\n"
 						 << "    call exit\n"
-						 << "\n"
+						 << '\n'
 						 << "    SECTION .data\n"
-						 << "    fmt db '%u', 0x0a, 0\n";
+						 << "    fmt db '%u', 0x0a, 0\n"
+						 << '\n'
+						 << "    SECTION .bss\n"
+						 << "    mem resb " << MEM_CAPACITY << '\n';
 			
 				asm_file.close();
 				}
@@ -740,8 +605,7 @@ namespace Corth {
 										 << "    lea rcx, [rel fmt]\n"
 										 << "    pop rdx\n"
 										 << "    mov rax, 0\n"
-										 << "    call printf\n"
-										 << "    pop rax\n";
+										 << "    call printf\n";
 							}
 						}
 						else {
@@ -752,9 +616,6 @@ namespace Corth {
 					else if (tok.type == TokenType::KEYWORD) {
 						if (static_cast<int>(Keyword::COUNT) == 7) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
-								// Need to pop from stack, compare, and jump to end if it is zero
-								// This means end needs to generate a UNIQUE label to jump to
-								// Get conditional value from stack, if false jump to end label
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
 										 << "    cmp rax, 0\n"
@@ -775,20 +636,39 @@ namespace Corth {
 										 << "    push rax\n"
 										 << "    push rax\n";
 							}
-							else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
-								asm_file << "    ;; -- while --\n"
-										 << "addr_" << instr_ptr << ":\n";
+							// else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
+							// 	asm_file << "    ;; -- while --\n"
+							// 			 << "addr_" << instr_ptr << ":\n";
+							// }
+							// else if (tok.text == GetKeywordStr(Keyword::DO)) {
+							// 	asm_file << "    ;; -- do --\n"
+							// 			 << "    pop rax\n"
+							// 			 << "    cmp rax, 0\n"
+							// 			 << "    je addr_" << tok.data << "\n";
+							// }
+							// else if (tok.text == GetKeywordStr(Keyword::ENDWHILE)) {
+							// 	asm_file << "    ;; -- endwhile --\n"
+							// 			 << "    jmp addr_" << tok.data << "\n"
+							// 			 << "addr_" << instr_ptr << ":\n";
+							// }
+							else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+								// Pushes the relative address of allocated memory onto the stack
+								asm_file << "    ;; -- mem --\n"
+										 << "    push mem\n";
+								
 							}
-							else if (tok.text == GetKeywordStr(Keyword::DO)) {
-								asm_file << "    ;; -- do --\n"
+							else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+								asm_file << "    ;; -- load byte --\n"
 										 << "    pop rax\n"
-										 << "    cmp rax, 0\n"
-										 << "    je addr_" << tok.data << "\n";
+										 << "    xor rbx, rbx\n"
+										 << "    mov bl, [rax]\n"
+										 << "    push rbx\n";
 							}
-							else if (tok.text == GetKeywordStr(Keyword::ENDWHILE)) {
-								asm_file << "    ;; -- endwhile --\n"
-										 << "    jmp addr_" << tok.data << "\n"
-										 << "addr_" << instr_ptr << ":\n";
+							else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+								asm_file << "    ;; -- store byte --\n"
+										 << "    pop rbx\n"
+										 << "    pop rax\n"
+										 << "    mov [rax], bl\n";
 							}
 						}
 						else {
@@ -798,12 +678,15 @@ namespace Corth {
 					}
 					instr_ptr++;
 				}
-				// EXIT GRACEFUL
+				// EXIT GRACEFUL, DECLARE CONSTANTS, ALLOCATE MEMORY
 				asm_file << "    mov rcx, 0\n"
 						 << "    call exit\n"
-						 << "\n\n"
+						 << "\n"
 						 << "    SECTION .data\n"
-						 << "    fmt db '%u', 0x0a, 0\n";
+						 << "    fmt db '%u', 0x0a, 0\n"
+						 << "\n"
+						 << "    SECTION .bss\n"
+						 << "    mem resb " << MEM_CAPACITY << "\n";
 
 				asm_file.close();
 				Log("NASM win64 assembly generated at " + asm_file_path);
@@ -1129,13 +1012,16 @@ namespace Corth {
                         // Skip skippable tokens first for speed
                         if (tok.text == GetKeywordStr(Keyword::ELSE)
                             || tok.text == GetKeywordStr(Keyword::ENDIF)
-                            || tok.text == GetKeywordStr(Keyword::WHILE)
-                            || tok.text == GetKeywordStr(Keyword::ENDWHILE))
+                            // || tok.text == GetKeywordStr(Keyword::WHILE)
+                            // || tok.text == GetKeywordStr(Keyword::ENDWHILE)
+							)
                         {
                             continue;
                         }
                         else if (tok.text == GetKeywordStr(Keyword::IF)
-                            || tok.text == GetKeywordStr(Keyword::DO)) {
+								 // || tok.text == GetKeywordStr(Keyword::DO)
+								 )
+						{
                             // both `if` and `do` will pop from the stack to check the condition to see if it needs to jump or not
                             if (stackSize > 0) {
                                 stackSize--;
@@ -1148,6 +1034,27 @@ namespace Corth {
                             // dup will pop from the stack then push that value back twice
 							if (stackSize > 0) {
 								stackSize++;
+							}
+							else {
+								TokenStackError(tok);
+							}
+						}
+						else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+							stackSize++;
+						}
+						else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+							// `loadb` will pop an address from the stack then push the value at that address
+							if (stackSize > 0) {
+								continue;
+							}
+							else {
+								TokenStackError(tok);
+							}
+						}
+						else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+							// `storeb` will pop a value and an address from the stack
+							if (stackSize > 1) {
+								stackSize -= 2;
 							}
 							else {
 								TokenStackError(tok);
@@ -1197,21 +1104,21 @@ namespace Corth {
 							return false;
 						}
 					}
-					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-						// Recursively validate nested do
-						ValidateBlock(prog, instr_ptr, instr_ptr_max);
-					}
-					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDWHILE)) {
-						if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-							// `An endwhile must set the `do` data field to it's instruction pointer (to jump to upon condition fail)`
-							// It must first set it's own data field to it's jump point, which is the `do`s data field before we change it
-							prog.tokens[instr_ptr].data = prog.tokens[block_instr_ptr].data;
-						    prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
-							return true;
-						}
-						Error("`" + GetKeywordStr(Keyword::ENDWHILE) + "` keyword can only be used within `" + GetKeywordStr(Keyword::DO) + "` blocks", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-                        return false;
-					}
+					// else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
+					// 	// Recursively validate nested do
+					// 	ValidateBlock(prog, instr_ptr, instr_ptr_max);
+					// }
+					// else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDWHILE)) {
+					// 	if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::DO)) {
+					// 		// `An endwhile must set the `do` data field to it's instruction pointer (to jump to upon condition fail)`
+					// 		// It must first set it's own data field to it's jump point, which is the `do`s data field before we change it
+					// 		prog.tokens[instr_ptr].data = prog.tokens[block_instr_ptr].data;
+					// 	    prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
+					// 		return true;
+					// 	}
+					// 	Error("`" + GetKeywordStr(Keyword::ENDWHILE) + "` keyword can only be used within `" + GetKeywordStr(Keyword::DO) + "` blocks", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
+                    //     return false;
+					// }
 					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
 						if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::IF)
 							|| prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::ELSE))
@@ -1243,28 +1150,28 @@ namespace Corth {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
-				if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
-					size_t while_instr_ptr = instr_ptr;
-					// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
-					while (instr_ptr < instr_ptr_max) {
-						if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-							prog.tokens[instr_ptr].data = std::to_string(while_instr_ptr);
-						    ValidateBlock(prog, instr_ptr, instr_ptr_max);
-							// Undo look-ahead
-							instr_ptr--;
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
-								 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)
-								 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF))
-						{
-							Error("Expected `" + GetKeywordStr(Keyword::DO) + "` following `" + GetKeywordStr(Keyword::WHILE) + "`", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-							//assert(false);
-						}
-						instr_ptr++;
-					}
-					// Undo look-ahead for `do`
-					instr_ptr--;
-				}
+				// if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
+				// 	size_t while_instr_ptr = instr_ptr;
+				// 	// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
+				// 	while (instr_ptr < instr_ptr_max) {
+				// 		if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
+				// 			prog.tokens[instr_ptr].data = std::to_string(while_instr_ptr);
+				// 		    ValidateBlock(prog, instr_ptr, instr_ptr_max);
+				// 			// Undo look-ahead
+				// 			instr_ptr--;
+				// 		}
+				// 		else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
+				// 				 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)
+				// 				 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF))
+				// 		{
+				// 			Error("Expected `" + GetKeywordStr(Keyword::DO) + "` following `" + GetKeywordStr(Keyword::WHILE) + "`", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
+				// 			//assert(false);
+				// 		}
+				// 		instr_ptr++;
+				// 	}
+				// 	// Undo look-ahead for `do`
+				// 	instr_ptr--;
+				// }
                 if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF))
 				{
 					ValidateBlock(prog, instr_ptr, instr_ptr_max);
