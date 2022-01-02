@@ -1,7 +1,13 @@
 # Corth
 It's like [Porth](https://gitlab.com/tsoding/porth/-/tree/master/), which is like [Forth](https://www.forth.com/forth/) but written in Python, but written in C++. But I don't actually know for sure since I never programmed in Porth or Forth, I only heard that they are some sort of stack-based programming language. Corth is also stack-based programming language. Which makes it just like Porth, just like Forth, am I rite?
 
-Also, it compiles directly to executable on multiple platforms including Windows and Linux.
+Corth is:
+- [x] A [stack based](https://en.wikipedia.org/wiki/Stack-oriented_programming) programming language
+- [x] [Turing complete](https://en.wikipedia.org/wiki/Turing_completeness) (see [rule 110 example](./examples/rule110.corth))
+- [x] Compileable to an executable, [cross-platform](#cross-platform-anchor)
+- [x] Totally awesome
+
+## Get the latest release [here](https://github.com/LensPlaysGames/Corth/releases)
 
 ###### WARNING: Corth uses the [system](https://en.cppreference.com/w/cpp/utility/program/system) function within C++ to run external commands on your computer. These commands can be affected by user input, so running corth has the potential to run any command on your system if you tell it to, including malicious ones. Be sure to check and double check any commands you see that use the `-a` or `-l` compiler options, as these tell Corth to run a different command than the default. Every command run by Corth is echoed to the standard out with a '[CMD]' prefix.
 
@@ -109,6 +115,9 @@ If you are unfamiliar with ASCII, I'm not quite sure how you got here. It's a wa
 Expected output: \
 <samp>Hello, World!</samp>
 
+### Complications
+For a more complex example, see [rule 110](./examples/rule110.corth)
+
 ### Definitions:
 #### Operators
 An operator will take value(s) from the stack and optionally push some back on.
@@ -178,7 +187,7 @@ You can run Corth with the `-h` or `--help` argument to see all available comman
 
 ##### Warning! -- On Linux, if you specify an output name to Corth with `-o`, it will only affect the generated assembly file name, not the output object or executable file. Look for `a.out` or similar. This may over-write previously-compiled-programs, so be careful! To accurately rename the output executable, pass the corresponding option to your linker with `-add-lo <option>`, for example: `-add-lo "-o my_program"` along with the normal `-o my_program`.
 
-### On Windows
+### <a name="cross-platform-anchor"></a> On Windows
 Open a terminal and navigate to the directory containing Corth.exe. \
 To familiarize yourself with the options of the CCLI, run the following command: \
 `Corth.exe -h` or `Corth.exe --help` \
