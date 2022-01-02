@@ -1011,7 +1011,7 @@ namespace Corth {
 					i++;
 					current = src[i];
 					tok.col_number++;
-					if (isalpha(current)) {tok.text.append(1, current); }
+					if (isalpha(current) || current == '_') {tok.text.append(1, current); }
 					else { break; }
 				}
 
