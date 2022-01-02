@@ -20,7 +20,6 @@
 
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
-	// I may want to switch to an enum with COUNT in the future, but this is okay for now.
 	const size_t OP_COUNT = 10;
 	bool isoperator(char& c){
 		return c == '+'    // addition
@@ -32,10 +31,8 @@ namespace Corth {
 			|| c == '>'    // greater than (or equal) comparison
 			|| c == '#';   // dump (pop + print)
 	}
-	
-	// Corth state (it may be a simple state machine, but it still is one :D)
+
 	const unsigned int MEM_CAPACITY = 720000; // Allocate 720000 kilobytes to the program by default. This is accessible using the `mem` keyword
-	
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
@@ -73,6 +70,7 @@ namespace Corth {
 		WHILE,
 		ENDWHILE,
 		DUMP,
+		DUMP_C,
 		DROP,
 		SWAP,
 		OVER,
@@ -80,7 +78,7 @@ namespace Corth {
 	};
 
 	bool iskeyword(std::string word) {
-		assert(static_cast<int>(Keyword::COUNT) == 15);
+		assert(static_cast<int>(Keyword::COUNT) == 16);
 		if (word == "if"
 			|| word == "else"
 			|| word == "endif"
@@ -93,6 +91,7 @@ namespace Corth {
 			|| word == "while"
 			|| word == "endwhile"
 			|| word == "dump"
+			|| word == "dump_c"
 			|| word == "drop"
 			|| word == "swap"
 			|| word == "over")
@@ -107,7 +106,7 @@ namespace Corth {
 	// This function outlines the corth source input and the output it will generate.
 	// case <output>: { return "<input>"; }
 	std::string GetKeywordStr(Keyword word) {
-		assert(static_cast<int>(Keyword::COUNT) == 15);
+		assert(static_cast<int>(Keyword::COUNT) == 16);
 		switch (word) {
 		case Keyword::IF:       { return "if";       }
         case Keyword::ELSE:     { return "else";     }
@@ -121,6 +120,7 @@ namespace Corth {
 		case Keyword::WHILE:    { return "while";    }
 		case Keyword::ENDWHILE: { return "endwhile"; }
 		case Keyword::DUMP:     { return "dump";     }
+		case Keyword::DUMP_C:   { return "dump_c";   }	
 		case Keyword::DROP:     { return "drop";     }
 		case Keyword::SWAP:     { return "swap";     }
 		case Keyword::OVER:     { return "over";     }
@@ -397,7 +397,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 15) {
+						if (static_cast<int>(Keyword::COUNT) == 16) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 							    asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -468,6 +468,13 @@ namespace Corth {
 										 << "    mov rax, 0\n"
 										 << "    call printf\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
+								asm_file << "    ;; -- dump --\n"
+										 << "    lea rdi, [rel fmt_char]\n"
+										 << "    pop rsi\n"
+										 << "    mov rax, 0\n"
+										 << "    call printf\n";
+							}
 							else if (tok.text == GetKeywordStr(Keyword::DROP)) {
 								asm_file << "    ;; -- drop --\n"
 										 << "    pop rax\n";
@@ -490,7 +497,7 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(static_cast<int>(Keyword::COUNT) == 15);
+							assert(static_cast<int>(Keyword::COUNT) == 16);
 						}
 					}
 					instr_ptr++;
@@ -500,7 +507,8 @@ namespace Corth {
 						 << "    call exit\n"
 						 << '\n'
 						 << "    SECTION .data\n"
-						 << "    fmt db '%u', 0x0a, 0\n"
+						 << "    fmt db '%u', 10, 0\n"
+						 << "    fmt_char db '%c', 0\n"
 						 << '\n'
 						 << "    SECTION .bss\n"
 						 << "    mem resb " << MEM_CAPACITY << '\n';
@@ -544,7 +552,8 @@ namespace Corth {
 			asm_file << "    ;; -- TODO: graceful exit --\n"
 					 << "\n\n"
 					 << "    SECTION .data\n"
-					 << "    fmt db '%u', 0x0a, 0\n";
+					 << "    fmt db '%u', 10, 0\n"
+					 << "    fmt_char db '%c', 0\n";
 		}
         else {
 			Error("Could not open file for writing. Does directory exist?");
@@ -685,7 +694,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 15) {
+						if (static_cast<int>(Keyword::COUNT) == 16) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -759,6 +768,15 @@ namespace Corth {
 										 << "    call printf\n"
 										 << "    add rsp, 32\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
+								asm_file << "    ;; -- dump --\n"
+										 << "    lea rcx, [rel fmt_char]\n"
+										 << "    pop rdx\n"
+										 << "    mov rax, 0\n"
+										 << "    sub rsp, 32\n"
+										 << "    call printf\n"
+										 << "    add rsp, 32\n";
+							}
 						    else if (tok.text == GetKeywordStr(Keyword::DROP)) {
 								asm_file << "    ;; -- drop --\n"
 										 << "    pop rax\n";
@@ -781,7 +799,7 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
-							assert(static_cast<int>(Keyword::COUNT) == 15);
+							assert(static_cast<int>(Keyword::COUNT) == 16);
 						}
 					}
 					instr_ptr++;
@@ -791,7 +809,8 @@ namespace Corth {
 						 << "    call exit\n"
 						 << "\n"
 						 << "    SECTION .data\n"
-						 << "    fmt db '%u', 0x0a, 0\n"
+						 << "    fmt db '%u', 10, 0\n"
+						 << "    fmt_char db '%c', 0\n"
 						 << "\n"
 						 << "    SECTION .bss\n"
 						 << "    mem resb " << MEM_CAPACITY << "\n";
@@ -1113,7 +1132,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    if (static_cast<int>(Keyword::COUNT) == 15) {
+                    if (static_cast<int>(Keyword::COUNT) == 16) {
                         // Skip skippable tokens first for speed
                         if (tok.text == GetKeywordStr(Keyword::ELSE)
                             || tok.text == GetKeywordStr(Keyword::ENDIF)
@@ -1178,9 +1197,10 @@ namespace Corth {
 							}
 						}
 						else if (tok.text == GetKeywordStr(Keyword::DUMP)
+								 || tok.text == GetKeywordStr(Keyword::DUMP_C)
 								 || tok.text == GetKeywordStr(Keyword::DROP))
 						{
-							// both `dump` and `drop` will take an item off the stack without returning anything
+							// both `dump`, `dump_c`, and `drop` will take an item off the stack without returning anything
 							// {a} -> { }
 							if (stackSize > 0) {
 								stackSize--;
@@ -1213,7 +1233,7 @@ namespace Corth {
 					}
 					else {
 						Error("Exhaustive handling of keyword count in ValidateTokens_Stack()");
-						assert(static_cast<int>(Keyword::COUNT) == 15);
+						assert(static_cast<int>(Keyword::COUNT) == 16);
 					}
 				}
 			}
@@ -1232,7 +1252,7 @@ namespace Corth {
 	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
 		size_t block_instr_ptr = instr_ptr;
 
-		if (static_cast<int>(Keyword::COUNT) == 15) {
+		if (static_cast<int>(Keyword::COUNT) == 16) {
 			// Handle while block
 			if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
 				// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
@@ -1306,7 +1326,7 @@ namespace Corth {
 		}
         else {
             Error("Exhaustive handling of keyword count in ValidateBlock(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-            assert(static_cast<int>(Keyword::COUNT) == 15);
+            assert(static_cast<int>(Keyword::COUNT) == 16);
         }	
 		
 		return false;
@@ -1316,7 +1336,7 @@ namespace Corth {
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		if (static_cast<int>(Keyword::COUNT) == 15) {
+		if (static_cast<int>(Keyword::COUNT) == 16) {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
@@ -1332,7 +1352,7 @@ namespace Corth {
 		}
 		else {
 			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-			assert(static_cast<int>(Keyword::COUNT) == 15);
+			assert(static_cast<int>(Keyword::COUNT) == 16);
 		}
 	}
 	
