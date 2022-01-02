@@ -65,6 +65,7 @@ namespace Corth {
 		ELSE,
 		ENDIF,
 		DUP,
+		TWODUP,
 		MEM,
 		LOADB,
 		STOREB,
@@ -72,22 +73,29 @@ namespace Corth {
 		WHILE,
 		ENDWHILE,
 		DUMP,
+		DROP,
+		SWAP,
+		OVER,
 		COUNT
 	};
 
 	bool iskeyword(std::string word) {
-		assert(static_cast<int>(Keyword::COUNT) == 11);
+		assert(static_cast<int>(Keyword::COUNT) == 15);
 		if (word == "if"
 			|| word == "else"
 			|| word == "endif"
 			|| word == "dup"
+			|| word == "twodup"
 			|| word == "mem"
 			|| word == "loadb"
 			|| word == "storeb"
 			|| word == "do"
 			|| word == "while"
 			|| word == "endwhile"
-			|| word == "dump")
+			|| word == "dump"
+			|| word == "drop"
+			|| word == "swap"
+			|| word == "over")
 		{
 			return true;
 		}
@@ -99,12 +107,13 @@ namespace Corth {
 	// This function outlines the corth source input and the output it will generate.
 	// case <output>: { return "<input>"; }
 	std::string GetKeywordStr(Keyword word) {
-		assert(static_cast<int>(Keyword::COUNT) == 11);
+		assert(static_cast<int>(Keyword::COUNT) == 15);
 		switch (word) {
 		case Keyword::IF:       { return "if";       }
         case Keyword::ELSE:     { return "else";     }
         case Keyword::ENDIF:    { return "endif";    }
 		case Keyword::DUP:      { return "dup";      }
+		case Keyword::TWODUP:   { return "twodup";     }
 		case Keyword::MEM:      { return "mem";      }
 		case Keyword::LOADB:    { return "loadb";    }
 		case Keyword::STOREB:   { return "storeb";   }
@@ -112,6 +121,9 @@ namespace Corth {
 		case Keyword::WHILE:    { return "while";    }
 		case Keyword::ENDWHILE: { return "endwhile"; }
 		case Keyword::DUMP:     { return "dump";     }
+		case Keyword::DROP:     { return "drop";     }
+		case Keyword::SWAP:     { return "swap";     }
+		case Keyword::OVER:     { return "over";     }
 		default:
 			assert(false);
 			return "ERROR IN GetKeywordStr: UNREACHABLE";
@@ -385,7 +397,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 11) {
+						if (static_cast<int>(Keyword::COUNT) == 15) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 							    asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -405,6 +417,15 @@ namespace Corth {
 								asm_file << "    ;; -- dup --\n"
 										 << "    pop rax\n"
 										 << "    push rax\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+								asm_file << "    ;; -- twodup --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    push rbx\n"
+										 << "    push rax\n"
+										 << "    push rbx\n"
 										 << "    push rax\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
@@ -447,10 +468,29 @@ namespace Corth {
 										 << "    mov rax, 0\n"
 										 << "    call printf\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::DROP)) {
+								asm_file << "    ;; -- drop --\n"
+										 << "    pop rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+								asm_file << "    ;; -- swap --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    push rax\n"
+										 << "    push rbx\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+								asm_file << "    ;; -- over --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    push rbx\n"
+										 << "    push rax\n"
+										 << "    push rbx\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(static_cast<int>(Keyword::COUNT) == 11);
+							assert(static_cast<int>(Keyword::COUNT) == 15);
 						}
 					}
 					instr_ptr++;
@@ -645,7 +685,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 11) {
+						if (static_cast<int>(Keyword::COUNT) == 15) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -665,6 +705,15 @@ namespace Corth {
 								asm_file << "    ;; -- dup --\n"
 										 << "    pop rax\n"
 										 << "    push rax\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+								asm_file << "    ;; -- twodup --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    push rbx\n"
+										 << "    push rax\n"
+										 << "    push rbx\n"
 										 << "    push rax\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
@@ -710,10 +759,29 @@ namespace Corth {
 										 << "    call printf\n"
 										 << "    add rsp, 32\n";
 							}
+						    else if (tok.text == GetKeywordStr(Keyword::DROP)) {
+								asm_file << "    ;; -- drop --\n"
+										 << "    pop rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+								asm_file << "    ;; -- swap --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    push rax\n"
+										 << "    push rbx\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+								asm_file << "    ;; -- over --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    push rbx\n"
+										 << "    push rax\n"
+										 << "    push rbx\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
-							assert(static_cast<int>(Keyword::COUNT) == 11);
+							assert(static_cast<int>(Keyword::COUNT) == 15);
 						}
 					}
 					instr_ptr++;
@@ -1045,7 +1113,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    if (static_cast<int>(Keyword::COUNT) == 11) {
+                    if (static_cast<int>(Keyword::COUNT) == 15) {
                         // Skip skippable tokens first for speed
                         if (tok.text == GetKeywordStr(Keyword::ELSE)
                             || tok.text == GetKeywordStr(Keyword::ENDIF)
@@ -1058,6 +1126,7 @@ namespace Corth {
 								 || tok.text == GetKeywordStr(Keyword::DO))
 						{
                             // both `if` and `do` will pop from the stack to check the condition to see if it needs to jump or not
+							// {<condition>} -> { }
                             if (stackSize > 0) {
                                 stackSize--;
                             }
@@ -1074,11 +1143,23 @@ namespace Corth {
 								TokenStackError(tok);
 							}
 						}
+						else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+                            // dup will pop from the stack then push that value back twice
+							if (stackSize > 1) {
+								stackSize += 2;
+							}
+							else {
+								TokenStackError(tok);
+							}
+						}
 						else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+							// `mem` will push the address of usable memory onto the stack
+							// { } -> {<memory address>}
 							stackSize++;
 						}
 						else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
 							// `loadb` will pop an address from the stack then push the value at that address
+							// {<address>} -> {<value>}
 							if (stackSize > 0) {
 								continue;
 							}
@@ -1088,6 +1169,7 @@ namespace Corth {
 						}
 						else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
 							// `storeb` will pop a value and an address from the stack
+							// {<address>, <value>} -> { }
 							if (stackSize > 1) {
 								stackSize -= 2;
 							}
@@ -1095,7 +1177,11 @@ namespace Corth {
 								TokenStackError(tok);
 							}
 						}
-						else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+						else if (tok.text == GetKeywordStr(Keyword::DUMP)
+								 || tok.text == GetKeywordStr(Keyword::DROP))
+						{
+							// both `dump` and `drop` will take an item off the stack without returning anything
+							// {a} -> { }
 							if (stackSize > 0) {
 								stackSize--;
 							}
@@ -1103,10 +1189,31 @@ namespace Corth {
 								TokenStackError(tok);
 							}
 						}
+						else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+							// `swap` will pop two values but also push two values, net zero.
+							if (stackSize > 1) {
+								continue;
+							}
+							else
+							{
+								TokenStackError(tok);
+							}
+						}
+						else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+							// Over will pop two values but push three values, net one
+							// {a, b} -> {a, b, a}
+							if (stackSize > 1) {
+								stackSize++;
+							}
+							else
+							{
+								TokenStackError(tok);
+							}
+						}
 					}
 					else {
 						Error("Exhaustive handling of keyword count in ValidateTokens_Stack()");
-						assert(static_cast<int>(Keyword::COUNT) == 11);
+						assert(static_cast<int>(Keyword::COUNT) == 15);
 					}
 				}
 			}
@@ -1122,11 +1229,33 @@ namespace Corth {
 	}
 
 	bool ValidateBlock(Program& prog, size_t& instr_ptr, size_t instr_ptr_max) {
-	    // Assume that current token at instruction pointer is an `if`, `else`, or `do`
+	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
 		size_t block_instr_ptr = instr_ptr;
 
-		// Look-ahead for an else block or an endif
-		if (static_cast<int>(Keyword::COUNT) == 11) {
+		if (static_cast<int>(Keyword::COUNT) == 15) {
+			// Handle while block
+			if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
+				// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
+				while (instr_ptr < instr_ptr_max) {
+					if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
+						prog.tokens[instr_ptr].data = std::to_string(block_instr_ptr);
+						return ValidateBlock(prog, instr_ptr, instr_ptr_max);
+						// Undo look-ahead
+						instr_ptr--;
+					}
+					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
+							 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)
+							 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)
+							 || instr_ptr + 1 == instr_ptr_max)
+					{
+						Error("Expected `" + GetKeywordStr(Keyword::DO) + "` following `" + GetKeywordStr(Keyword::WHILE) + "`", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
+						return false;
+					}
+					instr_ptr++;
+				}
+				
+			}
+			
 			while (instr_ptr < instr_ptr_max) {
 				instr_ptr++;
 				
@@ -1147,8 +1276,8 @@ namespace Corth {
 							return false;
 						}
 					}
-					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-						// Recursively validate nested do
+					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
+						// Recursively validate nested while
 						ValidateBlock(prog, instr_ptr, instr_ptr_max);
 					}
 					else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDWHILE)) {
@@ -1177,7 +1306,7 @@ namespace Corth {
 		}
         else {
             Error("Exhaustive handling of keyword count in ValidateBlock(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-            assert(static_cast<int>(Keyword::COUNT) == 11);
+            assert(static_cast<int>(Keyword::COUNT) == 15);
         }	
 		
 		return false;
@@ -1187,35 +1316,12 @@ namespace Corth {
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		// This seems like too much nesting, but I can't seem to wrap my head around a different way of doing it.
-		// If you would, kindly make a pull request fixing this stupidity and I will gladly accept it and merge it if it works :)
-		if (static_cast<int>(Keyword::COUNT) == 11) {
+		if (static_cast<int>(Keyword::COUNT) == 15) {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
-				if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
-					size_t while_instr_ptr = instr_ptr;
-					// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
-					while (instr_ptr < instr_ptr_max) {
-						if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-							prog.tokens[instr_ptr].data = std::to_string(while_instr_ptr);
-						    ValidateBlock(prog, instr_ptr, instr_ptr_max);
-							// Undo look-ahead
-							instr_ptr--;
-						}
-						else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
-								 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)
-								 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF))
-						{
-							Error("Expected `" + GetKeywordStr(Keyword::DO) + "` following `" + GetKeywordStr(Keyword::WHILE) + "`", prog.tokens[instr_ptr].line_number, prog.tokens[instr_ptr].col_number);
-							//assert(false);
-						}
-						instr_ptr++;
-					}
-					// Undo look-ahead for `do`
-					instr_ptr--;
-				}
-                if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF))
+                if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
+					|| prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE))
 				{
 					ValidateBlock(prog, instr_ptr, instr_ptr_max);
 					// Undo look-ahead
@@ -1226,7 +1332,7 @@ namespace Corth {
 		}
 		else {
 			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-			assert(static_cast<int>(Keyword::COUNT) == 11);
+			assert(static_cast<int>(Keyword::COUNT) == 15);
 		}
 	}
 	
@@ -1238,7 +1344,7 @@ namespace Corth {
 		ValidateTokens_Blocks(prog);
 
 		// Remove all un-neccessary tokens
-		std::remove_if(prog.tokens.begin(), prog.tokens.end(), RemovableToken);
+	    std::remove_if(prog.tokens.begin(), prog.tokens.end(), RemovableToken);
 
 		if (verbose_logging) { Log("Tokens validated"); }
 	}
@@ -1382,8 +1488,6 @@ int main(int argc, char** argv) {
 		
 						printf("[CMD]: `%s`\n", cmd_link.c_str());
 						system(cmd_link.c_str());
-		
-						printf("%s\n", "Executable built successfully!");
 					}
 					else {
 						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
@@ -1419,8 +1523,6 @@ int main(int argc, char** argv) {
 
 						printf("[CMD]: `%s`\n", cmd_link.c_str());
 						system(cmd_link.c_str());
-
-						printf("%s\n", "Executable built successfully!");
 					}
 					else {
 						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");

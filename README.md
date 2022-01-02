@@ -101,49 +101,48 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |    `<`   | Less-than            |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.                  |
 |   `>=`   | Greater-than-or-equal|    2 |    1 | Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not.   |
 |   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.     |
-|<code style="color:purple">dup</code>| Duplicate|1|2| Pops one value off the stack, then pushes it back on twice.                                              |
+|  `dup`   | Duplicate|1|2| Pops one value off the stack, then pushes it back on twice.                                              |
 
 #### Keywords
 | Keyword  | Meaning | Pop  | Push | Description                                                                                                                |
 |:--------:|:--------|-----:|-----:|:---------------------------------------------------------------------------------------------------------------------------|
-|`if`      |Conditional Branch   |1|0| Pops a value off the stack, then jumps to `else`/`endif`, unless popped value is true.                                   |
+|`if`      |Conditional Branch   |1|0| `{<condition>} -> { }` Pops a value off the stack, then jumps to `else`/`endif` only if popped value is equal to zero.   |
 |`else`    |Conditional Branch   |0|0| Only used between `if` and `endif` keywords to provide an alternate branch; what will be ran if `if` condition is false. |
 |`endif`   |Block Ending Symbol  |0|0| Required block-ending-symbol for `if` keyword.                                                                           |
-|`dup`     |Operator             |1|2| Pops one value off the stack, then pushes it back twice.                                                                 |
-|`mem`     |Operator             |0|1| Pushes the address of the usable memory in Corth. Hard-coded to 720kb; there will be a CCLI option in the future. To access any address within the memory, simply add the byte offset to the address, like so `mem <byte offset> +`|
-|`do`      |Operator             |1|0| Pops one value off the stack, then jumps just past `endwhile` if value is zero.                                          |
-|`while`   |Operator             |0|0| Generates a label for `endwhile` to jump to.                                                                             |
-|`endwhile`|Operator             |0|0| Generates a label for `do` to jump to upon false condition.                                                              |
+|`dup`     |Duplicate            |1|2| `{a} -> {a, a}` Pops one value off the stack, then pushes it back twice.                                                 |
+|`twodup`  |Duplicate Two        |2|4| `{a, b} -> {a, b, a, b}` Pops two values off the stack, then pushes them both back on, twice.                            |
+|`mem`     |Memory Access        |0|1| `{ } -> {<memory address>}` Pushes the address of the usable memory in Corth. Hard-coded to 720kb; there will be a CCLI option in the future. To access any address within the memory, simply add the byte offset to the address, like so `mem <byte offset> +`, then use it with the memory access keywords that accept memory addresses as arguments.|
+|`storeb`  |Store Byte           |2|0| `{<memory address>, <value>} -> { }` Pops a value and a memory address off the stack, then stores the first byte of that value at that memory address.|
+|`loadb`   |Load Byte            |1|1| `{<memory address>} -> {<value>}` Pops a memory address off the stack, then pushes a one byte value read from the memory address on to the stack.|
+|`do`      |Conditional Jump     |1|0| `{<condition>} -> { }` Pops one value off the stack, then jumps just past `endwhile` if value is zero.                   |
+|`while`   |Block Starting Symbol|0|0| Generates a label for `endwhile` to jump to.                                                                             |
+|`endwhile`|Block Ending Symbol  |0|0| Generates a label for `do` to jump to upon false condition.                                                              |
+|`drop`    |Stack Manipulation   |1|0|    `{a} -> { }` Drops the top-most item off the stack, leaving no reference to it. Use this to delete unused stack-items.|
+|`swap`    |Stack Manipulation   |2|2| `{a, b} -> {b, a}` Pops two values off the stack, then pushes them back in reverse order.                                |
+|`over`    |Stack Manipulation   |2|3| `{a, b} -> {a, b, a}` Pushes the stack item below the top on to the top.                                                 |
 
 ---
 
 ## How to build a Corth program
 So, you've written a program, what do you do now that you want to run it?
 
-The easiest thing to do is to simulate the program. \
-To do this, simply use the `-sim` or `--simulate` command line argument i.e. \
-Windows: `Path/To/Corth.exe -sim test.corth` \
-Linux: `./Path/To/Corth -sim test.corth`
-
 If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions down below).
-
-If you would like to compile a corth program into an executable file, there are a few more steps.
 
 First, you must ensure that you have [NASM](https://www.nasm.us/) installed somewhere on your machine. \
 On Windows you can [download the installer from the official website](https://www.nasm.us/) \
 On Mac, you can [download the necessary binaries from the official website][https://www.nasm.us/) \
 On Linux, run the following CMD: `apt install nasm` \
-NASM is the assembler that this project is built for. Eventually, different types of assembly will be able to be generated. \
-If you are on Windows and you didn't install it in the default directory the installer prompted, keep in mind the path to the 'nasm' executable file itself. You will need it later for the `-a` or `--assembler-path` command line option. \
-The only assembly syntax supported right now is NASM, but that will change in the future (i.e. [GAS](https://en.wikipedia.org/wiki/GNU_Assembler)).
+The only assembly syntax supported right now is NASM, but that will change in the future (i.e. [GAS](https://en.wikipedia.org/wiki/GNU_Assembler)). \
+If you are on Windows and you didn't install NASM in the default directory the installer prompted, keep in mind the path to the 'nasm' executable file itself. You will need it later for the `-a` or `--assembler-path` command line option.
 
 Second, you must ensure that you have some sort of linker on your machine that can link against the standard C runtime of whatever platform you're on. \
 For example, this might be [GoLink](http://godevtool.com/) on Windows. GoLink is easy to use and fast to setup; simply extract it and it's ready. \
 On Linux, this is most likely `ld`, the GNU linker; it comes with most linux distros by default.
 
 Once all the pre-requisites are installed, now comes time to use the CCLI, or Corth Command Line Interface. \
-Ideally, it will be very similar to the simulate command up above, but sometimes quite a few arguments need to be specified. \
-To avoid this as much as possible, Corth sets default values based on your operating system.
+To avoid headache as much as possible, Corth sets default values based on your operating system. \
+If you get any errors, there are a multitude of command line options to help rectify the situation. \
+You can run Corth with the `-h` or `--help` argument to see all available command line flags and options.
 
 ##### Warning! -- On Linux, if you specify an output name to Corth with `-o`, it will only affect the generated assembly file name, not the output object or executable file. Look for `a.out` or similar. This may over-write previously-compiled-programs, so be careful! To accurately rename the output executable, pass the corresponding option to your linker with `-add-lo <option>`. \
 For example: `-add-lo "-o my_program"`
