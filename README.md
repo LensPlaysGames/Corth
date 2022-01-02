@@ -11,6 +11,7 @@ This means that in order to do any operation, a value must be pushed onto the st
 Think of this as a literal stack of objects. \
 Likely, the operation will take it's arguments from the top of the stack, or `pop` from the stack, and sometimes it will return a value or two back onto it.
 
+### A simple example
 Take a look at this example in Corth: \
 `34 35 + #` \
 It is a basic Corth program that will add two numbers together, and then display the sum to the console.
@@ -34,12 +35,13 @@ Stack breakdown by step:
 
 #### Best practices in Corth indicate that the stack should be empty by the end of the program.
 
+### Conditional Branching
 Let's look at a slightly more complicated example program: \
-<code>500 80 - 420 = <span style="color:purple">if</span></code> \
+<code>500 80 - 420 = if</code> \
 <code>&nbsp;&nbsp;69 #</code> \
-<code style="color:purple">else</code> \
+<code>else</code> \
 <code>&nbsp;&nbsp;420 #</code> \
-<code style="color:purple">endif</code>
+<code>endif</code>
 
 This program should first evaulate `500 - 80`, then compare if that sum is equal to `420`. If true, print <samp>69</samp>. If false, print <samp>420</samp>. \
 Expected output: \
@@ -51,18 +53,41 @@ Let's break down how it works piece-by-piece:
 |    1 |`500 80 -` | Push two values on to the stack, subtract them, then push the result on to the stack.                                      |
 |    4 |`420` | Push `420` onto the stack                                                                                                       |
 |    5 |  `=` | Use the equality comparison operator; it pops two values off the stack, compares them, then pushes back a `1` if they are equal or a `0` if they aren't.|
-|    6 |<code style="color:purple">if</code>| Pop the condition just pushed onto the stack, jump to <code style="color:purple">else</code>/<code style="color:purple">endif</code> if it is false, otherwise, like in this case, fall-through to next instruction.|
+|    6 | `if` | Pop the condition just pushed onto the stack, jump to `else`/`endif` if it is false, otherwise, like in this case, fall-through to next instruction.|
 |    7 |`69 #`| Push a value onto the stack, then dump it to console output.                                                                    |
-|    8 |<code style="color:purple">else</code>| Label to jump to if <code style="color:purple">if</code> condition is false. Label to jump over to <code style="color:purple">endif</code> if <code style="color:purple">if</code> condition is true.|
-|    9 |`420 #`| This would push a value onto the stack, then dump it to console output, however it will be jumped over due to the <code style="color:purple">if</code> condition evaluating to true.|
-|   10 |<code style="color:purple">endif</code>| Label to jump to if <code style="color:purple">if</code> condition is false and no <code style="color:purple">else</code> label is present or if <code style="color:purple">if</code> condition is true and an <code style="color:purple">else</code> label is present.|
+|    8 |`else`| Label to jump to if `if` condition is false. Label to jump over to `endif` if `if` condition is true.                           |
+|    9 |`420 #`| This would push a value onto the stack, then dump it to console output, however it will be jumped over due to the `if` condition evaluating to true.|
+|   10 |`endif`| Label to jump to if `if` condition is false and no `else` label is present or if `if` condition is true and an `else` label is present.|
+
+### Loops
+Corth now fully supports loops! Check out the following simple example: \
+<code>1 while dup 30 <= do</code> \
+<code>&nbsp;&nbsp;dup #</code> \
+<code>&nbsp;&nbsp;1 +</code> \
+<code>endwhile</code>
+
+This program will print every whole number from `1` to `30`, each being on a new-line.
+
+Let's break down how it works:
+| Step | Code | Description                                                                                                                     |
+|------|------|---------------------------------------------------------------------------------------------------------------------------------|
+|    1 |  `1` | Simply push a one onto the stack.                                                                                               |
+|    2 |`while`| Generate an address to jump to upon reaching endwhile.                                                                         |
+|    3 |`dup 30 <=`| Push a boolean condition on the stack comparing whether the last item on the stack (duplicated) is less than or equal to `30`.|
+|    4 | `do` | Pop the condition just pushed onto the stack, jump just past `endwhile` (step 7) if it is zero, otherwise, like in this case, fall-through to next instruction.|
+|    5 |`dup #`| Duplicate the top-most value onto the stack, then dump the duplicate to console output. This prints the current loop counter, as that is what's on the stack.|
+|    6 |`1 +`| Add 1 to top-most value on the stack. This increments the loop counter.                                                          |
+|    7 |`endwhile`| Upon reaching, jump back to `while` (step 2) and continue execution from there.                                             |
+
+It is known that this program will trigger a stack validator warning, telling us that the stack at the end of the program is not empty. \
+With programs as simple as these, it's okay to do, however best practices indicate that the stack should be empty by the end of the program.
 
 ### Definitions:
 #### Operators
 An operator will take value(s) from the stack and optionally push some back on.
 The amount of values removed/added from/to the stack by a given operator can be seen by the 'pop' and 'push' amount in the following table.
 
-| Operator | Meaning              |  Pop | Push | Description                                                                                                   |
+| Operator | Meaning              | Pop  | Push | Description                                                                                                   |
 |:--------:|:---------------------|-----:|-----:|:--------------------------------------------------------------------------------------------------------------|
 |    `#`   | Dump                 |    1 |    0 | Humankind's best friend; pops a value off the stack, then prints that to the console.                         |
 |    `+`   | Addition             |    2 |    1 | Pops two values off the stack, then pushes the sum.                                                           |
@@ -77,12 +102,15 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |<code style="color:purple">dup</code>| Duplicate|1|2| Pops one value off the stack, then pushes it back on twice.                                              |
 
 #### Keywords
-| Keyword | Meaning |  Pop | Push | Description |
-|:-------:|:--------|-----:|-----:|:------------|
-|<code style="color:purple">if</code>|Conditional Branch|1|0|Pops a value off the stack, then jumps to <code style="color:purple">else</code>/<code style="color:purple">endif</code>, unless popped value is true.|
-|<code style="color:purple">else</code>|Conditional Branch|0|0|Only used between <code style="color:purple">if</code> and <code style="color:purple">endif</code> keywords to provide an alternate branch; what will be ran if <code style="color:purple">if</code> condition is false.|
-|<code style="color:purple">endif</code>|Block Ending Symbol|0|0|Required block-ending-symbol for <code style="color:purple">if</code> keyword.|
-|<code style="color:purple">dup</code>|Operator|0|0|Pops one value off the stack, then pushes it back twice.|
+| Keyword  | Meaning | Pop  | Push | Description                                                                                                                |
+|:--------:|:--------|-----:|-----:|:---------------------------------------------------------------------------------------------------------------------------|
+|`if`      |Conditional Branch   |1|0| Pops a value off the stack, then jumps to `else`/`endif`, unless popped value is true.                                   |
+|`else`    |Conditional Branch   |0|0| Only used between `if` and `endif` keywords to provide an alternate branch; what will be ran if `if` condition is false. |
+|`endif`   |Block Ending Symbol  |0|0| Required block-ending-symbol for `if` keyword.                                                                           |
+|`dup`     |Operator             |1|2| Pops one value off the stack, then pushes it back twice.                                                                 |
+|`do`      |Operator             |1|0| Pops one value off the stack, then jumps just past `endwhile` if value is zero.                                          |
+|`while`   |Operator             |0|0| Generates a label for `endwhile` to jump to.                                                                             |
+|`endwhile`|Operator             |0|0| Generates a label for `do` to jump to upon false condition.                                                              |
 
 ---
 
