@@ -42,7 +42,7 @@
 
 (eval-and-compile
   (defconst corth-keywords
-    '("if" "else" "endif")))
+    '("if" "else" "endif" "dup" "do" "while" "endwhile")))
 
 (defconst corth-highlights
   `((,(regexp-opt corth-keywords 'symbols) . font-lock-keyword-face)))

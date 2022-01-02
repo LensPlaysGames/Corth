@@ -1,7 +1,9 @@
 # Corth
 It's like [Porth](https://gitlab.com/tsoding/porth/-/tree/master/), which is like [Forth](https://www.forth.com/forth/) but written in Python, but written in C++. But I don't actually know for sure since I never programmed in Porth or Forth, I only heard that they are some sort of stack-based programming language. Corth is also stack-based programming language. Which makes it just like Porth, just like Forth, am I rite?
 
-Also, it compiles directly to executable on multiple platforms (not MacOS (yet)).
+Also, it compiles directly to executable on multiple platforms including Windows and Linux.
+
+###### WARNING: Corth uses the [system](https://en.cppreference.com/w/cpp/utility/program/system) function within C++ to run external commands on your computer. These commands can be affected by user input, so running corth has the potential to run any command on your system if you tell it to, including malicious ones. Be sure to check and double check any commands you see that use the `-a` or `-l` compiler options, as these tell Corth to run a different command than the default. Every command run by Corth is echoed to the standard out with a '[CMD]' prefix.
 
 ---
 

@@ -13,6 +13,11 @@
 #else
 #endif
 
+// TODO:
+// Change assembly generation to a lookup-table based on token
+// Make MEM_CAPACITY accessible through a CCLI option
+// At least try to have a warning when accessing bad memory (above memory capacity)
+
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
 	// I may want to switch to an enum with COUNT in the future, but this is okay for now.
@@ -66,11 +71,12 @@ namespace Corth {
 		DO,
 		WHILE,
 		ENDWHILE,
+		DUMP,
 		COUNT
 	};
 
 	bool iskeyword(std::string word) {
-		assert(static_cast<int>(Keyword::COUNT) == 10);
+		assert(static_cast<int>(Keyword::COUNT) == 11);
 		if (word == "if"
 			|| word == "else"
 			|| word == "endif"
@@ -80,7 +86,8 @@ namespace Corth {
 			|| word == "storeb"
 			|| word == "do"
 			|| word == "while"
-			|| word == "endwhile")
+			|| word == "endwhile"
+			|| word == "dump")
 		{
 			return true;
 		}
@@ -92,7 +99,7 @@ namespace Corth {
 	// This function outlines the corth source input and the output it will generate.
 	// case <output>: { return "<input>"; }
 	std::string GetKeywordStr(Keyword word) {
-		assert(static_cast<int>(Keyword::COUNT) == 10);
+		assert(static_cast<int>(Keyword::COUNT) == 11);
 		switch (word) {
 		case Keyword::IF:       { return "if";       }
         case Keyword::ELSE:     { return "else";     }
@@ -104,6 +111,7 @@ namespace Corth {
 		case Keyword::DO:       { return "do";       }
 		case Keyword::WHILE:    { return "while";    }
 		case Keyword::ENDWHILE: { return "endwhile"; }
+		case Keyword::DUMP:     { return "dump";     }
 		default:
 			assert(false);
 			return "ERROR IN GetKeywordStr: UNREACHABLE";
@@ -377,7 +385,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 10) {
+						if (static_cast<int>(Keyword::COUNT) == 11) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 							    asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -432,10 +440,17 @@ namespace Corth {
 										 << "    pop rax\n"
 										 << "    mov [rax], bl\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+								asm_file << "    ;; -- dump --\n"
+										 << "    lea rdi, [rel fmt]\n"
+										 << "    pop rsi\n"
+										 << "    mov rax, 0\n"
+										 << "    call printf\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(static_cast<int>(Keyword::COUNT) == 10);
+							assert(static_cast<int>(Keyword::COUNT) == 11);
 						}
 					}
 					instr_ptr++;
@@ -480,7 +495,8 @@ namespace Corth {
 
 			// TODO: WRITE HEADER
 			asm_file << "    ;; CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
-					 << "    ;; USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n";
+					 << "    ;; USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n"
+					 << "    ;; WHEN LINKING WITH OBJECTIVE-C, ALL EXTERNAL SYMBOLS MUST BE PREFIXED WITH '_'\n";
 
 			// TODO: WRITE TOKENS
 
@@ -629,7 +645,7 @@ namespace Corth {
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 10) {
+						if (static_cast<int>(Keyword::COUNT) == 11) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -684,6 +700,15 @@ namespace Corth {
 										 << "    pop rbx\n"
 										 << "    pop rax\n"
 										 << "    mov [rax], bl\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+								asm_file << "    ;; -- dump --\n"
+										 << "    lea rcx, [rel fmt]\n"
+										 << "    pop rdx\n"
+										 << "    mov rax, 0\n"
+										 << "    sub rsp, 32\n"
+										 << "    call printf\n"
+										 << "    add rsp, 32\n";
 							}
 						}
 						else {
