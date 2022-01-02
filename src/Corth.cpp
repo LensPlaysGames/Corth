@@ -42,7 +42,6 @@ namespace Corth {
 
 	enum class MODE {
 		COMPILE,
-		SIMULATE,
 		GENERATE,
 		COUNT
 	};
@@ -148,7 +147,6 @@ namespace Corth {
 		printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit.");
 		//printf("        %s\n", "-mac, -apple             | Generate assembly for MacOS 64-bit.");
         printf("        %s\n", "-com, --compile          | Compile program from source into executable");
-		printf("        %s\n", "-sim, --simulate         | Simulate the program in a virtual machine");
 		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
         printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
 		printf("    %s\n", "Options (latest over-rides):");
@@ -601,6 +599,12 @@ namespace Corth {
 										 << "    push rcx\n";
 							}
 							else if (tok.text == "#") {
+								// A call in x64 requires shadow space on the stack
+								// This is also called spill space or home space
+								// It's basically space on the stack the called function
+								//   will assume to be usable and over-writable
+								// In Corth, a stack-based language, this obviously causes issues
+								//   if I don't handle it correctly.
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rcx, [rel fmt]\n"
 										 << "    pop rdx\n"
@@ -704,7 +708,7 @@ namespace Corth {
 
 	bool HandleCMDLineArgs(int argc, char** argv) {
 		// Return value = whether execution will halt or not in main function
-		assert(static_cast<int>(MODE::COUNT) == 3);
+		assert(static_cast<int>(MODE::COUNT) == 2);
 		assert(static_cast<int>(PLATFORM::COUNT) == 2);
 		for (int i = 1; i < argc; i++) {
 			std::string arg = argv[i];
@@ -799,9 +803,6 @@ namespace Corth {
 			}
 			else if (arg == "-com" || arg == "--compile") {
 				RUN_MODE = MODE::COMPILE;
-			}
-			else if (arg == "-sim" || arg == "--simulate") {
-				RUN_MODE = MODE::SIMULATE;
 			}
 			else if (arg == "-gen" || arg == "--generate") {
 				RUN_MODE = MODE::GENERATE;
@@ -1294,11 +1295,8 @@ int main(int argc, char** argv) {
     }
 
 	if (lexSuccessful) {
-		assert(static_cast<int>(Corth::MODE::COUNT) == 3);
+		assert(static_cast<int>(Corth::MODE::COUNT) == 2);
 		switch (Corth::RUN_MODE) {
-		case Corth::MODE::SIMULATE:
-			SimulateProgram(prog);
-			break;
 		case Corth::MODE::GENERATE:
 			assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
 			switch (Corth::RUN_PLATFORM) {
