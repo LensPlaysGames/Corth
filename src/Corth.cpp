@@ -451,6 +451,7 @@ namespace Corth {
 						 << "    mem resb " << MEM_CAPACITY << '\n';
 			
 				asm_file.close();
+				Log("NASM elf64 assembly generated at " + asm_file_path);
 				}
 			}
 			else {
