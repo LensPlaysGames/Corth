@@ -279,12 +279,7 @@ namespace Corth {
 	void Log(std::string msg, size_t line_num, size_t column_num) {
 		DoLog(msg, line_num, column_num);
     }
-
-	/* TODO: Convert GenerateAssembly return type from void to bool
-	    It would also be cool if I just used a struct for argument registers.
-	    I could then just fill in an extra field within a program based on operating system
-	    and have one function to write NASM assembly (for windows and linux,
-	    mac requires extra faff like underscores before calls to external symbols). */
+	
 	void GenerateAssembly_NASM_linux64(Program& prog) {
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
@@ -1703,7 +1698,7 @@ int main(int argc, char** argv) {
 				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
 					if (!system(("which " + Corth::LINK_PATH).c_str())) {
 						/* Construct Commands
-						    Assembly is generated at `Corth::OUTPUT_NAME.asm`
+						    Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
 							By default on linux, NASM generates an output `.o` file of the same name as the input file
 							This means the linker needs to link to `Corth::OUTPUT_NAME.o`
 						 */
