@@ -713,7 +713,7 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
-							assert(static_cast<int>(Keyword::COUNT) == 10);
+							assert(static_cast<int>(Keyword::COUNT) == 11);
 						}
 					}
 					instr_ptr++;
@@ -1045,7 +1045,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    if (static_cast<int>(Keyword::COUNT) == 10) {
+                    if (static_cast<int>(Keyword::COUNT) == 11) {
                         // Skip skippable tokens first for speed
                         if (tok.text == GetKeywordStr(Keyword::ELSE)
                             || tok.text == GetKeywordStr(Keyword::ENDIF)
@@ -1095,10 +1095,18 @@ namespace Corth {
 								TokenStackError(tok);
 							}
 						}
+						else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+							if (stackSize > 0) {
+								stackSize--;
+							}
+							else {
+								TokenStackError(tok);
+							}
+						}
 					}
 					else {
 						Error("Exhaustive handling of keyword count in ValidateTokens_Stack()");
-						assert(static_cast<int>(Keyword::COUNT) == 10);
+						assert(static_cast<int>(Keyword::COUNT) == 11);
 					}
 				}
 			}
@@ -1118,7 +1126,7 @@ namespace Corth {
 		size_t block_instr_ptr = instr_ptr;
 
 		// Look-ahead for an else block or an endif
-		if (static_cast<int>(Keyword::COUNT) == 10) {
+		if (static_cast<int>(Keyword::COUNT) == 11) {
 			while (instr_ptr < instr_ptr_max) {
 				instr_ptr++;
 				
@@ -1169,7 +1177,7 @@ namespace Corth {
 		}
         else {
             Error("Exhaustive handling of keyword count in ValidateBlock(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-            assert(static_cast<int>(Keyword::COUNT) == 10);
+            assert(static_cast<int>(Keyword::COUNT) == 11);
         }	
 		
 		return false;
@@ -1181,7 +1189,7 @@ namespace Corth {
 	void ValidateTokens_Blocks(Program& prog) {
 		// This seems like too much nesting, but I can't seem to wrap my head around a different way of doing it.
 		// If you would, kindly make a pull request fixing this stupidity and I will gladly accept it and merge it if it works :)
-		if (static_cast<int>(Keyword::COUNT) == 10) {
+		if (static_cast<int>(Keyword::COUNT) == 11) {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
@@ -1218,7 +1226,7 @@ namespace Corth {
 		}
 		else {
 			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-			assert(static_cast<int>(Keyword::COUNT) == 10);
+			assert(static_cast<int>(Keyword::COUNT) == 11);
 		}
 	}
 	
