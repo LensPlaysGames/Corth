@@ -1766,7 +1766,6 @@ int main(int argc, char** argv) {
 	
 	if (!Corth::HandleCMDLineArgs(argc, argv)){
 		// Non-graceful handling of command line arguments, abort execution.
-	    Corth::PrintUsage();
 		return -1;
 	}
 	
@@ -1784,12 +1783,10 @@ int main(int argc, char** argv) {
     }
     catch (std::runtime_error e) {
 		Corth::Error("Could not load source file!", e);
-		Corth::PrintUsage();
         return -1;
     }
     catch (...) {
 		Corth::Error(("Could not load source file at " + Corth::SOURCE_PATH));
-		Corth::PrintUsage();
         return -1;
     }
 
@@ -1803,8 +1800,7 @@ int main(int argc, char** argv) {
 				#ifdef _WIN64
 				Corth::GenerateAssembly_NASM_win64(prog);
 				#else
-				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
-				Corth::PrintUsage();
+				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line flag");
 				return -1;
 				#endif
 				break;
@@ -1813,7 +1809,6 @@ int main(int argc, char** argv) {
 				Corth::GenerateAssembly_NASM_linux64(prog);
 				#else
 				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
-				Corth::PrintUsage();
 				return -1;
 				#endif
 				break;
@@ -1868,7 +1863,6 @@ int main(int argc, char** argv) {
 				}
 				#else
 				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
-				Corth::PrintUsage();
 				return -1;
 				#endif
 				break;
@@ -1919,7 +1913,6 @@ int main(int argc, char** argv) {
                 }
 				#else
 				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
-				Corth::PrintUsage();
 				return -1;
 				#endif
 				break;
