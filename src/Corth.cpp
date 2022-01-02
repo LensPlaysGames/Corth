@@ -368,8 +368,7 @@ namespace Corth {
 										 << "    lea rdi, [rel fmt]\n"
 										 << "    pop rsi\n"
 										 << "    mov rax, 0\n"
-										 << "    call printf\n"
-										 << "    pop rax\n";
+										 << "    call printf\n";
 							}
 						}
 						else {
