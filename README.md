@@ -110,6 +110,7 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |`else`    |Conditional Branch   |0|0| Only used between `if` and `endif` keywords to provide an alternate branch; what will be ran if `if` condition is false. |
 |`endif`   |Block Ending Symbol  |0|0| Required block-ending-symbol for `if` keyword.                                                                           |
 |`dup`     |Operator             |1|2| Pops one value off the stack, then pushes it back twice.                                                                 |
+|`mem`     |Operator             |0|1| Pushes the address of the usable memory in Corth. Hard-coded to 720kb; there will be a CCLI option in the future. To access any address within the memory, simply add the byte offset to the address, like so `mem <byte offset> +`|
 |`do`      |Operator             |1|0| Pops one value off the stack, then jumps just past `endwhile` if value is zero.                                          |
 |`while`   |Operator             |0|0| Generates a label for `endwhile` to jump to.                                                                             |
 |`endwhile`|Operator             |0|0| Generates a label for `do` to jump to upon false condition.                                                              |
