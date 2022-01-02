@@ -454,7 +454,6 @@ namespace Corth {
 				asm_file.close();
 				Log("NASM elf64 assembly generated at " + asm_file_path);
 				}
-			}
 			else {
 				Error("Exhaustive handling of TokenType count in GenerateAssembly_NASM_linux64()");
 				assert(static_cast<int>(TokenType::COUNT) == 4); 
