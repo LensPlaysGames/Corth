@@ -84,6 +84,31 @@ Let's break down how it works:
 It is known that this program will trigger a stack validator warning, telling us that the stack at the end of the program is not empty. \
 With programs as simple as these, it's okay to do, however best practices indicate that the stack should be empty by the end of the program.
 
+### Hello, World!
+It's quite rudimentary, and a few order of magnitudes slower than it needs to be, but it works. \
+Soon, strings will be supported so it will be as simple as dumping the string.
+
+If you are unfamiliar with ASCII, I'm not quite sure how you got here. It's a way of encoding a text character into a single byte. This program first pushes the ASCII character code, then dumps that character to the console, and does that until `Hello, World!` has been output.
+
+<code>10&nbsp; dump_c</code> \
+<code>72&nbsp; dump_c</code> \
+<code>101 dump_c</code> \
+<code>108 dump_c</code> \
+<code>108 dump_c</code> \
+<code>111 dump_c</code> \
+<code>44&nbsp; dump_c</code> \
+<code>32&nbsp; dump_c</code> \
+<code>87&nbsp; dump_c</code> \
+<code>111 dump_c</code> \
+<code>114 dump_c</code> \
+<code>108 dump_c</code> \
+<code>100 dump_c</code> \
+<code>33&nbsp; dump_c</code> \
+<code>10&nbsp; dump_c</code>
+
+Expected output: \
+<samp>Hello, World!</samp>
+
 ### Definitions:
 #### Operators
 An operator will take value(s) from the stack and optionally push some back on.
