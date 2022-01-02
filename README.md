@@ -91,26 +91,12 @@ It is known that this program will trigger a stack validator warning, telling us
 With programs as simple as these, it's okay to do, however best practices indicate that the stack should be empty by the end of the program.
 
 ### Hello, World!
-It's quite rudimentary, and a few order of magnitudes slower than it needs to be, but it works. \
-Soon, strings will be supported so it will be as simple as dumping the string.
+String literals are now supported in Corth; this makes printing a string to the console as simple as dumping with the `_s` suffix indicating a string format should be used.
 
-If you are unfamiliar with ASCII, I'm not quite sure how you got here. It's a way of encoding a text character into a single byte. This program first pushes the ASCII character code, then dumps that character to the console, and does that until `Hello, World!` has been output.
+<code>"Hello, World!" dump_s</code>
 
-<code>10&nbsp; dump_c</code> \
-<code>72&nbsp; dump_c</code> \
-<code>101 dump_c</code> \
-<code>108 dump_c</code> \
-<code>108 dump_c</code> \
-<code>111 dump_c</code> \
-<code>44&nbsp; dump_c</code> \
-<code>32&nbsp; dump_c</code> \
-<code>87&nbsp; dump_c</code> \
-<code>111 dump_c</code> \
-<code>114 dump_c</code> \
-<code>108 dump_c</code> \
-<code>100 dump_c</code> \
-<code>33&nbsp; dump_c</code> \
-<code>10&nbsp; dump_c</code>
+You can also dump single characters like so (most often used for a newline, as shown): \
+<code>10 dump_c</code>
 
 Expected output: \
 <samp>Hello, World!</samp>
@@ -125,7 +111,7 @@ The amount of values removed/added from/to the stack by a given operator can be 
 
 | Operator | Meaning              | Pop  | Push | Description                                                                                                   |
 |:--------:|:---------------------|-----:|-----:|:--------------------------------------------------------------------------------------------------------------|
-|    `#`   | Dump                 |    1 |    0 | Humankind's best friend; pops a value off the stack, then prints that to the console.                         |
+|    `#`   | Dump                 |    1 |    0 | Humankind's best friend; pops a value off the stack, then prints that to the console. For alternate formats, see [dump keywords](#dump-keywords)|
 |    `+`   | Addition             |    2 |    1 | Pops two values off the stack, then pushes the sum.                                                           |
 |    `-`   | Subtraction          |    2 |    1 | Pops two values off the stack, then pushes the difference.                                                    |
 |    `*`   | Multiplication       |    2 |    1 | Pops two values off the stack, then pushes the product.                                                       |
@@ -161,6 +147,9 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |`shr`     |Bitwise Operator     |2|1| `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}` Pops two values off the stack, then pushes back the second value bit-shifted right by the first value.|
 |`or`      |Bitwise Operator     |2|1| `{a, b} -> {a || b}` Pops two values off the stack, then pushes back the bitwise-or of those values.                     |
 |`and`     |Bitwise Operator     |2|1| `{a, b} -> {a && b}` Pops two values off the stack, then pushes back the bitwise-and of those values.                    |
+|<a name="dump-keywords"></a>`dump`|Pop & Print|1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as an unsigned integer.                                |
+|`dump_c`  |Dump Character       |1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as a char.                                             |
+|`dump_s`  |Dump String          |1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as a string.                                           |
 
 ---
 

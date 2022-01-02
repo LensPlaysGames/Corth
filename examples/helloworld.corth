@@ -1,18 +1,2 @@
 // Hello world in Corth
-// Use ASCII codes to print corresponding character to the standard out
-
-10  dump_c
-72  dump_c
-101 dump_c
-108 dump_c
-108 dump_c
-111 dump_c
-44  dump_c
-32  dump_c
-87  dump_c
-111 dump_c
-114 dump_c
-108 dump_c
-100 dump_c
-33  dump_c
-10  dump_c
+"Hello, World!" dump_s
