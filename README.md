@@ -234,6 +234,7 @@ Verbose Example: \
   - Solution: Specify a valid path, including file name and extension, to the assembler executable using `-a` or `--assembler-path`
 - "Linker not found at x"
   - Solution: Specify a valid path, including file name and extension, to the linker executable using `-l Path/To/Linker.exe` or `--linker-path Path/To/Linker.exe`
+- The stdout and stderr of any commands run are redirected to a log file in the same directory as the Corth executable. The contents of these files are printed to the console when the verbose flag is passed to Corth through the CCLI with `-v` or `--verbose`.
 
 ---
 

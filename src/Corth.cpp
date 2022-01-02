@@ -1306,8 +1306,6 @@ namespace Corth {
 					current = src[i];
 					tok.col_number++;
 				}
-
-				std::cout << "testing: " << tok.text << '\n';
 				
 				if (i >= src_end) {
 					Error("Expected closing quotes following opening quotes",
@@ -1727,6 +1725,28 @@ std::string loadFromFile(std::string filePath) {
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
+void printCharactersFromFile(std::string filePath, std::string logPrefix = "[LOG]") {
+	FILE* file_ptr;
+	char c;
+	file_ptr = fopen(filePath.c_str(), "r");
+	if (file_ptr != nullptr) {
+		// Don't print if log-file is empty
+		fseek(file_ptr, 0, SEEK_END);
+		if (ftell(file_ptr) != 0) {
+			printf("%c", '\n');
+			// Navigate back to beginning of file
+			fseek(file_ptr, 0, SEEK_SET);
+			printf("%s (%s):\n", logPrefix.c_str(), filePath.c_str());
+			c = fgetc(file_ptr);
+			while (c != EOF) {
+				printf("%c", c);
+				c = fgetc(file_ptr);
+			}
+		}
+		fclose(file_ptr);
+	}
+}
+
 int main(int argc, char** argv) {
     // PLATFORM SPECIFIC DEFAULTS
 	#ifdef _WIN64
@@ -1811,14 +1831,31 @@ int main(int argc, char** argv) {
 						    Assembly is generated at `Corth::OUTPUT_NAME.asm`
 					        By default on win64, NASM generates an output `.obj` file of the same name as the input file.
 					        This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
-						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + " " + Corth::OUTPUT_NAME + ".asm";
-						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + " " + Corth::OUTPUT_NAME + ".obj";
+						
+						std::string cmd_asmb = Corth::ASMB_PATH + " "
+							+ Corth::ASMB_OPTS + " "
+							+ Corth::OUTPUT_NAME + ".asm "
+							+ ">assembler-log.txt 2>&1";
+						
+						std::string cmd_link = Corth::LINK_PATH + " "
+							+ Corth::LINK_OPTS + " "
+							+ Corth::OUTPUT_NAME + ".obj "
+							+ ">linker-log.txt 2>&1";
 		
-						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-						system(cmd_asmb.c_str());
-		
+					    printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+						if (system(cmd_asmb.c_str()) == 0) {
+							Corth::Log("Assembler successful!");
+						}
+
 						printf("[CMD]: `%s`\n", cmd_link.c_str());
-						system(cmd_link.c_str());
+						if (system(cmd_link.c_str()) == 0) {
+							Corth::Log("Linker successful!");
+						}
+
+						if (Corth::verbose_logging) {
+							printCharactersFromFile("assembler-log.txt", "Assembler Log");
+							printCharactersFromFile("linker-log.txt", "Linker Log");
+						}
 					}
 					else {
 						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
@@ -1845,15 +1882,31 @@ int main(int argc, char** argv) {
 							By default on linux, NASM generates an output `.o` file of the same name as the input file
 							This means the linker needs to link to `Corth::OUTPUT_NAME.o`
 						 */
-						std::string cmd_asmb = Corth::ASMB_PATH + " " + Corth::ASMB_OPTS + " " + Corth::OUTPUT_NAME + ".asm";
-						std::string cmd_link = Corth::LINK_PATH + " " + Corth::LINK_OPTS + " " + Corth::OUTPUT_NAME + ".o";
+						std::string cmd_asmb = Corth::ASMB_PATH + " "
+							+ Corth::ASMB_OPTS + " "
+							+ Corth::OUTPUT_NAME + ".asm "
+							+ ">assembler-log.txt 2>&1";
+						
+						std::string cmd_link = Corth::LINK_PATH + " "
+							+ Corth::LINK_OPTS + " "
+							+ Corth::OUTPUT_NAME + ".o "
+							+ ">linker-log.txt 2>&1";
 
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-						system(cmd_asmb.c_str());
+						if (system(cmd_asmb.c_str()) == 0) {
+							Corth::Log("Assembler successful!");
+						}
 
 						printf("[CMD]: `%s`\n", cmd_link.c_str());
-						system(cmd_link.c_str());
+						if (system(cmd_link.c_str()) == 0) {
+							Corth::Log("Linker successful!");
+						}
+
+					    if (Corth::verbose_logging) {
+							printCharactersFromFile("assembler-log.txt", "Assembler Log");
+							printCharactersFromFile("linker-log.txt", "Linker Log");
+						}
 					}
 					else {
 						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
