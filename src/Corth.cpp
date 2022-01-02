@@ -20,7 +20,7 @@
 
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
-	const size_t OP_COUNT = 10;
+	const size_t OP_COUNT = 14;
 	bool isoperator(char& c){
 		return c == '+'    // addition
 			|| c == '-'    // subtraction
@@ -29,10 +29,12 @@ namespace Corth {
 			|| c == '='    // equality comparison
 			|| c == '<'    // less than (or equal) comparison
 			|| c == '>'    // greater than (or equal) comparison
-			|| c == '#';   // dump (pop + print)
+			|| c == '#'    // dump (pop + print)
+			|| c == '&'    // bitwise and (when combined with another)
+			|| c == '|';   // bitwise or (when combined with another)
 	}
 
-	const unsigned int MEM_CAPACITY = 720000; // Allocate 720000 kilobytes to the program by default. This is accessible using the `mem` keyword
+	const unsigned int MEM_CAPACITY = 720000;
 	std::string SOURCE_PATH = "main.corth";
 	std::string OUTPUT_NAME = "corth_program";
 	std::string ASMB_PATH = "";
@@ -74,11 +76,15 @@ namespace Corth {
 		DROP,
 		SWAP,
 		OVER,
+	    SHL,
+		SHR,
+		OR,
+		AND,
 		COUNT
 	};
 
 	bool iskeyword(std::string word) {
-		assert(static_cast<int>(Keyword::COUNT) == 16);
+		assert(static_cast<int>(Keyword::COUNT) == 20);
 		if (word == "if"
 			|| word == "else"
 			|| word == "endif"
@@ -94,7 +100,11 @@ namespace Corth {
 			|| word == "dump_c"
 			|| word == "drop"
 			|| word == "swap"
-			|| word == "over")
+			|| word == "over"
+			|| word == "shl"
+			|| word == "shr"
+			|| word == "or"
+			|| word == "and")
 		{
 			return true;
 		}
@@ -106,7 +116,7 @@ namespace Corth {
 	// This function outlines the corth source input and the output it will generate.
 	// case <output>: { return "<input>"; }
 	std::string GetKeywordStr(Keyword word) {
-		assert(static_cast<int>(Keyword::COUNT) == 16);
+		assert(static_cast<int>(Keyword::COUNT) == 20);
 		switch (word) {
 		case Keyword::IF:       { return "if";       }
         case Keyword::ELSE:     { return "else";     }
@@ -124,6 +134,10 @@ namespace Corth {
 		case Keyword::DROP:     { return "drop";     }
 		case Keyword::SWAP:     { return "swap";     }
 		case Keyword::OVER:     { return "over";     }
+		case Keyword::SHL:      { return "shl";       }
+		case Keyword::SHR:      { return "shr";      }	
+		case Keyword::OR:       { return "or";       }
+		case Keyword::AND:      { return "and";      }	
 		default:
 			assert(false);
 			return "ERROR IN GetKeywordStr: UNREACHABLE";
@@ -303,7 +317,7 @@ namespace Corth {
 								 << "    push rax\n";
 					}
 					else if (tok.type == TokenType::OP) {
-						if (OP_COUNT == 10) {
+						if (OP_COUNT == 14) {
 							if (tok.text == "+") {
 								asm_file << "    ;; -- add --\n"
 										 << "    pop rax\n"
@@ -383,6 +397,34 @@ namespace Corth {
 										 << "    cmovge rcx, rdx\n"
 										 << "    push rcx\n";
 							}
+						    else if (tok.text == "<<") {
+								asm_file << "    ;; -- bitwise-shift left --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shl rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == ">>") {
+								asm_file << "    ;; -- bitwise-shift right --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shr rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == "||") {
+								asm_file << "    ;; -- bitwise or --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    or rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "&&") {
+								asm_file << "    ;; -- bitwise and --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    and rax, rbx\n"
+										 << "    push rax\n";
+							}
 							else if (tok.text == "#") {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rdi, [rel fmt]\n"
@@ -393,11 +435,11 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(OP_COUNT == 10);
+							assert(OP_COUNT == 14);
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 16) {
+						if (static_cast<int>(Keyword::COUNT) == 20) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 							    asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -469,7 +511,7 @@ namespace Corth {
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
-								asm_file << "    ;; -- dump --\n"
+								asm_file << "    ;; -- dump character --\n"
 										 << "    lea rdi, [rel fmt_char]\n"
 										 << "    pop rsi\n"
 										 << "    mov rax, 0\n"
@@ -494,10 +536,38 @@ namespace Corth {
 										 << "    push rax\n"
 										 << "    push rbx\n";
 							}
+						    else if (tok.text == GetKeywordStr(Keyword::SHL)) {
+								asm_file << "    ;; -- bitwise-shift left --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shl rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SHR)) {
+								asm_file << "    ;; -- bitwise-shift right --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shr rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OR)) {
+								asm_file << "    ;; -- bitwise or --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    or rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::AND)) {
+								asm_file << "    ;; -- bitwise and --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    and rax, rbx\n"
+										 << "    push rax\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
-							assert(static_cast<int>(Keyword::COUNT) == 16);
+							assert(static_cast<int>(Keyword::COUNT) == 20);
 						}
 					}
 					instr_ptr++;
@@ -592,7 +662,7 @@ namespace Corth {
 								 << "    push rax\n";
 					}
 					else if (tok.type == TokenType::OP) {
-						if (OP_COUNT == 10) {
+						if (OP_COUNT == 14) {
 							if (tok.text == "+") {
 								asm_file << "    ;; -- add --\n"
 										 << "    pop rax\n"
@@ -672,6 +742,34 @@ namespace Corth {
 										 << "    cmovge rcx, rdx\n"
 										 << "    push rcx\n";
 							}
+							else if (tok.text == "<<") {
+								asm_file << "    ;; -- bitwise-shift left --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shl rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == ">>") {
+								asm_file << "    ;; -- bitwise-shift right --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shr rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == "||") {
+								asm_file << "    ;; -- bitwise or --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    or rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == "&&") {
+								asm_file << "    ;; -- bitwise and --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    and rax, rbx\n"
+										 << "    push rax\n";
+							}
 							else if (tok.text == "#") {
 								// A call in Windows x64 requires shadow space on the stack
 								// This is also called spill space or home space
@@ -690,11 +788,11 @@ namespace Corth {
 						}
 						else {
 							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_win64()");
-							assert(OP_COUNT == 10);
+							assert(OP_COUNT == 14);
 						}
 					}
 					else if (tok.type == TokenType::KEYWORD) {
-						if (static_cast<int>(Keyword::COUNT) == 16) {
+						if (static_cast<int>(Keyword::COUNT) == 20) {
 							if (tok.text == GetKeywordStr(Keyword::IF)) {
 								asm_file << "    ;; -- if --\n"
 										 << "    pop rax\n"
@@ -796,10 +894,38 @@ namespace Corth {
 										 << "    push rax\n"
 										 << "    push rbx\n";
 							}
+							else if (tok.text == GetKeywordStr(Keyword::SHL)) {
+								asm_file << "    ;; -- bitwise-shift left --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shl rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SHR)) {
+								asm_file << "    ;; -- bitwise-shift right --\n"
+										 << "    pop rcx\n"
+										 << "    pop rbx\n"
+										 << "    shr rbx, cl\n"
+										 << "    push rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OR)) {
+								asm_file << "    ;; -- bitwise or --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    or rax, rbx\n"
+										 << "    push rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::AND)) {
+								asm_file << "    ;; -- bitwise and --\n"
+										 << "    pop rax\n"
+										 << "    pop rbx\n"
+										 << "    and rax, rbx\n"
+										 << "    push rax\n";
+							}
 						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_win64()");
-							assert(static_cast<int>(Keyword::COUNT) == 16);
+							assert(static_cast<int>(Keyword::COUNT) == 20);
 						}
 					}
 					instr_ptr++;
@@ -969,6 +1095,10 @@ namespace Corth {
 		Token tok;
 		char current = src[0];
 
+		assert(static_cast<int>(TokenType::COUNT) == 4);
+		assert(OP_COUNT == 14);
+		assert(static_cast<int>(Keyword::COUNT) == 20);
+
 		for(int i = 0; i < src_end; i++) {
 			current = src[i];
 			
@@ -987,9 +1117,31 @@ namespace Corth {
 				// Look-ahead to check for multi-character operators
 				i++;
 				current = src[i];
-				// Comparison operators (lt or equal, gt or equal)
-				if (current == '=') {
+				if ((tok.text == "=" && current == '=')
+					|| (tok.text == "<" && current == '=')
+					|| (tok.text == ">" && current == '=')
+					|| (tok.text == "<" && current == '<')
+					|| (tok.text == ">" && current == '>'))
+				{
 					tok.text.append(1, current);
+				}
+				else if (tok.text == "|") {
+					if (current == '|') {
+						tok.text.append(1, current);
+					}
+					else {
+						Error("Expected '|' following '|'", tok.line_number, tok.col_number);
+						tok.text.append(1, '|'); // Create missing text so it will still work
+					}
+				}
+			    else if (tok.text == "&") {
+					if (current == '&') {
+						tok.text.append(1, current);
+					}
+					else {
+						Error("Expected '&' following '&'", tok.line_number, tok.col_number);
+						tok.text.append(1, '&'); // Create missing text so it will still work
+					}
 				}
 				else if (tok.text == "/" && current == '/') {
 					// This is a comment until new-line or end of file
@@ -1097,7 +1249,7 @@ namespace Corth {
 					stackSize++;
 				}
 				else if (tok.type == TokenType::OP) {
-					if (OP_COUNT == 10) {
+					if (OP_COUNT == 14) {
 						// Operators that pop two values off the stack and return one to it
 						if (tok.text == "+"
 							|| tok.text == "-"
@@ -1107,7 +1259,11 @@ namespace Corth {
 							|| tok.text == "<"
 							|| tok.text == ">"
 							|| tok.text == "<="
-							|| tok.text == ">=")
+							|| tok.text == ">="
+							|| tok.text == "<<"
+							|| tok.text == ">>"
+							|| tok.text == "||"
+							|| tok.text == "&&")
 						{
 							if (stackSize > 1) {
 								stackSize--; // Two values removed, result added, net loss of one
@@ -1128,11 +1284,11 @@ namespace Corth {
                     }
                     else {
                         Error("Exhaustive handling of operator count in ValidateTokens_Stack()");
-                        assert(OP_COUNT == 10);
+                        assert(OP_COUNT == 14);
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    if (static_cast<int>(Keyword::COUNT) == 16) {
+                    if (static_cast<int>(Keyword::COUNT) == 20) {
                         // Skip skippable tokens first for speed
                         if (tok.text == GetKeywordStr(Keyword::ELSE)
                             || tok.text == GetKeywordStr(Keyword::ENDIF)
@@ -1200,7 +1356,8 @@ namespace Corth {
 								 || tok.text == GetKeywordStr(Keyword::DUMP_C)
 								 || tok.text == GetKeywordStr(Keyword::DROP))
 						{
-							// both `dump`, `dump_c`, and `drop` will take an item off the stack without returning anything
+							// both `dump`, `dump_c`, and `drop` will take an item off the
+							//   stack without returning anything
 							// {a} -> { }
 							if (stackSize > 0) {
 								stackSize--;
@@ -1230,10 +1387,26 @@ namespace Corth {
 								TokenStackError(tok);
 							}
 						}
+						else if (tok.text == GetKeywordStr(Keyword::SHL)
+								 || tok.text == GetKeywordStr(Keyword::SHR)
+								 || tok.text == GetKeywordStr(Keyword::OR)
+								 || tok.text == GetKeywordStr(Keyword::AND))
+						{
+							// Bitwise-shift left and right, bitwise-or and bitwise-and will pop two
+							//   values off the stack and add one, net negative one
+							// {a, b} -> {c}
+							if (stackSize > 1) {
+								stackSize--;
+							}
+							else
+							{
+								TokenStackError(tok);
+							}
+						}
 					}
 					else {
 						Error("Exhaustive handling of keyword count in ValidateTokens_Stack()");
-						assert(static_cast<int>(Keyword::COUNT) == 16);
+						assert(static_cast<int>(Keyword::COUNT) == 20);
 					}
 				}
 			}
@@ -1252,7 +1425,7 @@ namespace Corth {
 	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
 		size_t block_instr_ptr = instr_ptr;
 
-		if (static_cast<int>(Keyword::COUNT) == 16) {
+		if (static_cast<int>(Keyword::COUNT) == 20) {
 			// Handle while block
 			if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
 				// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
@@ -1326,7 +1499,7 @@ namespace Corth {
 		}
         else {
             Error("Exhaustive handling of keyword count in ValidateBlock(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-            assert(static_cast<int>(Keyword::COUNT) == 16);
+            assert(static_cast<int>(Keyword::COUNT) == 20);
         }	
 		
 		return false;
@@ -1336,7 +1509,7 @@ namespace Corth {
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		if (static_cast<int>(Keyword::COUNT) == 16) {
+		if (static_cast<int>(Keyword::COUNT) == 20) {
 			size_t instr_ptr = 0;
 			size_t instr_ptr_max = prog.tokens.size();
 			while (instr_ptr < instr_ptr_max) {
@@ -1352,7 +1525,7 @@ namespace Corth {
 		}
 		else {
 			Error("Exhaustive handling of keyword count in ValidateTokens_Blocks(); keep in mind that not all keywords form blocks, and therefore may not need implementation");
-			assert(static_cast<int>(Keyword::COUNT) == 16);
+			assert(static_cast<int>(Keyword::COUNT) == 20);
 		}
 	}
 	

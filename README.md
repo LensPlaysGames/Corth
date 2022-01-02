@@ -126,7 +126,10 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |    `<`   | Less-than            |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.                  |
 |   `>=`   | Greater-than-or-equal|    2 |    1 | Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not.   |
 |   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.     |
-|  `dup`   | Duplicate|1|2| Pops one value off the stack, then pushes it back on twice.                                              |
+|   `<<`   | Bitwise Shift Left   |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`                                      |
+|   `>>`   | Bitwise Shift Right  |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`                                      |
+|   `||`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a || b}` Pops two values off the stack, then pushes back the bitwise-or of those values.          |
+|   `&&`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a && b}` Pops two values off the stack, then pushes back the bitwise-and of those values.         |
 
 #### Keywords
 | Keyword  | Meaning | Pop  | Push | Description                                                                                                                |
@@ -145,6 +148,10 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |`drop`    |Stack Manipulation   |1|0|    `{a} -> { }` Drops the top-most item off the stack, leaving no reference to it. Use this to delete unused stack-items.|
 |`swap`    |Stack Manipulation   |2|2| `{a, b} -> {b, a}` Pops two values off the stack, then pushes them back in reverse order.                                |
 |`over`    |Stack Manipulation   |2|3| `{a, b} -> {a, b, a}` Pushes the stack item below the top on to the top.                                                 |
+|`shl`     |Bitwise Operator     |2|1| `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}` Pops two values off the stack, then pushes back the second value bit-shifted left by the first value.|
+|`shr`     |Bitwise Operator     |2|1| `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}` Pops two values off the stack, then pushes back the second value bit-shifted right by the first value.|
+|`or`      |Bitwise Operator     |2|1| `{a, b} -> {a || b}` Pops two values off the stack, then pushes back the bitwise-or of those values.                     |
+|`and`     |Bitwise Operator     |2|1| `{a, b} -> {a && b}` Pops two values off the stack, then pushes back the bitwise-and of those values.                    |
 
 ---
 
@@ -169,8 +176,7 @@ To avoid headache as much as possible, Corth sets default values based on your o
 If you get any errors, there are a multitude of command line options to help rectify the situation. \
 You can run Corth with the `-h` or `--help` argument to see all available command line flags and options.
 
-##### Warning! -- On Linux, if you specify an output name to Corth with `-o`, it will only affect the generated assembly file name, not the output object or executable file. Look for `a.out` or similar. This may over-write previously-compiled-programs, so be careful! To accurately rename the output executable, pass the corresponding option to your linker with `-add-lo <option>`. \
-For example: `-add-lo "-o my_program"`
+##### Warning! -- On Linux, if you specify an output name to Corth with `-o`, it will only affect the generated assembly file name, not the output object or executable file. Look for `a.out` or similar. This may over-write previously-compiled-programs, so be careful! To accurately rename the output executable, pass the corresponding option to your linker with `-add-lo <option>`, for example: `-add-lo "-o my_program"` along with the normal `-o my_program`.
 
 ### On Windows
 Open a terminal and navigate to the directory containing Corth.exe. \

@@ -42,7 +42,7 @@
 
 (eval-and-compile
   (defconst corth-keywords
-    '("if" "else" "endif" "dup" "twodup" "do" "while" "endwhile" "drop" "swap" "over" "mem" "loadb" "storeb" "dump" "dump_c")))
+    '("if" "else" "endif" "dup" "twodup" "do" "while" "endwhile" "drop" "swap" "over" "mem" "loadb" "storeb" "dump" "dump_c" "shl" "shr" "or" "and")))
 
 (defconst corth-highlights
   `((,(regexp-opt corth-keywords 'symbols) . font-lock-keyword-face)))
