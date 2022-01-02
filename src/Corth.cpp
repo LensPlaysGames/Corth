@@ -206,7 +206,7 @@ namespace Corth {
 		printf("        %s\n", "-ao, --assembler-options | Command line arguments called with assembler");
         printf("        %s\n", "-lo, --linker-options    | Command line arguments called with linker");
 		printf("        %s\n", "-add-ao, --add-asm-opt   | Append a command line argument to assembler options");
-        printf("        %s\n", "-add-lo, --add-link-opt  | Append a command line argument to assembler options");
+        printf("        %s\n", "-add-lo, --add-link-opt  | Append a command line argument to linker options");
 	}
 
 	void DoLog(std::string msg, std::string prefix = "[LOG]", std::string suffix = "\n") {
