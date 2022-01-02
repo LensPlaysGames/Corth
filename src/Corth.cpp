@@ -433,6 +433,7 @@ namespace Corth {
 										 << "    pop rax\n"
 										 << "    mov [rax], bl\n";
 							}
+						}
 						else {
 							Error("Exhaustive handling of keyword count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
 							assert(static_cast<int>(Keyword::COUNT) == 10);
