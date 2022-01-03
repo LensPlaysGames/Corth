@@ -1044,9 +1044,17 @@ namespace Corth {
 		// Return value = whether execution will halt or not in main function
 		assert(static_cast<int>(MODE::COUNT) == 2);
 		assert(static_cast<int>(PLATFORM::COUNT) == 2);
+
+		if (argc == 1) {
+			// No command line args entered, print usage
+			PrintUsage();
+			return false;
+		}
+		
 		for (int i = 1; i < argc; i++) {
 			std::string arg = argv[i];
 			if (arg == "-h" || arg == "--help") {
+				PrintUsage();
 				return false;
 			}
 			else if (arg == "-v" || arg == "--verbose") {
