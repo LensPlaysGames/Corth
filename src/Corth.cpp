@@ -463,10 +463,11 @@ namespace Corth {
 										 << "    push rax\n";
 							}
 							else if (tok.text == "#") {
+								// Without clearing rax, seg faults can happen seemingly at random
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rdi, [rel fmt]\n"
 										 << "    pop rsi\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    call printf\n";
 							}
 						}
@@ -544,21 +545,21 @@ namespace Corth {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rdi, [rel fmt]\n"
 										 << "    pop rsi\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
 								asm_file << "    ;; -- dump character --\n"
 										 << "    lea rdi, [rel fmt_char]\n"
 										 << "    pop rsi\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
 							    asm_file << "    ;; -- dump string --\n"
 										 << "    lea rdi, [rel fmt_str]\n"
 										 << "    pop rsi\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DROP)) {
@@ -807,6 +808,7 @@ namespace Corth {
 								asm_file << "    # -- dump --\n"
 										 << "    lea fmt(%rip), %rdi\n"
 										 << "    pop %rsi\n"
+										 << "    xor %rax, %rax\n"
 										 << "    call printf\n";
 							}
 						}
@@ -885,18 +887,21 @@ namespace Corth {
 							    asm_file << "    # -- dump --\n"
 										 << "    lea fmt(%rip), %rdi\n"
 										 << "    pop %rsi\n"
+									     << "    xor %rax, %rax\n"
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
 								asm_file << "    # -- dump --\n"
 										 << "    lea fmt_char(%rip), %rdi\n"
 										 << "    pop %rsi\n"
+										 << "    xor %rax, %rax\n"
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
 								asm_file << "    # -- dump --\n"
 										 << "    lea fmt_str(%rip), %rdi\n"
 										 << "    pop %rsi\n"
+										 << "    xor %rax, %rax\n"
 										 << "    call printf\n";
 							}
 							else if (tok.text == GetKeywordStr(Keyword::DROP)) {
@@ -1181,7 +1186,7 @@ namespace Corth {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rcx, [rel fmt]\n"
 										 << "    pop rdx\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    sub rsp, 32\n"
 										 << "    call printf\n"
 										 << "    add rsp, 32\n";
@@ -1262,7 +1267,7 @@ namespace Corth {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rcx, [rel fmt]\n"
 										 << "    pop rdx\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    sub rsp, 32\n"
 										 << "    call printf\n"
 										 << "    add rsp, 32\n";
@@ -1271,7 +1276,7 @@ namespace Corth {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rcx, [rel fmt_char]\n"
 										 << "    pop rdx\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    sub rsp, 32\n"
 										 << "    call printf\n"
 										 << "    add rsp, 32\n";
@@ -1280,7 +1285,7 @@ namespace Corth {
 								asm_file << "    ;; -- dump --\n"
 										 << "    lea rcx, [rel fmt_str]\n"
 										 << "    pop rdx\n"
-										 << "    mov rax, 0\n"
+										 << "    xor rax, rax\n"
 										 << "    sub rsp, 32\n"
 										 << "    call printf\n"
 										 << "    add rsp, 32\n";
@@ -1532,6 +1537,7 @@ namespace Corth {
 								asm_file << "    # -- dump --\n"
 										 << "    lea fmt(%rip), %rcx\n"
 										 << "    pop %rdx\n"
+										 << "    xor %rax, %rax\n"
 										 << "    sub $32, %rsp\n"
 										 << "    call printf\n"
 										 << "    add $32, %rsp\n";
@@ -1612,6 +1618,7 @@ namespace Corth {
 								asm_file << "    # -- dump --\n"
 										 << "    lea fmt(%rip), %rcx\n"
 										 << "    pop %rdx\n"
+										 << "    xor %rax, %rax\n"
 										 << "    sub $32, %rsp\n"
 										 << "    call printf\n"
 										 << "    add $32, %rsp\n";
@@ -1620,6 +1627,7 @@ namespace Corth {
 								asm_file << "    # -- dump character --\n"
 										 << "    lea fmt_char(%rip), %rcx\n"
 										 << "    pop %rdx\n"
+										 << "    xor %rax, %rax\n"
 										 << "    sub $32, %rsp\n"
 										 << "    call printf\n"
 										 << "    add $32, %rsp\n";
@@ -1628,6 +1636,7 @@ namespace Corth {
 								asm_file << "    # -- dump string --\n"
 										 << "    lea fmt_str(%rip), %rcx\n"
 										 << "    pop %rdx\n"
+										 << "    xor %rax, %rax\n"
 										 << "    sub $32, %rsp\n"
 										 << "    call printf\n"
 										 << "    add $32, %rsp\n";
