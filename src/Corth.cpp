@@ -672,9 +672,8 @@ namespace Corth {
 					 << "    # USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n"
 					 << "    # LINUX SYSTEM CALLS USE R10 INSTEAD OF RCX\n"
 					 << "    .text\n"
-					 << "    # TODO: Figure out default linux gnu assembler `as` entry name (if there is one)"
-					 << "    .globl main\n"
-					 << "main:\n";
+					 << "    .globl _start\n"
+					 << "_start:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
 			if (static_cast<int>(TokenType::COUNT) == 5) {
@@ -1862,7 +1861,7 @@ namespace Corth {
 
                 #ifdef __linux__
 				Corth::ASMB_PATH = "gcc";
-				Corth::ASMB_OPTS = "-e main";
+				Corth::ASMB_OPTS = "";
 				Corth::LINK_PATH = "";
 				Corth::LINK_OPTS = "";
                 #endif	
