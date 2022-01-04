@@ -9,6 +9,8 @@ Corth is:
 
 ## Get the latest release [here](https://github.com/LensPlaysGames/Corth/releases)
 
+### [How To Use](#how-to-use-anchor)
+
 ###### WARNING: Corth uses the [system](https://en.cppreference.com/w/cpp/utility/program/system) function within C++ to run external commands on your computer. These commands can be affected by user input, so running corth has the potential to run any command on your system if you tell it to, including malicious ones. Be sure to check and double check any commands you see that use the `-a` or `-l` compiler options, as these tell Corth to run a different command than the default. Every command run by Corth is echoed to the standard out with a '[CMD]' prefix.
 
 ---
@@ -153,7 +155,7 @@ The amount of values removed/added from/to the stack by a given operator can be 
 
 ---
 
-## <a name="cross-platform-anchor"></a> How to build a Corth program
+## <a name="how-to-use-anchor"></a><a name="cross-platform-anchor"></a> How to build a Corth program
 So, you've written a program, what do you do now that you want to run it?
 
 If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions down below).
@@ -200,73 +202,47 @@ If you are on Windows and you didn't install NASM in the default directory the i
 
 #### You must ensure that you have some sort of linker on your machine that can link against the standard C runtime of whatever platform you're on.
 
-This is my recommendation [GoLink](http://godevtool.com/) on Windows. \
+- [GoLink](http://godevtool.com/) is my recommendation on Windows. \
 GoLink is easy to use and fast to setup; simply extract it and it's ready.
-On Linux, this is most likely `ld`, the GNU linker; it comes with most linux distros by default.
+
+- On Linux, this is most likely `ld`, the GNU linker; it comes with most linux distros by default.
 
 Once all the pre-requisites are installed, now comes time to use the CCLI, or Corth Command Line Interface. \
 To avoid headache as much as possible, Corth sets default values based on your operating system. \
-If you get any errors, there are a multitude of command line options to help rectify the situation. \
-You can run Corth with the `-h` or `--help` argument to see all available command line flags and options.
+If you get any errors, there are a multitude of command line options to help rectify the situation. (see [Common Errors](#common-errors-anchor))
 
 ### Linux
 Open a terminal and navigate to the directory containing the Corth executable. \
 To familiarize yourself with the options of the CCLI, run the following command: \
 `./Corth -h` or `./Corth --help` \
-A lot of options will appear, but most will not be needed unless you are getting errors, as the defaults are platform-specific.
-- `-linux` or `-linux64`
-  - Tell Corth to generate Linux assembly for NASM.
-- `-GAS`
-  - Tell Corth to generate GAS assembly (for assembling and linking with `gcc`)
-- `-com` or `--compile`
-  - Specifies compilation mode to Corth. This tells corth to generate assembly, assemble it, and link it into an executable.
-- `-gen` or `--generate`
-  - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
-- `-o` or `--output-name`
-  - Specify the name of the generated assembly files.
-- `-add-ao` or `-add-asm-opt`
-  - Append a command line argument to assembler options
-- `-add-lo` or `-add-link-opt`
-  - Append a command line argument to linker options
+A lot of options will appear, but most will not be needed unless you are getting errors, as the defaults are platform-specific. \
+One required flag on Linux is the `-linux` flag.
 
 Basic Example (given `apt install nasm` was run and `ld` is installed by default): \
-`./Corth -com -o my_program -add-lo "-o my_program" test.corth`
+`./Corth -o my_program -add-lo "-o my_program" test.corth`
 
 Verbose Example: \
-`./Corth -com -a nasm -ao "-f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth`
+`./Corth -a nasm -ao "-f elf64 corth_program.asm" -l ld -lo " -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64 -o corth_program corth_program.o" test.corth`
 
 ###  Windows
 Open a terminal and navigate to the directory containing `Corth.exe`. \
 To familiarize yourself with the options of the CCLI, run the following command: \
 `Corth.exe -h` or `Corth.exe --help` \
-A lot of different options will come up, with (hopefully) clear explanations on what everything does. \
-Because there are a lot, I will tell you the ones you will most likely need right away:
-- `-com` or `--compile`
-  - Specifies that Corth needs to generate assembly, assemble it into machine code, then link it into an executable.
-- `-GAS`
-  - Tells Corth to generate GAS assembly, using `gcc` to assemble and link instead of NASM and GoLink.
-- `-a` or `--assembler-path`
-  - This does what it sounds like, and allows the user to specify the path to the assembler `.exe` file to run. Set this to the exact path of `nasm.exe` on your machine, including file name and extension. If you downloaded it at the default location, Corth's defaults should work as well, so ideally you won't need to specify this argument.
-- `-l` or `--linker-path`
-  - Specify the path to the linker `.exe` file to run. This will be the path to `golink.exe` including file name and extension. Again, if you downloaded at the default locations, everything should work fine without specifying any extra arguments.
-- `-o` or `--output-name`
-  - Specify the name of the generated assembly, object, and executable files.
-- `-gen` or `--generate`
-  - Tell Corth to not use any command line tools to assemble or link anything; simply generate the output assembly file for the given platform and program. Useful if you would like to use a completely different assembling and linking ecosystem.
+A lot of different options will come up, with clear explanations on what everything does.
 
 Basic example: \
-`Corth.exe -com -o my_program test.corth`
+`Corth.exe -o my_program test.corth`
 
 Or, if Corth is giving errors about not finding assembler/linker: \
-`Corth.exe -com -a /Path/To/NASM/nasm.exe -l /Path/To/GoLink/golink.exe test.corth`
+`Corth.exe -a /Path/To/NASM/nasm.exe -l /Path/To/GoLink/golink.exe test.corth`
 
 Alternatively, you could add the directory containing the executable to your system's [PATH environment variable](https://www.c-sharpcorner.com/article/add-a-directory-to-path-environment-variable-in-windows-10/): \
-`Corth.exe -com -a nasm.exe -l golink.exe test.corth`
+`Corth.exe -a nasm.exe -l golink.exe test.corth`
 
 By default, the assembler and linker options are setup for Windows, using NASM and GoLink. \
 If your situation is different, make sure to specify the correct options using `-ao` and `-lo` respectively.
 
-### Common Errors:
+### <a name="common-errors-anchor"></a>Common Errors
 - "Assembler not found at x"
   - Solution: Specify a valid path, including file name and extension, to the assembler executable using `-a` or `--assembler-path`
 - "Linker not found at x"
