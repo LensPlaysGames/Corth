@@ -4,7 +4,7 @@ It's like [Porth](https://gitlab.com/tsoding/porth/-/tree/master/), which is lik
 Corth is:
 - [x] A [stack based](https://en.wikipedia.org/wiki/Stack-oriented_programming) programming language
 - [x] [Turing complete](https://en.wikipedia.org/wiki/Turing_completeness) (see [rule 110 example](./examples/rule110.corth))
-- [x] Compileable to an executable, [cross-platform](#cross-platform-anchor)
+- [x] Compileable to a dynamic executable linked with the C RunTime, [cross-platform](#cross-platform-anchor)
 - [x] Totally awesome
 
 ## Get the latest release [here](https://github.com/LensPlaysGames/Corth/releases)
@@ -123,7 +123,7 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.     |
 |   `<<`   | Bitwise Shift Left   |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`                                      |
 |   `>>`   | Bitwise Shift Right  |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`                                      |
-|   `\|\|`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a \|\| b}` Pops two values off the stack, then pushes back the bitwise-or of those values.          |
+|   `\|\|`   | Bitwise Operator   |    2 |    1 | `{a, b} -> {a \|\| b}` Pops two values off the stack, then pushes back the bitwise-or of those values.      |
 |   `&&`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a && b}` Pops two values off the stack, then pushes back the bitwise-and of those values.         |
 
 #### Keywords
