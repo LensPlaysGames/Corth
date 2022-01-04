@@ -123,7 +123,7 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |   `<=`   | Less-than-or-equal   |    2 |    1 | Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.     |
 |   `<<`   | Bitwise Shift Left   |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`                                      |
 |   `>>`   | Bitwise Shift Right  |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`                                      |
-|   `||`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a || b}` Pops two values off the stack, then pushes back the bitwise-or of those values.          |
+|   `\|\|`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a || b}` Pops two values off the stack, then pushes back the bitwise-or of those values.          |
 |   `&&`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a && b}` Pops two values off the stack, then pushes back the bitwise-and of those values.         |
 
 #### Keywords
@@ -145,9 +145,9 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |`over`    |Stack Manipulation   |2|3| `{a, b} -> {a, b, a}` Pushes the stack item below the top on to the top.                                                 |
 |`shl`     |Bitwise Operator     |2|1| `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}` Pops two values off the stack, then pushes back the second value bit-shifted left by the first value.|
 |`shr`     |Bitwise Operator     |2|1| `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}` Pops two values off the stack, then pushes back the second value bit-shifted right by the first value.|
-|`or`      |Bitwise Operator     |2|1| `{a, b} -> {a || b}` Pops two values off the stack, then pushes back the bitwise-or of those values.                     |
+|`or`      |Bitwise Operator     |2|1| `{a, b} -> {a \|\| b}` Pops two values off the stack, then pushes back the bitwise-or of those values.                   |
 |`and`     |Bitwise Operator     |2|1| `{a, b} -> {a && b}` Pops two values off the stack, then pushes back the bitwise-and of those values.                    |
-|<a name="dump-keywords"></a>`dump`|Pop & Print|1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as an unsigned integer.                                |
+|<a name="dump-keywords"></a>`dump`|Pop & Print|1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as an unsigned integer.                  |
 |`dump_c`  |Dump Character       |1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as a char.                                             |
 |`dump_s`  |Dump String          |1|0| `{a} -> { }` Pops a value off the stack, then prints it formatted as a string.                                           |
 
