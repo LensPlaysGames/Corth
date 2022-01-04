@@ -673,8 +673,8 @@ namespace Corth {
 					 << "    # LINUX SYSTEM CALLS USE R10 INSTEAD OF RCX\n"
 					 << "    .text\n"
 					 << "    # TODO: Figure out default linux gnu assembler `as` entry name (if there is one)"
-					 << "    .globl _start\n"
-					 << "_start:\n";
+					 << "    .globl main\n"
+					 << "main:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
 			if (static_cast<int>(TokenType::COUNT) == 5) {
