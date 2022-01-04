@@ -41,8 +41,10 @@
   "Syntax table for `corth-mode'.")
 
 (eval-and-compile
-  (defconst corth-keywords
-    '("if" "else" "endif" "dup" "twodup" "do" "while" "endwhile" "drop" "swap" "over" "mem" "loadb" "storeb" "dump" "dump_c" "shl" "shr" "or" "and")))
+  (defconst corth-keywords '("if" "else" "endif" "do" "while" "endwhile"
+							 "dup" "twodup"  "drop" "swap" "over" "mem" "loadb" "storeb"
+							 "dump" "dump_c" "dump_s"
+							 "shl" "shr" "or" "and")))
 
 (defconst corth-highlights
   `((,(regexp-opt corth-keywords 'symbols) . font-lock-keyword-face)))
