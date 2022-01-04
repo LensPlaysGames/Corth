@@ -1,5 +1,7 @@
 // Triangle side length
-mem 9999 +  80  storeb
+//          |
+//          V
+mem 9999 +  42  storeb
 
 // Initialize column pattern
 // The column pattern is simply a condition for each
@@ -8,34 +10,34 @@ mem 9999 +  80  storeb
 //   you see in the output to appear.
 // Example pattern: 1100001010
 // Example output:  **    * *
-mem 1                 + 1 storeb
-// Store a `1` at (amount of columns - 1) in pattern
+
+// Build initial table
+//   Store a `1` at the first byte of memory
+mem 1                    + 1 storeb
+//   Store a `1` at (<triangle-side-length> - 1) in memory
 mem mem 9999 + loadb 1 - + 1 storeb
 
-0 // Loop over lines
+0 // Loop over lines starting at `0`
 while dup mem 9999 + loadb 2 - < do
-  0 // Loop over columns, print character
+  0 // Loop over columns starting at `0`, construct string at mem[10000]
   while dup mem 9999 + loadb < do
-    // Test pattern to set current character to draw
-	// The current character is stored at mem[1000]
+    // Test pattern to set current character to write to string.
     dup mem + loadb if
-	  // Load a '*' into current character memory
-	  mem 1000 + 42 storeb
+	  // Store a '*' at current column in string memory.
+	  dup mem + 10000 + 42 storeb
 	else
-	  // Load a ' ' into current character memory
-	  mem 1000 + 32 storeb
+	  // Store a ' ' at current column in string memory.
+	  dup mem + 10000 + 32 storeb
 	endif
-
-    // Print character
-    mem 1000 + loadb dump_c
 
     // Increment column counter
     1 +
   endwhile
-  drop
+  dup mem + 10000 + 10 storeb // newline
+  mem + 10000 + 1 + 0 storeb  // null terminator
 
-  // Print newline
-  10 dump_c
+  // Print constructed string
+  mem 10000 + dump_s
 
   // Load Pattern
   mem 0 + loadb 1 << mem 1 + loadb or
