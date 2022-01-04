@@ -57,6 +57,14 @@ namespace Corth {
 		COUNT
 	};
 	PLATFORM RUN_PLATFORM = PLATFORM::WIN64;
+
+	enum class ASM_SYNTAX {
+		NASM,
+		GAS,
+		COUNT
+	};
+	ASM_SYNTAX ASSEMBLY_SYNTAX = ASM_SYNTAX::NASM;
+	
 	bool verbose_logging = false;
 
 	enum class Keyword {
@@ -191,11 +199,13 @@ namespace Corth {
 	void PrintUsage() {
 		printf("\n%s\n", "Usage: `Corth.exe <flags> <options> Path/To/File.corth`");
 		printf("    %s\n", "Flags:");
-        printf("        %s\n", "-win, -win64             | Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
+        printf("        %s\n", "-win, -win64             | (default) Generate assembly for Windows 64-bit. If no platform is specified, this is the default.");
 		printf("        %s\n", "-linux, -linux64         | Generate assembly for Linux 64-bit.");
 		//printf("        %s\n", "-mac, -apple             | Generate assembly for MacOS 64-bit.");
-        printf("        %s\n", "-com, --compile          | Compile program from source into executable");
+        printf("        %s\n", "-com, --compile          | (default) Compile program from source into executable");
 		printf("        %s\n", "-gen, --generate         | Generate assembly, but don't create an executable from it.");
+		printf("        %s\n", "-NASM                    | (default) When generating assembly, use NASM syntax. Any OPTIONS set before NASM may or may be over-ridden; best practice is to put it first.");
+		printf("        %s\n", "-GAS                     | When generating assembly, use GAS syntax. This is able to be assembled by gcc into an executable. (pass output file name to gcc with `-add-ao \"-o <output-file-name>\" and not the built-in `-o` option`). Any OPTIONS set before GAS may or may be over-ridden; best practice is to put it first.");
         printf("        %s\n", "-v, --verbose            | Enable verbose logging within Corth");
 		printf("    %s\n", "Options (latest over-rides):");
 		printf("        %s\n", "Usage: <option> <input>");
@@ -646,6 +656,339 @@ namespace Corth {
 		}
 	}
 
+	void GenerateAssembly_GAS_linux64(Program& prog) {
+		std::string asm_file_path = OUTPUT_NAME + ".s";
+		std::fstream asm_file;
+		asm_file.open(asm_file_path.c_str(), std::ios::out);
+		if (asm_file) {
+			Log("Generating Linux x64 GAS assembly");
+
+			// Save list of defined strings in file to write at the end of the assembly in the `.data` section.
+			std::vector<std::string> string_literals;
+
+            // WRITE HEADER TO ASM FILE
+			asm_file << "    # CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    # USING `GAS` SYNTAX\n"
+					 << "    # USING `SYSTEM V AMD64 ABI` CALLING CONVENTION (RDI, RSI, RDX, RCX, R8, R9, -> STACK)\n"
+					 << "    # LINUX SYSTEM CALLS USE R10 INSTEAD OF RCX\n"
+					 << "    .text\n"
+					 << "    # TODO: Figure out default linux gnu assembler `as` entry name (if there is one)"
+					 << "    .globl _start\n"
+					 << "_start:\n";
+
+            // WRITE TOKENS TO ASM FILE MAIN LABEL
+			if (static_cast<int>(TokenType::COUNT) == 5) {
+				size_t instr_ptr = 0;
+				size_t instr_ptr_max = prog.tokens.size();
+				while (instr_ptr < instr_ptr_max) {
+					Token& tok = prog.tokens[instr_ptr];
+					// Write assembly to opened file based on token type and value
+					if (tok.type == TokenType::INT) {
+						asm_file << "    # -- push INT --\n"
+								 << "    mov $"  << tok.text << ", %rax" << "\n"
+								 << "    push %rax\n";
+					}
+					else if (tok.type == TokenType::STRING) {
+						asm_file << "    # -- push STRING --\n"
+								 << "    lea str_" << string_literals.size() << "(%rip), %rax\n"
+								 << "    push %rax\n";
+						// String value is stored in tok.text
+						string_literals.push_back(tok.text);
+					}
+					else if (tok.type == TokenType::OP) {
+						if (OP_COUNT == 14) {
+							if (tok.text == "+") {
+								asm_file << "    # -- add --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    add %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "-") {
+								asm_file << "    # -- subtract --\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    sub %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "*") {
+								asm_file << "    # -- multiply --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    mul %rbx\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "/") {
+								asm_file << "    # -- divide --\n"
+										 << "    xor %rdx, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    div %rbx\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "=") {
+								asm_file << "    # -- equality condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmove %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == "<") {
+								asm_file << "    # -- less than condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovl %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == ">") {
+								asm_file << "    # -- greater than condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovg %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == "<=") {
+								asm_file << "    # -- less than or equal condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovle %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == ">=") {
+								asm_file << "    # -- greater than or equal condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovge %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+						    else if (tok.text == "<<") {
+								asm_file << "    # -- bitwise-shift left --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shl %cl, %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == ">>") {
+								asm_file << "    # -- bitwise-shift right --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shr %cl, %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == "||") {
+								asm_file << "    # -- bitwise or --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    or %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "&&") {
+								asm_file << "    # -- bitwise and --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    and %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "#") {
+								asm_file << "    # -- dump --\n"
+										 << "    lea fmt(%rip), %rdi\n"
+										 << "    pop %rsi\n"
+										 << "    call printf\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of operator count in GenerateAssembly_GAS_linux64()", tok.line_number, tok.col_number);
+							assert(OP_COUNT == 14);
+						}
+					}
+					else if (tok.type == TokenType::KEYWORD) {
+						if (static_cast<int>(Keyword::COUNT) == 21) {
+							if (tok.text == GetKeywordStr(Keyword::IF)) {
+							    asm_file << "    # -- if --\n"
+										 << "    pop %rax\n"
+										 << "    cmp $0, %rax\n"
+										 << "    je addr_" << tok.data << "\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
+								asm_file << "    # -- else --\n"
+										 << "    jmp addr_" << tok.data << "\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
+								asm_file << "    # -- endif --\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+								asm_file << "    # -- dup --\n"
+										 << "    pop %rax\n"
+										 << "    push %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+								asm_file << "    # -- twodup --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    push %rbx\n"
+										 << "    push %rax\n"
+										 << "    push %rbx\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
+								asm_file << "    # -- while --\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DO)) {
+								asm_file << "    # -- do --\n"
+										 << "    pop %rax\n"
+										 << "    cmp $0, %rax\n"
+										 << "    je addr_" << tok.data << "\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ENDWHILE)) {
+								asm_file << "    # -- endwhile --\n"
+										 << "    jmp addr_" << tok.data << "\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+								asm_file << "    # -- mem --\n"
+										 << "    lea mem(%rip), %rax\n"
+										 << "    push %rax\n";
+								// Pushes the relative address of allocated memory onto the stack
+							}
+							else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+								asm_file << "    # -- load byte --\n"
+										 << "    pop %rax\n"
+										 << "    xor %rbx, %rbx\n"
+										 << "    mov (%rax), %bl\n"
+										 << "    push %rbx\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+								asm_file << "    # -- store byte --\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    mov %bl, (%rax)\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+							    asm_file << "    # -- dump --\n"
+										 << "    lea fmt(%rip), %rdi\n"
+										 << "    pop %rsi\n"
+										 << "    call printf\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
+								asm_file << "    # -- dump --\n"
+										 << "    lea fmt_char(%rip), %rdi\n"
+										 << "    pop %rsi\n"
+										 << "    call printf\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
+								asm_file << "    # -- dump --\n"
+										 << "    lea fmt_str(%rip), %rdi\n"
+										 << "    pop %rsi\n"
+										 << "    call printf\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DROP)) {
+								asm_file << "    # -- drop --\n"
+										 << "    pop %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+								asm_file << "    # -- swap --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    push %rax\n"
+										 << "    push %rbx\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+								asm_file << "    # -- over --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    push %rbx\n"
+										 << "    push %rax\n"
+										 << "    push %rbx\n";
+							}
+						    else if (tok.text == GetKeywordStr(Keyword::SHL)) {
+								asm_file << "    # -- bitwise-shift left --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shl %cl, %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SHR)) {
+								asm_file << "    # -- bitwise-shift right --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shr %cl %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OR)) {
+								asm_file << "    # -- bitwise or --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    or %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::AND)) {
+								asm_file << "    # -- bitwise and --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    and %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of keyword count in GenerateAssembly_GAS_linux64()", tok.line_number, tok.col_number);
+							assert(static_cast<int>(Keyword::COUNT) == 21);
+						}
+					}
+					instr_ptr++;
+				}
+				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+				asm_file << "    mov $0, %rdi\n"
+						 << "    call exit\n"
+						 << '\n'
+						 << "    .data\n"
+						 << "    fmt: .string \"%u\\n\"\n"
+						 << "    fmt_char: .string \"%c\"\n"
+						 << "    fmt_str: .string \"%s\"\n";
+
+				size_t index = 0;
+				if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
+				for (auto& string : string_literals) {
+					asm_file << "str_" << index << ": .string \"" << string << "\"\n";
+					index++;
+				}
+				asm_file << '\n'
+						 << "    .bss\n"
+						 << "    .comm mem, " << MEM_CAPACITY << '\n';
+			
+				asm_file.close();
+				
+				Log("Linux x64 GAS assembly generated at " + asm_file_path);
+			}
+			else {
+				Error("Exhaustive handling of TokenType count in GenerateAssembly_GAS_linux64()");
+				assert(static_cast<int>(TokenType::COUNT) == 5);
+			}
+		}
+		else {
+			Error("Could not open file for writing. Does directory exist?");
+			assert(asm_file);
+		}
+	}
+
 	void GenerateAssembly_NASM_mac64(Program& prog) {
 		std::string asm_file_path = OUTPUT_NAME + ".asm";
 		std::fstream asm_file;
@@ -1040,10 +1383,350 @@ namespace Corth {
 		}
 	}
 
+	void GenerateAssembly_GAS_win64(Program& prog) {
+		std::string asm_file_path = OUTPUT_NAME + ".s";
+		std::fstream asm_file;
+		asm_file.open(asm_file_path.c_str(), std::ios::out);
+		if (asm_file) {
+			Log("Generating WIN64 GAS assembly");
+
+			// Save list of defined strings in file to write at the end of the assembly in the `.data` section.
+			std::vector<std::string> string_literals;
+
+            // WRITE HEADER TO ASM FILE
+			asm_file << "    # CORTH COMPILER GENERATED THIS ASSEMBLY -- (BY LENSOR RADII)\n"
+					 << "    # USING `GAS` SYNTAX\n"
+					 << "    # USING `WINDOWS X64` CALLING CONVENTION (RCX, RDX, R8, R9, -> STACK)\n"
+					 << "    .text\n"
+					 << "    .globl main\n"
+					 << "main:\n";
+
+            // WRITE TOKENS TO ASM FILE MAIN LABEL
+			if (static_cast<int>(TokenType::COUNT) == 5) {
+				size_t instr_ptr = 0;
+				size_t instr_ptr_max = prog.tokens.size();
+				while (instr_ptr < instr_ptr_max) {
+					Token& tok = prog.tokens[instr_ptr];
+					// Write assembly to opened file based on token type and value
+					if (tok.type == TokenType::INT) {
+						asm_file << "    # -- push INT --\n"
+								 << "    mov $"  << tok.text << ", %rax" << "\n"
+								 << "    push %rax\n";
+					}
+					else if (tok.type == TokenType::STRING) {
+						asm_file << "    # -- push STRING --\n"
+								 << "    lea str_" << string_literals.size() << "(%rip), %rax\n"
+								 << "    push %rax\n";
+						// String value is stored in tok.text
+						string_literals.push_back(tok.text);
+					}
+					else if (tok.type == TokenType::OP) {
+						if (OP_COUNT == 14) {
+							if (tok.text == "+") {
+								asm_file << "    # -- add --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    add %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "-") {
+								asm_file << "    # -- subtract --\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    sub %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "*") {
+								asm_file << "    # -- multiply --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    mul %rbx\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "/") {
+								asm_file << "    # -- divide --\n"
+										 << "    xor %rdx, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    div %rbx\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "=") {
+								asm_file << "    # -- equality condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmove %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == "<") {
+								asm_file << "    # -- less than condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovl %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == ">") {
+								asm_file << "    # -- greater than condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovg %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == "<=") {
+								asm_file << "    # -- less than or equal condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovle %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+							else if (tok.text == ">=") {
+								asm_file << "    # -- greater than or equal condition --\n"
+										 << "    mov $0, %rcx\n"
+										 << "    mov $1, %rdx\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    cmp %rbx, %rax\n"
+										 << "    cmovge %rdx, %rcx\n"
+										 << "    push %rcx\n";
+							}
+						    else if (tok.text == "<<") {
+								asm_file << "    # -- bitwise-shift left --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shl %cl, %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == ">>") {
+								asm_file << "    # -- bitwise-shift right --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shr %cl, %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == "||") {
+								asm_file << "    # -- bitwise or --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    or %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "&&") {
+								asm_file << "    # -- bitwise and --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    and %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == "#") {
+								asm_file << "    # -- dump --\n"
+										 << "    lea fmt(%rip), %rcx\n"
+										 << "    pop %rdx\n"
+										 << "    sub $32, %rsp\n"
+										 << "    call printf\n"
+										 << "    add $32, %rsp\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of operator count in GenerateAssembly_NASM_linux64()", tok.line_number, tok.col_number);
+							assert(OP_COUNT == 14);
+						}
+					}
+					else if (tok.type == TokenType::KEYWORD) {
+						if (static_cast<int>(Keyword::COUNT) == 21) {
+							if (tok.text == GetKeywordStr(Keyword::IF)) {
+							    asm_file << "    # -- if --\n"
+										 << "    pop %rax\n"
+										 << "    cmp $0, %rax\n"
+										 << "    je addr_" << tok.data << "\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ELSE)) {
+								asm_file << "    # -- else --\n"
+										 << "    jmp addr_" << tok.data << "\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ENDIF)) {
+								asm_file << "    # -- endif --\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+								asm_file << "    # -- dup --\n"
+										 << "    pop %rax\n"
+										 << "    push %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+								asm_file << "    # -- twodup --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    push %rbx\n"
+										 << "    push %rax\n"
+										 << "    push %rbx\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
+								asm_file << "    # -- while --\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DO)) {
+								asm_file << "    # -- do --\n"
+										 << "    pop %rax\n"
+										 << "    cmp $0, %rax\n"
+										 << "    je addr_" << tok.data << "\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::ENDWHILE)) {
+								asm_file << "    # -- endwhile --\n"
+										 << "    jmp addr_" << tok.data << "\n"
+										 << "addr_" << instr_ptr << ":\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+								asm_file << "    # -- mem --\n"
+										 << "    lea mem(%rip), %rax\n"
+										 << "    push %rax\n";
+								// Pushes the relative address of allocated memory onto the stack
+							}
+							else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+								asm_file << "    # -- load byte --\n"
+										 << "    pop %rax\n"
+										 << "    xor %rbx, %rbx\n"
+										 << "    mov (%rax), %bl\n"
+										 << "    push %rbx\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+								asm_file << "    # -- store byte --\n"
+										 << "    pop %rbx\n"
+										 << "    pop %rax\n"
+										 << "    mov %bl, (%rax)\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+								asm_file << "    # -- dump --\n"
+										 << "    lea fmt(%rip), %rcx\n"
+										 << "    pop %rdx\n"
+										 << "    sub $32, %rsp\n"
+										 << "    call printf\n"
+										 << "    add $32, %rsp\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
+								asm_file << "    # -- dump character --\n"
+										 << "    lea fmt_char(%rip), %rcx\n"
+										 << "    pop %rdx\n"
+										 << "    sub $32, %rsp\n"
+										 << "    call printf\n"
+										 << "    add $32, %rsp\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
+								asm_file << "    # -- dump string --\n"
+										 << "    lea fmt_str(%rip), %rcx\n"
+										 << "    pop %rdx\n"
+										 << "    sub $32, %rsp\n"
+										 << "    call printf\n"
+										 << "    add $32, %rsp\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::DROP)) {
+								asm_file << "    # -- drop --\n"
+										 << "    pop %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+								asm_file << "    # -- swap --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    push %rax\n"
+										 << "    push %rbx\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+								asm_file << "    # -- over --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    push %rbx\n"
+										 << "    push %rax\n"
+										 << "    push %rbx\n";
+							}
+						    else if (tok.text == GetKeywordStr(Keyword::SHL)) {
+								asm_file << "    # -- bitwise-shift left --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shl %cl, %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::SHR)) {
+								asm_file << "    # -- bitwise-shift right --\n"
+										 << "    pop %rcx\n"
+										 << "    pop %rbx\n"
+										 << "    shr %cl %rbx\n"
+										 << "    push %rbx";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::OR)) {
+								asm_file << "    # -- bitwise or --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    or %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+							else if (tok.text == GetKeywordStr(Keyword::AND)) {
+								asm_file << "    # -- bitwise and --\n"
+										 << "    pop %rax\n"
+										 << "    pop %rbx\n"
+										 << "    and %rbx, %rax\n"
+										 << "    push %rax\n";
+							}
+						}
+						else {
+							Error("Exhaustive handling of keyword count in GenerateAssembly_GAS_win64()", tok.line_number, tok.col_number);
+							assert(static_cast<int>(Keyword::COUNT) == 21);
+						}
+					}
+					instr_ptr++;
+				}
+				// WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+				asm_file << "    mov $0, %rcx\n"
+						 << "    call exit\n"
+						 << '\n'
+						 << "    .data\n"
+						 << "    fmt: .string \"%u\\n\"\n"
+						 << "    fmt_char: .string \"%c\"\n"
+						 << "    fmt_str: .string \"%s\"\n";
+
+				size_t index = 0;
+				if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
+				for (auto& string : string_literals) {
+					asm_file << "str_" << index << ": .string \"" << string << "\"\n";
+					index++;
+				}
+				asm_file << '\n'
+						 << "    .bss\n"
+						 << "    .comm mem, " << MEM_CAPACITY << '\n';
+			
+				asm_file.close();
+				
+				Log("WIN64 GAS assembly generated at " + asm_file_path);
+			}
+			else {
+				Error("Exhaustive handling of TokenType count in GenerateAssembly_GAS_linux64()");
+				assert(static_cast<int>(TokenType::COUNT) == 5);
+			}
+		}
+		else {
+			Error("Could not open file for writing. Does directory exist?");
+			assert(asm_file);
+		}
+	}
+
 	bool HandleCMDLineArgs(int argc, char** argv) {
 		// Return value = whether execution will halt or not in main function
 		assert(static_cast<int>(MODE::COUNT) == 2);
 		assert(static_cast<int>(PLATFORM::COUNT) == 2);
+		assert(static_cast<int>(ASM_SYNTAX::COUNT) == 2);
 
 		if (argc == 1) {
 			// No command line args entered, print usage
@@ -1139,7 +1822,7 @@ namespace Corth {
 			else if (arg == "-linux" || arg == "-linux64") {
 				RUN_PLATFORM = PLATFORM::LINUX64;
 			}
-			else if (arg == "-win32" || arg == "-m32" || arg == "-linux32") {
+			else if (arg == "-win32" || arg == "-m32" || arg == "-linux32" || arg == "-Wa,--32") {
 				Error("32-bit mode is not supported!");
 				return false;
 			}
@@ -1148,6 +1831,41 @@ namespace Corth {
 			}
 			else if (arg == "-gen" || arg == "--generate") {
 				RUN_MODE = MODE::GENERATE;
+			}
+			else if (arg == "-NASM") {
+				ASSEMBLY_SYNTAX = ASM_SYNTAX::NASM;
+				// PLATFORM SPECIFIC DEFAULTS
+                #ifdef _WIN64
+				// Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
+				Corth::ASMB_PATH = "\\NASM\\nasm.exe";
+				Corth::ASMB_OPTS = "-f win64";
+				Corth::LINK_PATH = "\\Golink\\golink.exe";
+				Corth::LINK_OPTS = "/console /ENTRY:main msvcrt.dll";
+                #endif
+
+                #ifdef __linux__
+				Corth::ASMB_PATH = "nasm";
+				Corth::ASMB_OPTS = "-f elf64";
+				Corth::LINK_PATH = "ld";
+				Corth::LINK_OPTS = "-dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64";
+                #endif	
+			}
+			else if (arg == "-GAS") {
+				ASSEMBLY_SYNTAX = ASM_SYNTAX::GAS;
+				#ifdef _WIN64
+				// Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
+				Corth::ASMB_PATH = "\\TDM-GCC-64\\bin\\gcc.exe";
+				Corth::ASMB_OPTS = "-e main";
+				Corth::LINK_PATH = "";
+				Corth::LINK_OPTS = "";
+                #endif
+
+                #ifdef __linux__
+				Corth::ASMB_PATH = "gcc";
+				Corth::ASMB_OPTS = "-e main";
+				Corth::LINK_PATH = "";
+				Corth::LINK_OPTS = "";
+                #endif	
 			}
 			else {
 				SOURCE_PATH = argv[i];
@@ -1780,6 +2498,10 @@ int main(int argc, char** argv) {
 	Corth::Program prog;
 	bool lexSuccessful = false;
 
+	assert(static_cast<int>(Corth::MODE::COUNT) == 2);
+	assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
+	assert(static_cast<int>(Corth::ASM_SYNTAX::COUNT) == 2);
+	
     try {
         prog.source = loadFromFile(Corth::SOURCE_PATH);
 		if (Corth::verbose_logging) { Corth::Log("Load file: successful"); }
@@ -1799,14 +2521,20 @@ int main(int argc, char** argv) {
     }
 
 	if (lexSuccessful) {
-		assert(static_cast<int>(Corth::MODE::COUNT) == 2);
+		
 		switch (Corth::RUN_MODE) {
 		case Corth::MODE::GENERATE:
-			assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
+			
 			switch (Corth::RUN_PLATFORM) {
 			case Corth::PLATFORM::WIN64:
 				#ifdef _WIN64
-				Corth::GenerateAssembly_NASM_win64(prog);
+				switch (Corth::ASSEMBLY_SYNTAX) {
+				case Corth::ASM_SYNTAX::NASM:
+					Corth::GenerateAssembly_NASM_win64(prog);
+					break;
+				case Corth::ASM_SYNTAX::GAS:
+					Corth::GenerateAssembly_GAS_win64(prog);
+				}
 				#else
 				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line flag");
 				return -1;
@@ -1814,7 +2542,15 @@ int main(int argc, char** argv) {
 				break;
 			case Corth::PLATFORM::LINUX64:
 				#ifdef __linux__
-				Corth::GenerateAssembly_NASM_linux64(prog);
+				
+			    switch (Corth::ASSEMBLY_SYNTAX) {
+				case Corth::ASM_SYNTAX::NASM:
+					Corth::GenerateAssembly_NASM_linux64(prog);
+					break;
+				case Corth::ASM_SYNTAX::GAS:
+					Corth::GenerateAssembly_GAS_linux64(prog);
+					break;
+				}
 				#else
 				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
 				return -1;
@@ -1823,52 +2559,90 @@ int main(int argc, char** argv) {
 			}
 			break;
         case Corth::MODE::COMPILE:
-			assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2);
 			switch (Corth::RUN_PLATFORM) {
 			case Corth::PLATFORM::WIN64:
 				#ifdef _WIN64
-				Corth::GenerateAssembly_NASM_win64(prog);
-				if (FileExists(Corth::ASMB_PATH)) {
-					if (FileExists(Corth::LINK_PATH)) {
+				switch (Corth::ASSEMBLY_SYNTAX) {
+				case Corth::ASM_SYNTAX::NASM:
+					Corth::GenerateAssembly_NASM_win64(prog);
+					if (FileExists(Corth::ASMB_PATH)) {
+						if (FileExists(Corth::LINK_PATH)) {
+							/* Construct Commands
+							   Assembly is generated at `Corth::OUTPUT_NAME.asm`
+							   By default on win64, NASM generates an output `.obj` file of the same name as the input file.
+							   This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
+						
+							std::string cmd_asmb = Corth::ASMB_PATH + " "
+								+ Corth::ASMB_OPTS + " "
+								+ Corth::OUTPUT_NAME + ".asm "
+								+ ">assembler-log.txt 2>&1";
+						
+							std::string cmd_link = Corth::LINK_PATH + " "
+								+ Corth::LINK_OPTS + " "
+								+ Corth::OUTPUT_NAME + ".obj "
+								+ ">linker-log.txt 2>&1";
+		
+							printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+							if (system(cmd_asmb.c_str()) == 0) {
+								Corth::Log("Assembler successful!");
+							}
+							else {
+								Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+							}
+
+							printf("[CMD]: `%s`\n", cmd_link.c_str());
+							if (system(cmd_link.c_str()) == 0) {
+								Corth::Log("Linker successful!");
+							}
+							else {
+								Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
+							}
+
+							if (Corth::verbose_logging) {
+								printCharactersFromFile("assembler-log.txt", "Assembler Log");
+								printCharactersFromFile("linker-log.txt", "Linker Log");
+							}
+						}
+						else {
+							Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
+							return -1;
+						}
+					}
+					else {
+						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+						return -1;
+					}
+					break;
+				case Corth::ASM_SYNTAX::GAS:
+					Corth::GenerateAssembly_GAS_win64(prog);
+					if (FileExists(Corth::ASMB_PATH)) {
 						/* Construct Commands
-						    Assembly is generated at `Corth::OUTPUT_NAME.asm`
-					        By default on win64, NASM generates an output `.obj` file of the same name as the input file.
-					        This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
+						   Assembly is generated at `Corth::OUTPUT_NAME.s` */
 						
 						std::string cmd_asmb = Corth::ASMB_PATH + " "
 							+ Corth::ASMB_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".asm "
+							+ Corth::OUTPUT_NAME + ".s "
 							+ ">assembler-log.txt 2>&1";
-						
-						std::string cmd_link = Corth::LINK_PATH + " "
-							+ Corth::LINK_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".obj "
-							+ ">linker-log.txt 2>&1";
 		
-					    printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						if (system(cmd_asmb.c_str()) == 0) {
 							Corth::Log("Assembler successful!");
 						}
-
-						printf("[CMD]: `%s`\n", cmd_link.c_str());
-						if (system(cmd_link.c_str()) == 0) {
-							Corth::Log("Linker successful!");
+						else {
+							Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
 						}
 
 						if (Corth::verbose_logging) {
 							printCharactersFromFile("assembler-log.txt", "Assembler Log");
-							printCharactersFromFile("linker-log.txt", "Linker Log");
 						}
 					}
 					else {
-						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
+						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
 						return -1;
 					}
+					break;
 				}
-				else {
-					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-					return -1;
-				}
+				
 				#else
 				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
 				return -1;
@@ -1876,55 +2650,94 @@ int main(int argc, char** argv) {
 				break;
 			case Corth::PLATFORM::LINUX64:
 				#ifdef __linux__
-				Corth::GenerateAssembly_NASM_linux64(prog);
-				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
-					if (!system(("which " + Corth::LINK_PATH).c_str())) {
+				switch (Corth::ASSEMBLY_SYNTAX) {
+				case Corth::ASM_SYNTAX::NASM:
+					Corth::GenerateAssembly_NASM_linux64(prog);
+					if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+						if (!system(("which " + Corth::LINK_PATH).c_str())) {
+							/* Construct Commands
+							   Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
+							   By default on linux, NASM generates an output `.o` file of the same name as the input file
+							   This means the linker needs to link to `Corth::OUTPUT_NAME.o`
+							*/
+							std::string cmd_asmb = Corth::ASMB_PATH + " "
+								+ Corth::ASMB_OPTS + " "
+								+ Corth::OUTPUT_NAME + ".asm "
+								+ ">assembler-log.txt 2>&1";
+						
+							std::string cmd_link = Corth::LINK_PATH + " "
+								+ Corth::LINK_OPTS + " "
+								+ Corth::OUTPUT_NAME + ".o "
+								+ ">linker-log.txt 2>&1";
+
+							// TODO: Look into exec() family of functions
+							printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+							if (system(cmd_asmb.c_str()) == 0) {
+								Corth::Log("Assembler successful!");
+							}
+							else {
+								Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+							}
+
+							printf("[CMD]: `%s`\n", cmd_link.c_str());
+							if (system(cmd_link.c_str()) == 0) {
+								Corth::Log("Linker successful!");
+							}
+							else {
+								Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
+							}
+
+							if (Corth::verbose_logging) {
+								printCharactersFromFile("assembler-log.txt", "Assembler Log");
+								printCharactersFromFile("linker-log.txt", "Linker Log");
+							}
+						}
+						else {
+							Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
+							return -1;
+						}
+					}
+					else {
+						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+						return -1;
+					}
+					break;
+				case Corth::ASM_SYNTAX::GAS:
+					Corth::GenerateAssembly_GAS_linux64(prog);
+					if (!system(("which " + Corth::ASMB_PATH).c_str())) {
 						/* Construct Commands
-						    Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
-							By default on linux, NASM generates an output `.o` file of the same name as the input file
-							This means the linker needs to link to `Corth::OUTPUT_NAME.o`
-						 */
+						   Assembly is generated at `<Corth::OUTPUT_NAME>.s` */
 						std::string cmd_asmb = Corth::ASMB_PATH + " "
 							+ Corth::ASMB_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".asm "
+							+ Corth::OUTPUT_NAME + ".s "
 							+ ">assembler-log.txt 2>&1";
 						
-						std::string cmd_link = Corth::LINK_PATH + " "
-							+ Corth::LINK_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".o "
-							+ ">linker-log.txt 2>&1";
-
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						if (system(cmd_asmb.c_str()) == 0) {
 							Corth::Log("Assembler successful!");
 						}
-
-						printf("[CMD]: `%s`\n", cmd_link.c_str());
-						if (system(cmd_link.c_str()) == 0) {
-							Corth::Log("Linker successful!");
+						else {
+							Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
 						}
 
-					    if (Corth::verbose_logging) {
+						if (Corth::verbose_logging) {
 							printCharactersFromFile("assembler-log.txt", "Assembler Log");
-							printCharactersFromFile("linker-log.txt", "Linker Log");
 						}
 					}
 					else {
-						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
+						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
 						return -1;
 					}
-				}
-				else {
-					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-                    return -1;
-                }
-				#else
-				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
-				return -1;
-				#endif
-				break;
+					break;
 			}
+				
+            #else
+			Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
+			return -1;
+            #endif
+			break;
+		}
 			
 			break;
 		}
