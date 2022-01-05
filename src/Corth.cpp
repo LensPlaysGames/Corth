@@ -1856,7 +1856,7 @@ namespace Corth {
     }
 
     // Convert program source into tokens
-    void Lex(Program& prog) {
+    bool Lex(Program& prog) {
         std::string src = prog.source;
         size_t src_end = src.size();
 
@@ -1898,7 +1898,7 @@ namespace Corth {
                         tok.text.append(1, current);
                     }
                     else {
-                        Error("Expected '|' following '|'", tok.line_number, tok.col_number);
+                        Warning("Expected '|' following '|'", tok.line_number, tok.col_number);
                         tok.text.append(1, '|'); // Create missing text so it will still work
                     }
                 }
@@ -1907,7 +1907,7 @@ namespace Corth {
                         tok.text.append(1, current);
                     }
                     else {
-                        Error("Expected '&' following '&'", tok.line_number, tok.col_number);
+                        Warning("Expected '&' following '&'", tok.line_number, tok.col_number);
                         tok.text.append(1, '&'); // Create missing text so it will still work
                     }
                 }
@@ -1950,7 +1950,11 @@ namespace Corth {
                     i++;
                     current = src[i];
                     tok.col_number++;
-                    if (isalpha(current) || current == '_') {tok.text.append(1, current); }
+                    if (isalpha(current)
+						|| current == '_')
+					{
+						tok.text.append(1, current);
+					}
                     else { break; }
                 }
 
@@ -1961,8 +1965,9 @@ namespace Corth {
                     tok.type = TokenType::KEYWORD;
                 }
                 else {
-                    Warning("Unidentified keyword: " + tok.text,
+                    Error("Unidentified keyword: " + tok.text,
                             tok.line_number, tok.col_number);
+					return false;
                 }
                 
                 i--; // Undo lookahead.
@@ -1993,11 +1998,13 @@ namespace Corth {
                 if (i >= src_end) {
                     Error("Expected closing quotes following opening quotes",
                           tok.line_number, tok.col_number);
+					return false;
                 }
                 i--;
                 PushToken(toks, tok);
             }
         }
+		return true;
     }
 
     void PrintToken(Token& t) {
@@ -2338,6 +2345,7 @@ namespace Corth {
 	}
 }
 
+// This function is my Windows version of the `where` cmd
 bool FileExists(std::string filePath) {
 	// Check path relative Corth.exe
 	std::ifstream file(filePath);
@@ -2429,20 +2437,15 @@ int main(int argc, char** argv) {
 	}
 	
 	Corth::Program prog;
-	bool lexSuccessful = false;
 
 	static_assert(static_cast<int>(Corth::MODE::COUNT) == 2, "Exhaustive handling of modes in main method");
 	static_assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2, "Exhaustive handling of platforms in main method");
 	static_assert(static_cast<int>(Corth::ASM_SYNTAX::COUNT) == 2, "Exhaustive handling of assembly syntaxes in main method");
-	
+
+	// Try to load program source from a file
     try {
         prog.source = loadFromFile(Corth::SOURCE_PATH);
 		if (Corth::verbose_logging) { Corth::Log("Load file: successful"); }
-        Corth::Lex(prog);
-		Corth::ValidateTokens(prog);
-		if (Corth::verbose_logging) { Corth::Log("Lexed file into tokens: successful"); }
-        lexSuccessful = true;
-		if (Corth::verbose_logging) { Corth::PrintTokens(prog); }
     }
     catch (std::runtime_error e) {
 		Corth::Error("Could not load source file!", e);
@@ -2453,8 +2456,22 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+	// Lex program source into tokens
+	bool lexSuccessful = Corth::Lex(prog);
 	if (lexSuccessful) {
-		
+		Corth::ValidateTokens(prog);
+		if (Corth::verbose_logging) {
+			Corth::Log("Lexed file into tokens: successful");
+			Corth::PrintTokens(prog);
+		}
+	}
+	else {
+		Corth::Error("Failure when lexing file into tokens");
+	    return -1;
+	}
+
+	if (lexSuccessful) {
+
 		switch (Corth::RUN_MODE) {
 		case Corth::MODE::GENERATE:
 			
