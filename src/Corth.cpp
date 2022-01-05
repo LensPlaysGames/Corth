@@ -2460,9 +2460,9 @@ std::string loadFromFile(std::string filePath) {
 }
 
 void printCharactersFromFile(std::string filePath, std::string logPrefix = "[LOG]") {
-	FILE* file_ptr;
+	FILE* file_ptr {nullptr};
 	char c;
-	file_ptr = fopen(filePath.c_str(), "r");
+	fopen_s(&file_ptr, filePath.c_str(), "r");
 	if (file_ptr != nullptr) {
 		// Don't print if log-file is empty
 		fseek(file_ptr, 0, SEEK_END);
