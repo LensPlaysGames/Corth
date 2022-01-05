@@ -183,7 +183,7 @@ Example cmd with output renamed: \
 
 #### Windows
 As for Windows, there is a little funky business... MinGW, the 'normal' installation manager for GNU tools on Windows, doesn't support 64 bits. \
-Luckily, there is a community-fix, [TDM-GCC-64](https://jmeubank.github.io/tdm-gcc/), that solves this exact problem, so go donate to this person for doing the hard work that all of us can now use. \
+Luckily, there is a community-fix, [TDM-GCC-64](https://jmeubank.github.io/tdm-gcc/), that solves this exact problem, so go donate to this person for doing the hard work that all of us can now use. If for some reason the github was taken down, or anything of the sort, [here](https://web.archive.org/web/20220105210812/https://github.com/jmeubank/tdm-gcc) is a link to a wayback machine snapshot. \
 It's a very easy to use installer, and comes with a whole host of very useful 64 bit tools on Windows. Install it at the default location, otherwise Corth will need to be passed the path to the `gcc` executable using the CCLI `-a` option.
 
 To familiarize yourself with the Corth Command Line Interface (CCLI), run the following command: \
