@@ -105,7 +105,8 @@ namespace Corth {
     };
 
     bool iskeyword(std::string word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in iskeyword");
+        static_assert(static_cast<int>(Keyword::COUNT) == 22,
+					  "Exhaustive handling of keywords in iskeyword");
         if (word == "if"
             || word == "else"
             || word == "endif"
@@ -139,7 +140,8 @@ namespace Corth {
     // This function outlines the corth source input and the output it will generate.
     // case <output>: { return "<input>"; }
     std::string GetKeywordStr(Keyword word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in GetKeywordStr");
+        static_assert(static_cast<int>(Keyword::COUNT) == 22,
+					  "Exhaustive handling of keywords in GetKeywordStr");
         switch (word) {
         case Keyword::IF:       { return "if";       }
         case Keyword::ELSE:     { return "else";     }
