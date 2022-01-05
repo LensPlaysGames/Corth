@@ -158,7 +158,7 @@ The amount of values removed/added from/to the stack by a given operator can be 
 ## <a name="how-to-use-anchor"></a><a name="cross-platform-anchor"></a> How to build a Corth program
 So, you've written a program, what do you do now that you want to run it?
 
-If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions down below).
+If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions [down below](#build-corth-how-to-anchor)).
 
 There are two assembly syntaxes Corth supports (for now):
 
@@ -251,7 +251,7 @@ If your situation is different, make sure to specify the correct options using `
 
 ---
 
-## How to build Corth from source
+## <a name="build-corth-how-to-anchor"></a>How to build Corth from source
 This project uses [CMake](https://cmake.org/) to build Corth for any platform that CMake supports (which is a lot). \
 This means Corth source code can be easily built in your favorite IDE that supports C++ (or with make, you linux-folk).
 
