@@ -2065,7 +2065,7 @@ namespace Corth {
 		size_t instr_ptr = 0;
 		size_t instr_ptr_max = p.tokens.size();
 		for (size_t instr_ptr = 0; instr_ptr < instr_ptr_max; instr_ptr++) {
-			std::cout << "    " << instr_ptr << ": ";
+			printf("    %zu: ", instr_ptr);
 			PrintToken(p.tokens[instr_ptr]);
 		}
 	}
