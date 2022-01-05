@@ -4,9 +4,13 @@
 #include <algorithm>   // remove_if
 #include <stdlib.h>    // system, exit
 
+// Custom headers
+#include "Errors.h"
+
 // Data types
 #include <string>
 #include <vector>
+#include <map>
 
 // Platform specific includes
 #ifdef _WIN64
@@ -25,21 +29,6 @@
 // New keyword: `mod` with matching operator symbol '%' (modulus)
 
 namespace Corth {
-	// This needs to be changed if operators are added or removed from Corth internally.
-	const size_t OP_COUNT = 14;
-	bool isoperator(char& c){
-		return c == '+'    // addition
-			|| c == '-'    // subtraction
-			|| c == '*'    // multiplication
-            || c == '/'    // division
-            || c == '='    // equality comparison
-            || c == '<'    // less than (or equal) comparison
-            || c == '>'    // greater than (or equal) comparison
-            || c == '#'    // dump (pop + print)
-            || c == '&'    // bitwise and (when combined with another)
-            || c == '|';   // bitwise or (when combined with another)
-    }
-
     const unsigned int MEM_CAPACITY = 720000;
     std::string SOURCE_PATH = "main.corth";
     std::string OUTPUT_NAME = "corth_program";
@@ -73,81 +62,21 @@ namespace Corth {
     
     bool verbose_logging = false;
 
-    void DoLog(std::string msg, std::string prefix = "[LOG]", std::string suffix = "\n") {
-        printf((prefix + ": %s" + suffix).c_str(), msg.c_str());
-    }
-
-    void DoLog(std::string msg, size_t line_num, std::string prefix = "[LOG]", std::string suffix = "\n") {
-        printf((prefix + " LINE %zu: %s" + suffix).c_str(), line_num, msg.c_str());
-    }
-
-    void DoLog(std::string msg, size_t line_num, size_t column_num, std::string prefix = "[LOG]", std::string suffix = "\n") {
-        printf((prefix + " LINE %zu, COL %zu: %s" + suffix).c_str(), line_num, column_num, msg.c_str());
-    }
-
-    void Error(std::string msg) {
-        DoLog(msg, "\n[ERR]");
-    }
-
-    void Error(std::string msg, size_t line_num) {
-        DoLog(msg, line_num, "\n[ERR]");
-    }
-
-    void Error(std::string msg, size_t line_num, size_t column_num) {
-        DoLog(msg, line_num, column_num, "\n[ERR]");
-    }
-
-    void Error(std::string msg, std::exception e) {
-        DoLog(msg + " (" + e.what() + ")", "\n[ERR]");
-    }
-
-    void StackError() {
-        Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?");
-    }
-
-    void StackError(size_t line_num) {
-        Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num);
-    }
-
-    void StackError(size_t line_num, size_t column_num) {
-        Error("Stack protection invoked! (Did you forget to put the operator after the operands (i.e. `5 5 +` not `5 + 5`))?", line_num, column_num);
-    }
-
-    void Warning(std::string msg) {
-        DoLog(msg, "[WRN]");
-    }
-
-    void Warning(std::string msg, size_t line_num) {
-        DoLog(msg, line_num, "[WRN]");
-    }
-
-    void Warning(std::string msg, size_t line_num, size_t column_num) {
-        DoLog(msg, line_num, column_num, "[WRN]");
-    }
-
-    void DbgLog(std::string msg) {
-        DoLog(msg, "[DBG]");
-    }
-
-    void DbgLog(std::string msg, size_t line_num) {
-        DoLog(msg, line_num, "[DBG]");
-    }
-
-    void DbgLog(std::string msg, size_t line_num, size_t column_num) {
-        DoLog(msg, line_num, column_num, "[DBG]");
-    }
-
-    void Log(std::string msg) {
-        DoLog(msg);
-    }
-
-    void Log(std::string msg, size_t line_num) {
-        DoLog(msg, line_num);
-    }
-
-    void Log(std::string msg, size_t line_num, size_t column_num) {
-        DoLog(msg, line_num, column_num);
-    }
+    // This needs to be changed if operators are added or removed from Corth internally.
+    const size_t OP_COUNT = 15;
+    bool isoperator(char& c){
+		return c == '+'      // addition
+			|| c == '-'    // subtraction
+			|| c == '*'    // multiplication
+			|| c == '/'    // division
+			|| c == '='    // equality comparison
+			|| c == '<'    // less than (or equal) comparison
+			|| c == '>'    // greater than (or equal) comparison
+			|| c == '#'    // dump (pop + print)
+			|| c == '%'    // modulo
+			|| c == '&'    // bitwise and (when combined with another)
+			|| c == '|';   // bitwise or (when combined with another)
+  }
 
     enum class Keyword {
         IF,
