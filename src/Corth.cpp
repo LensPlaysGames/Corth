@@ -174,6 +174,7 @@ namespace Corth {
         COUNT
     };
 
+	// TODO: Convert to lookup table
     bool iskeyword(std::string word) {
         static_assert(static_cast<int>(Keyword::COUNT) == 21, "Exhaustive handling of keywords in iskeyword");
         if (word == "if"
@@ -205,6 +206,7 @@ namespace Corth {
         }
     }
 
+	// TODO: Convert to lookup table
     // This function outlines the corth source input and the output it will generate.
     // case <output>: { return "<input>"; }
     std::string GetKeywordStr(Keyword word) {
