@@ -44,7 +44,7 @@
   (defconst corth-keywords '("if" "else" "endif" "do" "while" "endwhile"
 							 "dup" "twodup"  "drop" "swap" "over" "mem" "loadb" "storeb"
 							 "dump" "dump_c" "dump_s"
-							 "shl" "shr" "or" "and")))
+							 "shl" "shr" "or" "and" "mod")))
 
 (defconst corth-highlights
   `((,(regexp-opt corth-keywords 'symbols) . font-lock-keyword-face)))
