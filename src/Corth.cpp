@@ -2470,109 +2470,83 @@ int main(int argc, char** argv) {
 	    return -1;
 	}
 
-	if (lexSuccessful) {
-
-		switch (Corth::RUN_MODE) {
-		case Corth::MODE::GENERATE:
-			
-			switch (Corth::RUN_PLATFORM) {
-			case Corth::PLATFORM::WIN64:
-				#ifdef _WIN64
-				switch (Corth::ASSEMBLY_SYNTAX) {
-				case Corth::ASM_SYNTAX::NASM:
-					Corth::GenerateAssembly_NASM_win64(prog);
-					break;
-				case Corth::ASM_SYNTAX::GAS:
-					Corth::GenerateAssembly_GAS_win64(prog);
-				}
-				#else
-				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line flag");
-				return -1;
-				#endif
-				break;
-			case Corth::PLATFORM::LINUX64:
-				#ifdef __linux__
-				
-			    switch (Corth::ASSEMBLY_SYNTAX) {
-				case Corth::ASM_SYNTAX::NASM:
-					Corth::GenerateAssembly_NASM_linux64(prog);
-					break;
-				case Corth::ASM_SYNTAX::GAS:
-					Corth::GenerateAssembly_GAS_linux64(prog);
-					break;
-				}
-				#else
-				Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
-				return -1;
-				#endif
-				break;
+	if (Corth::RUN_MODE == Corth::MODE::GENERATE) {
+		if (Corth::RUN_PLATFORM == Corth::PLATFORM::WIN64) {
+            #ifdef _WIN64
+			if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+				Corth::GenerateAssembly_NASM_win64(prog);
 			}
-			break;
-        case Corth::MODE::COMPILE:
-			switch (Corth::RUN_PLATFORM) {
-			case Corth::PLATFORM::WIN64:
-				#ifdef _WIN64
-				switch (Corth::ASSEMBLY_SYNTAX) {
-				case Corth::ASM_SYNTAX::NASM:
-					Corth::GenerateAssembly_NASM_win64(prog);
-					if (FileExists(Corth::ASMB_PATH)) {
-						if (FileExists(Corth::LINK_PATH)) {
-							/* Construct Commands
-							   Assembly is generated at `Corth::OUTPUT_NAME.asm`
-							   By default on win64, NASM generates an output `.obj` file of the same name as the input file.
-							   This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
+			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+				Corth::GenerateAssembly_GAS_win64(prog);
+			}
+            #else
+			Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line flag");
+			return -1;
+            #endif
+		}
+		else if (Corth::RUN_PLATFORM == Corth::PLATFORM::LINUX64) {
+            #ifdef __linux__
+		    if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+				Corth::GenerateAssembly_NASM_linux64(prog);
+			}
+			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+				Corth::GenerateAssembly_GAS_linux64(prog);
+			}
+            #else
+			Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
+			return -1;
+            #endif
+		}
+	}
+	else if (Corth::RUN_MODE == Corth::MODE::COMPILE) {
+		if (Corth::RUN_PLATFORM == Corth::PLATFORM::WIN64) {
+            #ifdef _WIN64
+			if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+				Corth::GenerateAssembly_GAS_win64(prog);
+				if (FileExists(Corth::ASMB_PATH)) {
+					/* Construct Commands
+					   Assembly is generated at `Corth::OUTPUT_NAME.s` */
 						
-							std::string cmd_asmb = Corth::ASMB_PATH + " "
-								+ Corth::ASMB_OPTS + " "
-								+ Corth::OUTPUT_NAME + ".asm "
-								+ ">assembler-log.txt 2>&1";
-						
-							std::string cmd_link = Corth::LINK_PATH + " "
-								+ Corth::LINK_OPTS + " "
-								+ Corth::OUTPUT_NAME + ".obj "
-								+ ">linker-log.txt 2>&1";
+					std::string cmd_asmb = Corth::ASMB_PATH + " "
+						+ Corth::ASMB_OPTS + " "
+						+ Corth::OUTPUT_NAME + ".s "
+						+ ">assembler-log.txt 2>&1";
 		
-							printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-							if (system(cmd_asmb.c_str()) == 0) {
-								Corth::Log("Assembler successful!");
-							}
-							else {
-								Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
-							}
-
-							printf("[CMD]: `%s`\n", cmd_link.c_str());
-							if (system(cmd_link.c_str()) == 0) {
-								Corth::Log("Linker successful!");
-							}
-							else {
-								Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
-							}
-
-							if (Corth::verbose_logging) {
-								printCharactersFromFile("assembler-log.txt", "Assembler Log");
-								printCharactersFromFile("linker-log.txt", "Linker Log");
-							}
-						}
-						else {
-							Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
-							return -1;
-						}
+					printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+					if (system(cmd_asmb.c_str()) == 0) {
+						Corth::Log("Assembler successful!");
 					}
 					else {
-						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-						return -1;
+						Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
 					}
-					break;
-				case Corth::ASM_SYNTAX::GAS:
-					Corth::GenerateAssembly_GAS_win64(prog);
-					if (FileExists(Corth::ASMB_PATH)) {
+
+					if (Corth::verbose_logging) {
+						printCharactersFromFile("assembler-log.txt", "Assembler Log");
+					}
+				}
+				else {
+					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+					return -1;
+				}
+			}
+			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+				Corth::GenerateAssembly_NASM_win64(prog);
+				if (FileExists(Corth::ASMB_PATH)) {
+					if (FileExists(Corth::LINK_PATH)) {
 						/* Construct Commands
-						   Assembly is generated at `Corth::OUTPUT_NAME.s` */
+						   Assembly is generated at `Corth::OUTPUT_NAME.asm`
+						   By default on win64, NASM generates an output `.obj` file of the same name as the input file.
+						   This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
 						
 						std::string cmd_asmb = Corth::ASMB_PATH + " "
 							+ Corth::ASMB_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".s "
+							+ Corth::OUTPUT_NAME + ".asm "
 							+ ">assembler-log.txt 2>&1";
+						
+						std::string cmd_link = Corth::LINK_PATH + " "
+							+ Corth::LINK_OPTS + " "
+							+ Corth::OUTPUT_NAME + ".obj "
+							+ ">linker-log.txt 2>&1";
 		
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						if (system(cmd_asmb.c_str()) == 0) {
@@ -2582,86 +2556,83 @@ int main(int argc, char** argv) {
 							Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
 						}
 
-						if (Corth::verbose_logging) {
-							printCharactersFromFile("assembler-log.txt", "Assembler Log");
-						}
-					}
-					else {
-						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-						return -1;
-					}
-					break;
-				}
-				
-				#else
-				Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
-				return -1;
-				#endif
-				break;
-			case Corth::PLATFORM::LINUX64:
-				#ifdef __linux__
-				switch (Corth::ASSEMBLY_SYNTAX) {
-				case Corth::ASM_SYNTAX::NASM:
-					Corth::GenerateAssembly_NASM_linux64(prog);
-					if (!system(("which " + Corth::ASMB_PATH).c_str())) {
-						if (!system(("which " + Corth::LINK_PATH).c_str())) {
-							/* Construct Commands
-							   Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
-							   By default on linux, NASM generates an output `.o` file of the same name as the input file
-							   This means the linker needs to link to `Corth::OUTPUT_NAME.o`
-							*/
-							std::string cmd_asmb = Corth::ASMB_PATH + " "
-								+ Corth::ASMB_OPTS + " "
-								+ Corth::OUTPUT_NAME + ".asm "
-								+ ">assembler-log.txt 2>&1";
-						
-							std::string cmd_link = Corth::LINK_PATH + " "
-								+ Corth::LINK_OPTS + " "
-								+ Corth::OUTPUT_NAME + ".o "
-								+ ">linker-log.txt 2>&1";
-
-							// TODO: Look into exec() family of functions
-							printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-							if (system(cmd_asmb.c_str()) == 0) {
-								Corth::Log("Assembler successful!");
-							}
-							else {
-								Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
-							}
-
-							printf("[CMD]: `%s`\n", cmd_link.c_str());
-							if (system(cmd_link.c_str()) == 0) {
-								Corth::Log("Linker successful!");
-							}
-							else {
-								Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
-							}
-
-							if (Corth::verbose_logging) {
-								printCharactersFromFile("assembler-log.txt", "Assembler Log");
-								printCharactersFromFile("linker-log.txt", "Linker Log");
-							}
+						printf("[CMD]: `%s`\n", cmd_link.c_str());
+						if (system(cmd_link.c_str()) == 0) {
+							Corth::Log("Linker successful!");
 						}
 						else {
-							Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
-							return -1;
+							Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
+						}
+
+						if (Corth::verbose_logging) {
+							printCharactersFromFile("assembler-log.txt", "Assembler Log");
+							printCharactersFromFile("linker-log.txt", "Linker Log");
 						}
 					}
 					else {
-						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
 						return -1;
 					}
-					break;
-				case Corth::ASM_SYNTAX::GAS:
-					Corth::GenerateAssembly_GAS_linux64(prog);
-					if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+				}
+				else {
+					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+					return -1;
+				}
+			}
+            #else
+			Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
+			return -1;
+            #endif
+		}
+		else if (Corth::RUN_PLATFORM == Corth::PLATFORM::LINUX64) {
+			#ifdef __linux__
+			if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+				Corth::GenerateAssembly_GAS_linux64(prog);
+				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+					/* Construct Commands
+					   Assembly is generated at `<Corth::OUTPUT_NAME>.s` */
+					std::string cmd_asmb = Corth::ASMB_PATH + " "
+						+ Corth::ASMB_OPTS + " "
+						+ Corth::OUTPUT_NAME + ".s "
+						+ ">assembler-log.txt 2>&1";
+						
+					// TODO: Look into exec() family of functions
+					printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+					if (system(cmd_asmb.c_str()) == 0) {
+						Corth::Log("Assembler successful!");
+					}
+					else {
+						Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+					}
+
+					if (Corth::verbose_logging) {
+						printCharactersFromFile("assembler-log.txt", "Assembler Log");
+					}
+				}
+				else {
+					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+					return -1;
+				}
+			}
+			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+				Corth::GenerateAssembly_NASM_linux64(prog);
+				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+					if (!system(("which " + Corth::LINK_PATH).c_str())) {
 						/* Construct Commands
-						   Assembly is generated at `<Corth::OUTPUT_NAME>.s` */
+						   Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
+						   By default on linux, NASM generates an output `.o` file of the same name as the input file
+						   This means the linker needs to link to `Corth::OUTPUT_NAME.o`
+						*/
 						std::string cmd_asmb = Corth::ASMB_PATH + " "
 							+ Corth::ASMB_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".s "
+							+ Corth::OUTPUT_NAME + ".asm "
 							+ ">assembler-log.txt 2>&1";
 						
+						std::string cmd_link = Corth::LINK_PATH + " "
+							+ Corth::LINK_OPTS + " "
+							+ Corth::OUTPUT_NAME + ".o "
+							+ ">linker-log.txt 2>&1";
+
 						// TODO: Look into exec() family of functions
 						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
 						if (system(cmd_asmb.c_str()) == 0) {
@@ -2671,27 +2642,34 @@ int main(int argc, char** argv) {
 							Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
 						}
 
+						printf("[CMD]: `%s`\n", cmd_link.c_str());
+						if (system(cmd_link.c_str()) == 0) {
+							Corth::Log("Linker successful!");
+						}
+						else {
+							Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
+						}
+
 						if (Corth::verbose_logging) {
 							printCharactersFromFile("assembler-log.txt", "Assembler Log");
+							printCharactersFromFile("linker-log.txt", "Linker Log");
 						}
 					}
 					else {
-						Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
 						return -1;
 					}
-					break;
+				}
+				else {
+					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+					return -1;
+				}
 			}
-				
-            #else
+		    #else
 			Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
 			return -1;
             #endif
-			break;
-		}
-			
-			break;
 		}
 	}
-
 	return 0;
 }
