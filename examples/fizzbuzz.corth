@@ -1,0 +1,22 @@
+1 // Initialize loop counter
+while dup 100 < do
+  dup 15 mod 0 = if
+    "FizzBuzz\n" dump_s
+  else
+    dup 3 mod 0 = if
+	  "Fizz\n" dump_s
+	else
+	  dup 5 mod 0 = if
+	    "Buzz\n" dump_s
+	  else
+	    // Print loop counter
+	    dup dump
+	  endif
+    endif
+  endif
+
+  // Increment counter
+  1 +
+endwhile
+drop // Remove loop counter from stack
+
