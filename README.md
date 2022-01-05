@@ -124,36 +124,36 @@ The amount of values removed/added from/to the stack by a given operator can be 
 |    `<`   | Less-than            |    2 |    1 | `{a, b} -> {a < b}`   |Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.|
 |   `>=`   | Greater-than-or-equal|    2 |    1 | `{a, b} -> {a >= b}`  |Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not.|
 |   `<=`   | Less-than-or-equal   |    2 |    1 | `{a, b} -> {a <= b}`  |Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.|
-|   `<<`   | Bitwise Shift Left   |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`|Shifts the bits of a given value to the left by a given amount.|
-|   `>>`   | Bitwise Shift Right  |    2 |    1 | `{<value-to-shift>, <amount-of-bits-to-shift>} -> {<bit-shifted-value>}`|Shifts the bits of a given value to the right by a given amount.|
+|   `<<`   | Bitwise Shift Left   |    2 |    1 | `{a, b} -> {a << b}`  |Shifts the bits of a given value to the left by a given amount.                        |
+|   `>>`   | Bitwise Shift Right  |    2 |    1 | `{a, b} -> {a >> b}`  |Shifts the bits of a given value to the right by a given amount.                       |
 |   `\|\|` | Bitwise Operator     |    2 |    1 | `{a, b} -> {a \|\| b}`|Pops two values off the stack, then pushes back the bitwise-or of those values.        |
 |   `&&`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a && b}`  |Pops two values off the stack, then pushes back the bitwise-and of those values.       |
 
 #### <a name="keywords-anchor"></a> Keywords
 | Keyword  | Meaning | Pop  | Push | Notation | Description                                                                                                     |
 |:--------:|:--------|-----:|-----:|:--------:|:----------------------------------------------------------------------------------------------------------------|
-|`if`      |Conditional Branch   |1|0| `{<condition>} -> { }`|Pops a value off the stack, then jumps to `else`/`endif` only if popped value is equal to zero.   |
-|`else`    |Conditional Branch   |0|0| | Only used between `if` and `endif` keywords to provide an alternate branch; what will be ran if `if` condition is false.|
-|`endif`   |Block Ending Symbol  |0|0| | Required block-ending-symbol for `if` keyword.                                                                         |
-|`dup`     |Duplicate            |1|2| `{a} -> {a, a}`|Pops one value off the stack, then pushes it back twice.                                                 |
-|`twodup`  |Duplicate Two        |2|4| `{a, b} -> {a, b, a, b}`|Pops two values off the stack, then pushes them both back on, twice.                            |
-|`mem`     |Memory Access        |0|1| `{ } -> {<memory address>}`|Pushes the address of the usable memory in Corth. Hard-coded to 720kb; there will be a CCLI option in the future. To access any address within the memory, simply add the byte offset to the address, like so `mem <byte offset> +`, then use it with the memory access keywords that accept memory addresses as arguments.|
-|`store<x>`|Store from memory    |2|0| `{<memory address>, <value>} -> { }`|Pops a value and a memory address off the stack, then stores that value at that memory address. <x> can be any of 'b': byte, 'w': word (2 bytes), 'd': double word (4 bytes), 'q': quad word (8 bytes)|
-|`load<x>` |Load from memory     |1|1| `{<memory address>} -> {<value>}`|Pops a memory address off the stack, then pushes a value read from the memory address on to the stack. <x> can be any of 'b': byte, 'w': word (2 bytes), 'd': double word (4 bytes), 'q': quad word (8 bytes)|
-|`do`      |Conditional Jump     |1|0| `{<condition>} -> { }`|Pops one value off the stack, then jumps just past `endwhile` if value is zero.                   |
-|`while`   |Block Starting Symbol|0|0| | Generates a label for `endwhile` to jump to.                                                                           |
-|`endwhile`|Block Ending Symbol  |0|0| | Generates a label for `do` to jump to upon false condition.                                                            |
-|`drop`    |Stack Manipulation   |1|0|    `{a} -> { }`|Drops the top-most item off the stack, leaving no reference to it. Use this to delete unused stack-items.|
-|`swap`    |Stack Manipulation   |2|2| `{a, b} -> {b, a}`|Pops two values off the stack, then pushes them back in reverse order.                                |
-|`over`    |Stack Manipulation   |2|3| `{a, b} -> {a, b, a}`|Pushes the stack item below the top on to the top.                                                 |
-|`shl`     |Bitwise Operator     |2|1|`{value, amount-of-bits-to-shift} -> {bit-shifted-value}`|Equivalent to [`<<` operator](#ops-anchor).                     |
-|`shr`     |Bitwise Operator     |2|1|`{value, amount-of-bits-to-shift} -> {bit-shifted-value}`|Equivalent to [`>>` operator](#ops-anchor).                     |
-|`or`      |Bitwise Operator     |2|1| `{a, b} -> {a \|\| b}`|Equivalent to [`\|\|` operator](#ops-anchor).                                                     |
-|`and`     |Bitwise Operator     |2|1| `{a, b} -> {a && b}`|Equivalent to [`&&` operator](#ops-anchor).                                                         |
-|`mod`     |Modulo               |2|1| `{a, b} -> {a % b}`|Equivalent to [`%` operator](#ops-anchor).                                                           |
-|`dump`    |Pop & Print          |1|0| `{a} -> { }`|Pops a value off the stack, then prints it formatted as an unsigned integer. Equivalent to [`#` operator](#ops-anchor).|
-|`dump_c`  |Dump Character       |1|0| `{a} -> { }`|Pops a value off the stack, then prints it formatted as a char.                                             |
-|`dump_s`  |Dump String          |1|0| `{a} -> { }`|Pops a value off the stack, then prints it formatted as a string.                                           |
+|`if`      |Conditional Branch   |1|0| `{<condition>} -> { }`          |Pops a value off the stack, then jumps to `else`/`endif` only if popped value is equal to zero.|
+|`else`    |Conditional Branch   |0|0|                                  | Only used between `if` and `endif` keywords to provide an alternate branch; what will be ran if `if` condition is false.|
+|`endif`   |Block Ending Symbol  |0|0|                                 | Required block-ending-symbol for `if` keyword.                                         |
+|`dup`     |Duplicate            |1|2| `{a} -> {a, a}`                 |Pops one value off the stack, then pushes it back twice.                                                 |
+|`twodup`  |Duplicate Two        |2|4| `{a, b} -> {a, b, a, b}`        |Pops two values off the stack, then pushes them both back on, twice.                    |
+|`mem`     |Memory Access        |0|1| `{ } -> {<memory address>}`     |Pushes the address of the usable memory in Corth. Hard-coded to 720kb; there will be a CCLI option in the future. To access any address within the memory, simply add the byte offset to the address, like so `mem <byte offset> +`, then use it with the memory access keywords that accept memory addresses as arguments.|
+|`store<x>`|Store from memory    |2|0| `{<memory address>, <value>} -> { }`|Pops a value and a memory address off the stack, then stores that value at that memory address. <x> can be any of 'b': byte, 'w': word (2 bytes), 'd': double word (4 bytes), 'q': quad word (8 bytes).|
+|`load<x>` |Load from memory     |1|1|`{<memory address>} -> {<value>}`|Pops a memory address off the stack, then pushes a value read from the memory address on to the stack. <x> can be any of 'b': byte, 'w': word (2 bytes), 'd': double word (4 bytes), 'q': quad word (8 bytes).|
+|`do`      |Conditional Jump     |1|0| `{<condition>} -> { }`          |Pops one value off the stack, then jumps just past `endwhile` if value is zero.         |
+|`while`   |Block Starting Symbol|0|0|                                 |Generates a label for `endwhile` to jump to.                                            |
+|`endwhile`|Block Ending Symbol  |0|0|                                 |Generates a label for `do` to jump to upon false condition.                             |
+|`drop`    |Stack Manipulation   |1|0| `{a} -> { }`                    |Drops the top-most item off the stack, leaving no reference to it. Use this to delete unused stack-items.|
+|`swap`    |Stack Manipulation   |2|2| `{a, b} -> {b, a}`              |Pops two values off the stack, then pushes them back in reverse order.                  |
+|`over`    |Stack Manipulation   |2|3| `{a, b} -> {a, b, a}`           |Pushes the stack item below the top on to the top.                                      |
+|`shl`     |Bitwise Operator     |2|1| `{a, b} -> {a << b}`            |Equivalent to [`<<` operator](#ops-anchor).                                             |
+|`shr`     |Bitwise Operator     |2|1| `{a, b} -> {a >> b}`            |Equivalent to [`>>` operator](#ops-anchor).                                             |
+|`or`      |Bitwise Operator     |2|1| `{a, b} -> {a \|\| b}`          |Equivalent to [`\|\|` operator](#ops-anchor).                                           |
+|`and`     |Bitwise Operator     |2|1| `{a, b} -> {a && b}`            |Equivalent to [`&&` operator](#ops-anchor).                                             |
+|`mod`     |Modulo               |2|1| `{a, b} -> {a % b}`              |Equivalent to [`%` operator](#ops-anchor).                                             |
+|`dump`    |Pop & Print          |1|0| `{a} -> { }`                    |Pops a value off the stack, then prints it formatted as an unsigned integer. Equivalent to [`#` operator](#ops-anchor).|
+|`dump_c`  |Dump Character       |1|0| `{a} -> { }`                    |Pops a value off the stack, then prints it formatted as a char.                         |
+|`dump_s`  |Dump String          |1|0| `{a} -> { }`                    |Pops a value off the stack, then prints it formatted as a string.                       |
 
 ---
 
