@@ -25,7 +25,6 @@
 
 // TODO:
 // Make MEM_CAPACITY accessible through a CCLI option
-// Implement store/load64 (32, 16?)
 // New keyword: `mod` with matching operator symbol '%' (modulus)
 
 namespace Corth {
@@ -65,7 +64,7 @@ namespace Corth {
     // This needs to be changed if operators are added or removed from Corth internally.
     const size_t OP_COUNT = 15;
     bool isoperator(char& c){
-		return c == '+'      // addition
+		return c == '+'    // addition
 			|| c == '-'    // subtraction
 			|| c == '*'    // multiplication
 			|| c == '/'    // division
@@ -96,6 +95,10 @@ namespace Corth {
 		MEM,
         LOADB,
         STOREB,
+		LOADW,
+        STOREW,
+		LOADD,
+        STORED,
 		LOADQ,
         STOREQ,
         SHL,
@@ -107,7 +110,7 @@ namespace Corth {
     };
 
     bool iskeyword(std::string word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 24,
+        static_assert(static_cast<int>(Keyword::COUNT) == 28,
 					  "Exhaustive handling of keywords in iskeyword");
         if (word == "if"
             || word == "else"
@@ -126,6 +129,10 @@ namespace Corth {
 			|| word == "mem"
             || word == "loadb"
             || word == "storeb"
+			|| word == "loadw"
+            || word == "storew"
+			|| word == "loadd"
+            || word == "stored"
 			|| word == "loadq"
             || word == "storeq"
             || word == "shl"
@@ -144,7 +151,7 @@ namespace Corth {
     // This function outlines the corth source input and the output it will generate.
     // case <output>: { return "<input>"; }
     std::string GetKeywordStr(Keyword word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 24,
+        static_assert(static_cast<int>(Keyword::COUNT) == 28,
 					  "Exhaustive handling of keywords in GetKeywordStr");
         switch (word) {
         case Keyword::IF:       { return "if";       }
@@ -166,6 +173,10 @@ namespace Corth {
 		case Keyword::MEM:      { return "mem";      }
         case Keyword::LOADB:    { return "loadb";    }
         case Keyword::STOREB:   { return "storeb";   }
+		case Keyword::LOADW:    { return "loadw";    }
+        case Keyword::STOREW:   { return "storew";   }
+		case Keyword::LOADD:    { return "loadd";    }
+        case Keyword::STORED:   { return "stored";   }
 		case Keyword::LOADQ:    { return "loadq";    }
         case Keyword::STOREQ:   { return "storeq";   }
 			
@@ -434,7 +445,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 28,
 								  "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
@@ -540,6 +551,32 @@ namespace Corth {
                                  << "    pop rbx\n"
                                  << "    pop rax\n"
                                  << "    mov [rax], bl\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                        asm_file << "    ;; -- load word --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov bx, [rax]\n"
+                                 << "    push rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREW)) {
+                        asm_file << "    ;; -- store word --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], bx\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                        asm_file << "    ;; -- load double word --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov ebx, [rax]\n"
+                                 << "    push rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STORED)) {
+                        asm_file << "    ;; -- store double word --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], ebx\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    ;; -- load quad word --\n"
@@ -795,7 +832,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 28,
 								  "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
@@ -902,6 +939,32 @@ namespace Corth {
                                  << "    pop %rbx\n"
                                  << "    pop %rax\n"
                                  << "    mov %bl, (%rax)\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                        asm_file << "    # -- load word --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %bx\n"
+                                 << "    push %rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREW)) {
+                        asm_file << "    # -- store word --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %bx, (%rax)\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                        asm_file << "    # -- load double word --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %ebx\n"
+                                 << "    push %rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STORED)) {
+                        asm_file << "    # -- store double word --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %ebx, (%rax)\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    # -- load quad word --\n"
@@ -1195,7 +1258,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 28,
 								  "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
@@ -1308,6 +1371,32 @@ namespace Corth {
                                  << "    pop rbx\n"
                                  << "    pop rax\n"
                                  << "    mov [rax], bl\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                        asm_file << "    ;; -- load word --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov bx, [rax]\n"
+                                 << "    push rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREW)) {
+                        asm_file << "    ;; -- store word --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], bx\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                        asm_file << "    ;; -- load double word --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov ebx, [rax]\n"
+                                 << "    push rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STORED)) {
+                        asm_file << "    ;; -- store double word --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], ebx\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    ;; -- load quad word --\n"
@@ -1566,7 +1655,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 28,
 								  "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
@@ -1679,6 +1768,32 @@ namespace Corth {
                                  << "    pop %rbx\n"
                                  << "    pop %rax\n"
                                  << "    mov %bl, (%rax)\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                        asm_file << "    # -- load word --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %bx\n"
+                                 << "    push %rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREW)) {
+                        asm_file << "    # -- store word --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %bx, (%rax)\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                        asm_file << "    # -- load double word --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %ebx\n"
+                                 << "    push %rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STORED)) {
+                        asm_file << "    # -- store double word --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %ebx, (%rax)\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    # -- load quad word --\n"
@@ -2184,7 +2299,7 @@ namespace Corth {
 				}
 			}
 			else if (tok.type == TokenType::KEYWORD) {
-				static_assert(static_cast<int>(Keyword::COUNT) == 24,
+				static_assert(static_cast<int>(Keyword::COUNT) == 28,
 							  "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
 				// Skip skippable tokens first for speed
 				if (tok.text == GetKeywordStr(Keyword::ELSE)
@@ -2230,6 +2345,8 @@ namespace Corth {
 					stackSize++;
 				}
 				else if (tok.text == GetKeywordStr(Keyword::LOADB)
+						 || tok.text == GetKeywordStr(Keyword::LOADW)
+						 || tok.text == GetKeywordStr(Keyword::LOADD)
 						 || tok.text == GetKeywordStr(Keyword::LOADQ))
 				{
 					// `loadb` operations will pop an address from the stack,
@@ -2243,7 +2360,10 @@ namespace Corth {
 					}
 				}
 				else if (tok.text == GetKeywordStr(Keyword::STOREB)
-						 || tok.text == GetKeywordStr(Keyword::STOREQ)) {
+						 || tok.text == GetKeywordStr(Keyword::STOREW)
+						 || tok.text == GetKeywordStr(Keyword::STORED)
+						 || tok.text == GetKeywordStr(Keyword::STOREQ))
+				{
 					// `store` operations will pop a value and an
 					//   address from the stack.
 					// {<address>, <value>} -> { }
@@ -2319,7 +2439,7 @@ namespace Corth {
 	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
 		size_t block_instr_ptr = instr_ptr;
 
-		static_assert(static_cast<int>(Keyword::COUNT) == 24,
+		static_assert(static_cast<int>(Keyword::COUNT) == 28,
 					  "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
 		
 		// Handle while block
@@ -2417,7 +2537,7 @@ namespace Corth {
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		static_assert(static_cast<int>(Keyword::COUNT) == 24,
+		static_assert(static_cast<int>(Keyword::COUNT) == 28,
 					  "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
 		size_t instr_ptr = 0;
 		size_t instr_ptr_max = prog.tokens.size();
