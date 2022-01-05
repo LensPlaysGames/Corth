@@ -104,7 +104,6 @@ namespace Corth {
         COUNT
     };
 
-	// TODO: Convert to lookup table
     bool iskeyword(std::string word) {
         static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in iskeyword");
         if (word == "if"
@@ -137,7 +136,6 @@ namespace Corth {
         }
     }
 
-	// TODO: Convert to lookup table
     // This function outlines the corth source input and the output it will generate.
     // case <output>: { return "<input>"; }
     std::string GetKeywordStr(Keyword word) {
@@ -182,7 +180,8 @@ namespace Corth {
     };
 
     std::string TokenTypeStr(TokenType& t) {
-        static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in TokenTypeStr");
+        static_assert(static_cast<int>(TokenType::COUNT) == 5,
+					  "Exhaustive handling of token types in TokenTypeStr");
         if (t == TokenType::WHITESPACE)   { return "WHITESPACE"; }
         else if (t == TokenType::INT)     { return "INTEGER";    }
         else if (t == TokenType::STRING)  { return "STRING";     }
@@ -277,7 +276,8 @@ namespace Corth {
                      << "_start:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
-            static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in GenerateAssembly_NASM_linux64");
+            static_assert(static_cast<int>(TokenType::COUNT) == 5,
+						  "Exhaustive handling of token types in GenerateAssembly_NASM_linux64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -296,7 +296,8 @@ namespace Corth {
                     string_literals.push_back(tok.text);
                 }
                 else if (tok.type == TokenType::OP) {
-                    static_assert(OP_COUNT == 15, "Exhaustive handling of operators in GenerateAssembly_NASM_linux64");
+                    static_assert(OP_COUNT == 15,
+								  "Exhaustive handling of operators in GenerateAssembly_NASM_linux64");
                     if (tok.text == "+") {
                         asm_file << "    ;; -- add --\n"
                                  << "    pop rax\n"
@@ -422,7 +423,8 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
+                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+								  "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
                                  << "    pop rax\n"
@@ -620,7 +622,8 @@ namespace Corth {
                      << "main:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
-            static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in GenerateAssembly_GAS_linux64");
+            static_assert(static_cast<int>(TokenType::COUNT) == 5,
+						  "Exhaustive handling of token types in GenerateAssembly_GAS_linux64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -639,7 +642,8 @@ namespace Corth {
                     string_literals.push_back(tok.text);
                 }
                 else if (tok.type == TokenType::OP) {
-                    static_assert(OP_COUNT == 15, "Exhaustive handling of operators in GenerateAssembly_GAS_linux64");
+                    static_assert(OP_COUNT == 15,
+								  "Exhaustive handling of operators in GenerateAssembly_GAS_linux64");
                     if (tok.text == "+") {
                         asm_file << "    # -- add --\n"
                                  << "    pop %rax\n"
@@ -764,7 +768,8 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
+                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+								  "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
                                  << "    pop %rax\n"
@@ -995,7 +1000,8 @@ namespace Corth {
                      << "main:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
-            static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in GenerateAssembly_NASM_win64");
+            static_assert(static_cast<int>(TokenType::COUNT) == 5,
+						  "Exhaustive handling of token types in GenerateAssembly_NASM_win64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -1012,7 +1018,8 @@ namespace Corth {
                     string_literals.push_back(tok.text);
                 }
                 else if (tok.type == TokenType::OP) {
-                    static_assert(OP_COUNT == 15, "Exhaustive handling of operators in GenerateAssembly_NASM_win64");
+                    static_assert(OP_COUNT == 15,
+								  "Exhaustive handling of operators in GenerateAssembly_NASM_win64");
                     if (tok.text == "+") {
                         asm_file << "    ;; -- add --\n"
                                  << "    pop rax\n"
@@ -1145,7 +1152,8 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
+                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+								  "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
                                  << "    pop rax\n"
@@ -1351,7 +1359,8 @@ namespace Corth {
                      << "main:\n";
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
-            static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
+            static_assert(static_cast<int>(TokenType::COUNT) == 5,
+						  "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -1370,7 +1379,8 @@ namespace Corth {
                     string_literals.push_back(tok.text);
                 }
                 else if (tok.type == TokenType::OP) {
-                    static_assert(OP_COUNT == 15, "Exhaustive handling of operators in GenerateAssembly_GAS_win64");
+                    static_assert(OP_COUNT == 15,
+								  "Exhaustive handling of operators in GenerateAssembly_GAS_win64");
                     if (tok.text == "+") {
                         asm_file << "    # -- add --\n"
                                  << "    pop %rax\n"
@@ -1497,7 +1507,8 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
+                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+								  "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
                                  << "    pop %rax\n"
@@ -1680,9 +1691,12 @@ namespace Corth {
         // Return value:
         // False = Execution will halt in main function
         // True = Execution will continue in main function
-        static_assert(static_cast<int>(MODE::COUNT) == 2, "Exhaustive handling of supported modes in HandleCMDLineArgs");
-        static_assert(static_cast<int>(PLATFORM::COUNT) == 2, "Exhaustive handling of supported platforms in HandleCMDLineArgs");
-        static_assert(static_cast<int>(ASM_SYNTAX::COUNT) == 2, "Exhaustive handling of supported assembly syntaxes in HandleCMDLineArgs");
+        static_assert(static_cast<int>(MODE::COUNT) == 2,
+					  "Exhaustive handling of supported modes in HandleCMDLineArgs");
+        static_assert(static_cast<int>(PLATFORM::COUNT) == 2,
+					  "Exhaustive handling of supported platforms in HandleCMDLineArgs");
+        static_assert(static_cast<int>(ASM_SYNTAX::COUNT) == 2,
+					  "Exhaustive handling of supported assembly syntaxes in HandleCMDLineArgs");
 
         if (argc == 1) {
             // No command line args entered, print usage
@@ -1858,7 +1872,8 @@ namespace Corth {
         std::string src = prog.source;
         size_t src_end = src.size();
 
-        static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in Lex method");
+        static_assert(static_cast<int>(TokenType::COUNT) == 5,
+					  "Exhaustive handling of token types in Lex method");
         
         std::vector<Token>& toks = prog.tokens;
         Token tok;
@@ -1877,7 +1892,8 @@ namespace Corth {
                 }
             }
             else if (isoperator(current)) {
-                static_assert(OP_COUNT == 15, "Exhaustive handling of operators in Lex method");
+                static_assert(OP_COUNT == 15,
+							  "Exhaustive handling of operators in Lex method");
                 tok.type = TokenType::OP;
                 tok.text.append(1, current);
                 // Look-ahead to check for multi-character operators
@@ -2043,7 +2059,8 @@ namespace Corth {
 		std::vector<Token>& toks = prog.tokens;
 		// Amount of things on virtual stack
 		size_t stackSize = 0;
-		static_assert(static_cast<int>(TokenType::COUNT) == 5, "Exhaustive handling of token types in ValidateTokens_Stack");
+		static_assert(static_cast<int>(TokenType::COUNT) == 5,
+					  "Exhaustive handling of token types in ValidateTokens_Stack");
 		for (auto& tok : toks) {
 			if (tok.type == TokenType::WHITESPACE) {
 				Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number, tok.col_number);
@@ -2054,7 +2071,8 @@ namespace Corth {
 				stackSize++;
 			}
 			else if (tok.type == TokenType::OP) {
-				static_assert(OP_COUNT == 15, "Exhaustive handling of operators in ValidateTokens_Stack.");
+				static_assert(OP_COUNT == 15,
+							  "Exhaustive handling of operators in ValidateTokens_Stack.");
 				// Operators that pop two values off the stack and return one to it
 				if (tok.text == "+"
 					|| tok.text == "-"
@@ -2091,7 +2109,8 @@ namespace Corth {
 				}
 			}
 			else if (tok.type == TokenType::KEYWORD) {
-				static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
+				static_assert(static_cast<int>(Keyword::COUNT) == 22,
+							  "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
 				// Skip skippable tokens first for speed
 				if (tok.text == GetKeywordStr(Keyword::ELSE)
 					|| tok.text == GetKeywordStr(Keyword::ENDIF)
@@ -2220,7 +2239,8 @@ namespace Corth {
 	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
 		size_t block_instr_ptr = instr_ptr;
 
-		static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
+		static_assert(static_cast<int>(Keyword::COUNT) == 22,
+					  "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
 		
 		// Handle while block
 		if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
@@ -2317,7 +2337,8 @@ namespace Corth {
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		static_assert(static_cast<int>(Keyword::COUNT) == 22, "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
+		static_assert(static_cast<int>(Keyword::COUNT) == 22,
+					  "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
 		size_t instr_ptr = 0;
 		size_t instr_ptr_max = prog.tokens.size();
 		while (instr_ptr < instr_ptr_max) {
@@ -2439,9 +2460,12 @@ int main(int argc, char** argv) {
 	
 	Corth::Program prog;
 
-	static_assert(static_cast<int>(Corth::MODE::COUNT) == 2, "Exhaustive handling of modes in main method");
-	static_assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2, "Exhaustive handling of platforms in main method");
-	static_assert(static_cast<int>(Corth::ASM_SYNTAX::COUNT) == 2, "Exhaustive handling of assembly syntaxes in main method");
+	static_assert(static_cast<int>(Corth::MODE::COUNT) == 2,
+				  "Exhaustive handling of modes in main method");
+	static_assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2,
+				  "Exhaustive handling of platforms in main method");
+	static_assert(static_cast<int>(Corth::ASM_SYNTAX::COUNT) == 2,
+				  "Exhaustive handling of assembly syntaxes in main method");
 
 	// Try to load program source from a file
     try {
