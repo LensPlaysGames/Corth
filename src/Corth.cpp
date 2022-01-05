@@ -82,20 +82,22 @@ namespace Corth {
         IF,
         ELSE,
         ENDIF,
-        DUP,
-        TWODUP,
-        MEM,
-        LOADB,
-        STOREB,
         DO,
         WHILE,
         ENDWHILE,
-        DUMP,
-        DUMP_C,
-        DUMP_S,
+		DUP,
+        TWODUP,
         DROP,
         SWAP,
         OVER,
+		DUMP,
+        DUMP_C,
+        DUMP_S,
+		MEM,
+        LOADB,
+        STOREB,
+		LOADQ,
+        STOREQ,
         SHL,
         SHR,
         OR,
@@ -105,25 +107,27 @@ namespace Corth {
     };
 
     bool iskeyword(std::string word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 22,
+        static_assert(static_cast<int>(Keyword::COUNT) == 24,
 					  "Exhaustive handling of keywords in iskeyword");
         if (word == "if"
             || word == "else"
             || word == "endif"
-            || word == "dup"
-            || word == "twodup"
-            || word == "mem"
-            || word == "loadb"
-            || word == "storeb"
             || word == "do"
             || word == "while"
             || word == "endwhile"
-            || word == "dump"
-            || word == "dump_c"
-            || word == "dump_s"
+			|| word == "dup"
+            || word == "twodup"
             || word == "drop"
             || word == "swap"
             || word == "over"
+			|| word == "dump"
+            || word == "dump_c"
+            || word == "dump_s"
+			|| word == "mem"
+            || word == "loadb"
+            || word == "storeb"
+			|| word == "loadq"
+            || word == "storeq"
             || word == "shl"
             || word == "shr"
             || word == "or"
@@ -140,26 +144,31 @@ namespace Corth {
     // This function outlines the corth source input and the output it will generate.
     // case <output>: { return "<input>"; }
     std::string GetKeywordStr(Keyword word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 22,
+        static_assert(static_cast<int>(Keyword::COUNT) == 24,
 					  "Exhaustive handling of keywords in GetKeywordStr");
         switch (word) {
         case Keyword::IF:       { return "if";       }
         case Keyword::ELSE:     { return "else";     }
         case Keyword::ENDIF:    { return "endif";    }
-        case Keyword::DUP:      { return "dup";      }
-        case Keyword::TWODUP:   { return "twodup";   }
-        case Keyword::MEM:      { return "mem";      }
-        case Keyword::LOADB:    { return "loadb";    }
-        case Keyword::STOREB:   { return "storeb";   }
         case Keyword::DO:       { return "do";       }
         case Keyword::WHILE:    { return "while";    }
         case Keyword::ENDWHILE: { return "endwhile"; }
-        case Keyword::DUMP:     { return "dump";     }
-        case Keyword::DUMP_C:   { return "dump_c";   }
-        case Keyword::DUMP_S:   { return "dump_s";   }
+			
+		case Keyword::DUP:      { return "dup";      }
+        case Keyword::TWODUP:   { return "twodup";   }
         case Keyword::DROP:     { return "drop";     }
         case Keyword::SWAP:     { return "swap";     }
         case Keyword::OVER:     { return "over";     }
+		case Keyword::DUMP:     { return "dump";     }
+        case Keyword::DUMP_C:   { return "dump_c";   }
+        case Keyword::DUMP_S:   { return "dump_s";   }
+			
+		case Keyword::MEM:      { return "mem";      }
+        case Keyword::LOADB:    { return "loadb";    }
+        case Keyword::STOREB:   { return "storeb";   }
+		case Keyword::LOADQ:    { return "loadq";    }
+        case Keyword::STOREQ:   { return "storeq";   }
+			
         case Keyword::SHL:      { return "shl";      }
         case Keyword::SHR:      { return "shr";      }  
         case Keyword::OR:       { return "or";       }
@@ -425,7 +434,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
 								  "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
@@ -442,21 +451,6 @@ namespace Corth {
                         asm_file << "    ;; -- endif --\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
-                        asm_file << "    ;; -- dup --\n"
-                                 << "    pop rax\n"
-                                 << "    push rax\n"
-                                 << "    push rax\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
-                        asm_file << "    ;; -- twodup --\n"
-                                 << "    pop rax\n"
-                                 << "    pop rbx\n"
-                                 << "    push rbx\n"
-                                 << "    push rax\n"
-                                 << "    push rbx\n"
-                                 << "    push rax\n";
-                    }
                     else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
                         asm_file << "    ;; -- while --\n"
                                  << "addr_" << instr_ptr << ":\n";
@@ -472,44 +466,21 @@ namespace Corth {
                                  << "    jmp addr_" << tok.data << "\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
-                        asm_file << "    ;; -- mem --\n"
-                                 << "    push mem\n";
-                        // Pushes the relative address of allocated memory onto the stack
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
-                        asm_file << "    ;; -- load byte --\n"
+                    
+					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                        asm_file << "    ;; -- dup --\n"
                                  << "    pop rax\n"
-                                 << "    xor rbx, rbx\n"
-                                 << "    mov bl, [rax]\n"
-                                 << "    push rbx\n";
+                                 << "    push rax\n"
+                                 << "    push rax\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
-                        asm_file << "    ;; -- store byte --\n"
+                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+                        asm_file << "    ;; -- twodup --\n"
+                                 << "    pop rax\n"
                                  << "    pop rbx\n"
-                                 << "    pop rax\n"
-                                 << "    mov [rax], bl\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
-                        asm_file << "    ;; -- dump --\n"
-                                 << "    lea rdi, [rel fmt]\n"
-                                 << "    pop rsi\n"
-                                 << "    xor rax, rax\n"
-                                 << "    call printf\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
-                        asm_file << "    ;; -- dump character --\n"
-                                 << "    lea rdi, [rel fmt_char]\n"
-                                 << "    pop rsi\n"
-                                 << "    xor rax, rax\n"
-                                 << "    call printf\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
-                        asm_file << "    ;; -- dump string --\n"
-                                 << "    lea rdi, [rel fmt_str]\n"
-                                 << "    pop rsi\n"
-                                 << "    xor rax, rax\n"
-                                 << "    call printf\n";
+                                 << "    push rbx\n"
+                                 << "    push rax\n"
+                                 << "    push rbx\n"
+                                 << "    push rax\n";
                     }
                     else if (tok.text == GetKeywordStr(Keyword::DROP)) {
                         asm_file << "    ;; -- drop --\n"
@@ -530,6 +501,60 @@ namespace Corth {
                                  << "    push rax\n"
                                  << "    push rbx\n";
                     }
+					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+                        asm_file << "    ;; -- dump --\n"
+                                 << "    lea rdi, [rel fmt]\n"
+                                 << "    pop rsi\n"
+                                 << "    xor rax, rax\n"
+                                 << "    call printf\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
+                        asm_file << "    ;; -- dump character --\n"
+                                 << "    lea rdi, [rel fmt_char]\n"
+                                 << "    pop rsi\n"
+                                 << "    xor rax, rax\n"
+                                 << "    call printf\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
+                        asm_file << "    ;; -- dump string --\n"
+                                 << "    lea rdi, [rel fmt_str]\n"
+                                 << "    pop rsi\n"
+                                 << "    xor rax, rax\n"
+                                 << "    call printf\n";
+                    }
+
+					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                        asm_file << "    ;; -- mem --\n"
+                                 << "    push mem\n";
+                        // Pushes the relative address of allocated memory onto the stack
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+                        asm_file << "    ;; -- load byte --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov bl, [rax]\n"
+                                 << "    push rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+                        asm_file << "    ;; -- store byte --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], bl\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                        asm_file << "    ;; -- load quad word --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov rbx, [rax]\n"
+                                 << "    push rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREQ)) {
+                        asm_file << "    ;; -- store quad word --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], rbx\n";
+                    }
+					
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    ;; -- bitwise-shift left --\n"
                                  << "    pop rcx\n"
@@ -770,7 +795,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
 								  "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
@@ -787,21 +812,6 @@ namespace Corth {
                         asm_file << "    # -- endif --\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
-                        asm_file << "    # -- dup --\n"
-                                 << "    pop %rax\n"
-                                 << "    push %rax\n"
-                                 << "    push %rax\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
-                        asm_file << "    # -- twodup --\n"
-                                 << "    pop %rax\n"
-                                 << "    pop %rbx\n"
-                                 << "    push %rbx\n"
-                                 << "    push %rax\n"
-                                 << "    push %rbx\n"
-                                 << "    push %rax\n";
-                    }
                     else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
                         asm_file << "    # -- while --\n"
                                  << "addr_" << instr_ptr << ":\n";
@@ -817,45 +827,21 @@ namespace Corth {
                                  << "    jmp addr_" << tok.data << "\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
-                        asm_file << "    # -- mem --\n"
-                                 << "    lea mem(%rip), %rax\n"
+					
+					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                        asm_file << "    # -- dup --\n"
+                                 << "    pop %rax\n"
+                                 << "    push %rax\n"
                                  << "    push %rax\n";
-                        // Pushes the relative address of allocated memory onto the stack
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
-                        asm_file << "    # -- load byte --\n"
+                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+                        asm_file << "    # -- twodup --\n"
                                  << "    pop %rax\n"
-                                 << "    xor %rbx, %rbx\n"
-                                 << "    mov (%rax), %bl\n"
-                                 << "    push %rbx\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
-                        asm_file << "    # -- store byte --\n"
                                  << "    pop %rbx\n"
-                                 << "    pop %rax\n"
-                                 << "    mov %bl, (%rax)\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
-                        asm_file << "    # -- dump --\n"
-                                 << "    lea fmt(%rip), %rdi\n"
-                                 << "    pop %rsi\n"
-                                 << "    xor %rax, %rax\n"
-                                 << "    call printf\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
-                        asm_file << "    # -- dump --\n"
-                                 << "    lea fmt_char(%rip), %rdi\n"
-                                 << "    pop %rsi\n"
-                                 << "    xor %rax, %rax\n"
-                                 << "    call printf\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
-                        asm_file << "    # -- dump --\n"
-                                 << "    lea fmt_str(%rip), %rdi\n"
-                                 << "    pop %rsi\n"
-                                 << "    xor %rax, %rax\n"
-                                 << "    call printf\n";
+                                 << "    push %rbx\n"
+                                 << "    push %rax\n"
+                                 << "    push %rbx\n"
+                                 << "    push %rax\n";
                     }
                     else if (tok.text == GetKeywordStr(Keyword::DROP)) {
                         asm_file << "    # -- drop --\n"
@@ -876,6 +862,61 @@ namespace Corth {
                                  << "    push %rax\n"
                                  << "    push %rbx\n";
                     }
+					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+                        asm_file << "    # -- dump --\n"
+                                 << "    lea fmt(%rip), %rdi\n"
+                                 << "    pop %rsi\n"
+                                 << "    xor %rax, %rax\n"
+                                 << "    call printf\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
+                        asm_file << "    # -- dump --\n"
+                                 << "    lea fmt_char(%rip), %rdi\n"
+                                 << "    pop %rsi\n"
+                                 << "    xor %rax, %rax\n"
+                                 << "    call printf\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
+                        asm_file << "    # -- dump --\n"
+                                 << "    lea fmt_str(%rip), %rdi\n"
+                                 << "    pop %rsi\n"
+                                 << "    xor %rax, %rax\n"
+                                 << "    call printf\n";
+                    }
+
+					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                        asm_file << "    # -- mem --\n"
+                                 << "    lea mem(%rip), %rax\n"
+                                 << "    push %rax\n";
+                        // Pushes the relative address of allocated memory onto the stack
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+                        asm_file << "    # -- load byte --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %bl\n"
+                                 << "    push %rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+                        asm_file << "    # -- store byte --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %bl, (%rax)\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                        asm_file << "    # -- load quad word --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %rbx\n"
+                                 << "    push %rbx\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREQ)) {
+                        asm_file << "    # -- store quad word --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %rbx, (%rax)\n";
+                    }
+					
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    # -- bitwise-shift left --\n"
                                  << "    pop %rcx\n"
@@ -1154,7 +1195,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
 								  "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
@@ -1171,21 +1212,6 @@ namespace Corth {
                         asm_file << "    ;; -- endif --\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
-                        asm_file << "    ;; -- dup --\n"
-                                 << "    pop rax\n"
-                                 << "    push rax\n"
-                                 << "    push rax\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
-                        asm_file << "    ;; -- twodup --\n"
-                                 << "    pop rax\n"
-                                 << "    pop rbx\n"
-                                 << "    push rbx\n"
-                                 << "    push rax\n"
-                                 << "    push rbx\n"
-                                 << "    push rax\n";
-                    }
                     else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
                         asm_file << "    ;; -- while --\n"
                                  << "addr_" << instr_ptr << ":\n";
@@ -1201,26 +1227,42 @@ namespace Corth {
                                  << "    jmp addr_" << tok.data << "\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
-                        // Pushes the relative address of allocated memory onto the stack
-                        asm_file << "    ;; -- mem --\n"
-                                 << "    push mem\n";
-                                
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
-                        asm_file << "    ;; -- load byte --\n"
+					
+					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                        asm_file << "    ;; -- dup --\n"
                                  << "    pop rax\n"
-                                 << "    xor rbx, rbx\n"
-                                 << "    mov bl, [rax]\n"
+                                 << "    push rax\n"
+                                 << "    push rax\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+                        asm_file << "    ;; -- twodup --\n"
+                                 << "    pop rax\n"
+                                 << "    pop rbx\n"
+                                 << "    push rbx\n"
+                                 << "    push rax\n"
+                                 << "    push rbx\n"
+                                 << "    push rax\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::DROP)) {
+                        asm_file << "    ;; -- drop --\n"
+                                 << "    pop rax\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+                        asm_file << "    ;; -- swap --\n"
+                                 << "    pop rax\n"
+                                 << "    pop rbx\n"
+                                 << "    push rax\n"
                                  << "    push rbx\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
-                        asm_file << "    ;; -- store byte --\n"
-                                 << "    pop rbx\n"
+                    else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+                        asm_file << "    ;; -- over --\n"
                                  << "    pop rax\n"
-                                 << "    mov [rax], bl\n";
+                                 << "    pop rbx\n"
+                                 << "    push rbx\n"
+                                 << "    push rax\n"
+                                 << "    push rbx\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
                         asm_file << "    ;; -- dump --\n"
                                  << "    lea rcx, [rel fmt]\n"
                                  << "    pop rdx\n"
@@ -1247,25 +1289,40 @@ namespace Corth {
                                  << "    call printf\n"
                                  << "    add rsp, 32\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DROP)) {
-                        asm_file << "    ;; -- drop --\n"
-                                 << "    pop rax\n";
+
+					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                        // Pushes the relative address of allocated memory onto the stack
+                        asm_file << "    ;; -- mem --\n"
+                                 << "    push mem\n";
+                                
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
-                        asm_file << "    ;; -- swap --\n"
+                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+                        asm_file << "    ;; -- load byte --\n"
                                  << "    pop rax\n"
-                                 << "    pop rbx\n"
-                                 << "    push rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov bl, [rax]\n"
                                  << "    push rbx\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::OVER)) {
-                        asm_file << "    ;; -- over --\n"
-                                 << "    pop rax\n"
+                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+                        asm_file << "    ;; -- store byte --\n"
                                  << "    pop rbx\n"
-                                 << "    push rbx\n"
-                                 << "    push rax\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], bl\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                        asm_file << "    ;; -- load quad word --\n"
+                                 << "    pop rax\n"
+                                 << "    xor rbx, rbx\n"
+                                 << "    mov rbx, [rax]\n"
                                  << "    push rbx\n";
                     }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREQ)) {
+                        asm_file << "    ;; -- store quad word --\n"
+                                 << "    pop rbx\n"
+                                 << "    pop rax\n"
+                                 << "    mov [rax], rbx\n";
+                    }
+					
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    ;; -- bitwise-shift left --\n"
                                  << "    pop rcx\n"
@@ -1509,7 +1566,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 22,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 24,
 								  "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
@@ -1526,21 +1583,6 @@ namespace Corth {
                         asm_file << "    # -- endif --\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
-                        asm_file << "    # -- dup --\n"
-                                 << "    pop %rax\n"
-                                 << "    push %rax\n"
-                                 << "    push %rax\n";
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
-                        asm_file << "    # -- twodup --\n"
-                                 << "    pop %rax\n"
-                                 << "    pop %rbx\n"
-                                 << "    push %rbx\n"
-                                 << "    push %rax\n"
-                                 << "    push %rbx\n"
-                                 << "    push %rax\n";
-                    }
                     else if (tok.text == GetKeywordStr(Keyword::WHILE)) {
                         asm_file << "    # -- while --\n"
                                  << "addr_" << instr_ptr << ":\n";
@@ -1556,26 +1598,42 @@ namespace Corth {
                                  << "    jmp addr_" << tok.data << "\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
-                        asm_file << "    # -- mem --\n"
-                                 << "    lea mem(%rip), %rax\n"
-                                 << "    push %rax\n";
-                        // Pushes the relative address of allocated memory onto the stack
-                    }
-                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
-                        asm_file << "    # -- load byte --\n"
+                    
+					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                        asm_file << "    # -- dup --\n"
                                  << "    pop %rax\n"
-                                 << "    xor %rbx, %rbx\n"
-                                 << "    mov (%rax), %bl\n"
+                                 << "    push %rax\n"
+                                 << "    push %rax\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+                        asm_file << "    # -- twodup --\n"
+                                 << "    pop %rax\n"
+                                 << "    pop %rbx\n"
+                                 << "    push %rbx\n"
+                                 << "    push %rax\n"
+                                 << "    push %rbx\n"
+                                 << "    push %rax\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::DROP)) {
+                        asm_file << "    # -- drop --\n"
+                                 << "    pop %rax\n";
+                    }
+                    else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+                        asm_file << "    # -- swap --\n"
+                                 << "    pop %rax\n"
+                                 << "    pop %rbx\n"
+                                 << "    push %rax\n"
                                  << "    push %rbx\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
-                        asm_file << "    # -- store byte --\n"
-                                 << "    pop %rbx\n"
+                    else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+                        asm_file << "    # -- over --\n"
                                  << "    pop %rax\n"
-                                 << "    mov %bl, (%rax)\n";
+                                 << "    pop %rbx\n"
+                                 << "    push %rbx\n"
+                                 << "    push %rax\n"
+                                 << "    push %rbx\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
                         asm_file << "    # -- dump --\n"
                                  << "    lea fmt(%rip), %rcx\n"
                                  << "    pop %rdx\n"
@@ -1602,25 +1660,40 @@ namespace Corth {
                                  << "    call printf\n"
                                  << "    add $32, %rsp\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::DROP)) {
-                        asm_file << "    # -- drop --\n"
-                                 << "    pop %rax\n";
+
+					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                        asm_file << "    # -- mem --\n"
+                                 << "    lea mem(%rip), %rax\n"
+                                 << "    push %rax\n";
+                        // Pushes the relative address of allocated memory onto the stack
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
-                        asm_file << "    # -- swap --\n"
+                    else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
+                        asm_file << "    # -- load byte --\n"
                                  << "    pop %rax\n"
-                                 << "    pop %rbx\n"
-                                 << "    push %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %bl\n"
                                  << "    push %rbx\n";
                     }
-                    else if (tok.text == GetKeywordStr(Keyword::OVER)) {
-                        asm_file << "    # -- over --\n"
-                                 << "    pop %rax\n"
+                    else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
+                        asm_file << "    # -- store byte --\n"
                                  << "    pop %rbx\n"
-                                 << "    push %rbx\n"
-                                 << "    push %rax\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %bl, (%rax)\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                        asm_file << "    # -- load quad word --\n"
+                                 << "    pop %rax\n"
+                                 << "    xor %rbx, %rbx\n"
+                                 << "    mov (%rax), %rbx\n"
                                  << "    push %rbx\n";
                     }
+                    else if (tok.text == GetKeywordStr(Keyword::STOREQ)) {
+                        asm_file << "    # -- store quad word --\n"
+                                 << "    pop %rbx\n"
+                                 << "    pop %rax\n"
+                                 << "    mov %rbx, (%rax)\n";
+                    }
+					
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    # -- bitwise-shift left --\n"
                                  << "    pop %rcx\n"
@@ -2111,7 +2184,7 @@ namespace Corth {
 				}
 			}
 			else if (tok.type == TokenType::KEYWORD) {
-				static_assert(static_cast<int>(Keyword::COUNT) == 22,
+				static_assert(static_cast<int>(Keyword::COUNT) == 24,
 							  "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
 				// Skip skippable tokens first for speed
 				if (tok.text == GetKeywordStr(Keyword::ELSE)
@@ -2156,8 +2229,11 @@ namespace Corth {
 					// { } -> {<memory address>}
 					stackSize++;
 				}
-				else if (tok.text == GetKeywordStr(Keyword::LOADB)) {
-					// `loadb` will pop an address from the stack then push the value at that address
+				else if (tok.text == GetKeywordStr(Keyword::LOADB)
+						 || tok.text == GetKeywordStr(Keyword::LOADQ))
+				{
+					// `loadb` operations will pop an address from the stack,
+					//   then push the value at that address.
 					// {<address>} -> {<value>}
 					if (stackSize > 0) {
 						continue;
@@ -2166,8 +2242,10 @@ namespace Corth {
 						TokenStackError(tok);
 					}
 				}
-				else if (tok.text == GetKeywordStr(Keyword::STOREB)) {
-					// `storeb` will pop a value and an address from the stack
+				else if (tok.text == GetKeywordStr(Keyword::STOREB)
+						 || tok.text == GetKeywordStr(Keyword::STOREQ)) {
+					// `store` operations will pop a value and an
+					//   address from the stack.
 					// {<address>, <value>} -> { }
 					if (stackSize > 1) {
 						stackSize -= 2;
@@ -2241,7 +2319,7 @@ namespace Corth {
 	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
 		size_t block_instr_ptr = instr_ptr;
 
-		static_assert(static_cast<int>(Keyword::COUNT) == 22,
+		static_assert(static_cast<int>(Keyword::COUNT) == 24,
 					  "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
 		
 		// Handle while block
@@ -2339,7 +2417,7 @@ namespace Corth {
 	// For example, an `if` statement needs to know where to jump to if it is false.
 	// Another example: `endwhile` statement needs to know where to jump back to.
 	void ValidateTokens_Blocks(Program& prog) {
-		static_assert(static_cast<int>(Keyword::COUNT) == 22,
+		static_assert(static_cast<int>(Keyword::COUNT) == 24,
 					  "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
 		size_t instr_ptr = 0;
 		size_t instr_ptr_max = prog.tokens.size();
