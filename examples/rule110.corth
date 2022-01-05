@@ -8,8 +8,8 @@ mem 9999 +  41  storeb
 //   column that is being drawn, in the form of a bit.
 // It is updated throughout runtime, causing the fancy drawing
 //   you see in the output to appear.
-// Example pattern: 1100001010
-// Example output:  **    * *
+// Example pattern: 11000010
+// Example output:  **    * 
 
 // Build initial table
 //   Store a `1` at the first byte of memory

@@ -20,9 +20,9 @@
 #endif
 
 // TODO:
-// Change assembly generation to a lookup-table based on token
 // Make MEM_CAPACITY accessible through a CCLI option
-// At least try to have a warning when accessing bad memory (above memory capacity)
+// Implement store/load64 (32, 16?)
+// New keyword: `mod` with matching operator symbol '%' (modulus)
 
 namespace Corth {
 	// This needs to be changed if operators are added or removed from Corth internally.
