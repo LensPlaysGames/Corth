@@ -1,7 +1,7 @@
-// Triangle side length (max 255)
+// Triangle side length (stored at mem[9900] thru mem[9908])
 //          |
 //          V
-mem 9999 +  41  storeb
+mem 9900 +  300  storeq
 
 // Initialize column pattern
 // The column pattern is simply a condition for each
@@ -15,18 +15,18 @@ mem 9999 +  41  storeb
 //   Store a `1` at the first byte of memory
 mem 1                    + 1 storeb
 //   Store a `1` at (amount of columns - 1) in memory
-mem mem 9999 + loadb 1 - + 1 storeb
+mem mem 9900 + loadq 1 - + 1 storeb
 
 // Construct end of string in memory
-mem mem 9999 + loadb + 10000 +     10 storeb // newline
-mem mem 9999 + loadb + 10000 + 1 +  0 storeb // null terminator
+mem mem 9900 + loadq + 10000 +     10 storeb // newline
+mem mem 9900 + loadq + 10000 + 1 +  0 storeb // null terminator
 
 0 // Loop over lines
-while dup mem 9999 + loadb < do
+while dup mem 9900 + loadq < do
   // Load Pattern
   mem loadb 1 << mem 1 + loadb or
   // Loop over columns, shift pattern
-  mem 9999 + loadb 2 -
+  mem 9900 + loadq 2 -
   while dup 3 > do
     1 -
     // Pattern to top of stack, ((pattern << 1) && 7)
@@ -47,7 +47,7 @@ while dup mem 9999 + loadb < do
   drop drop
 
   0 // Loop over columns, construct string from pattern at mem[10000]
-  while dup mem 9999 + loadb < do
+  while dup mem 9900 + loadq < do
     // Test pattern to set current character to write to string.
     dup mem + loadb if
 	  // Load a '*' into current character within string memory
