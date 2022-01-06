@@ -62,9 +62,15 @@ Stack breakdown by step:
 4. []
 ```
 
+Related:
+- Operator: [+](#op-add)
+- Operator: [#](#op-dump)
+
 #### Best practices in Corth indicate that the stack should be empty by the end of the program.
 
 [To Top](#top)
+
+---
 
 ### Hello, World! <a name="how-to-hello-world"></a>
 String literals are now supported in Corth; this makes printing a string to the console as simple as dumping with the `_s` suffix indicating a string format should be used.
@@ -81,10 +87,12 @@ You can also dump single characters like so (most often used for a newline, as s
 Expected output: \
 <samp>Hello, World!</samp>
 
-### Complications <a name="how-to-complications"></a>
-For a more complex example, see [rule 110](./examples/rule110.corth)
+Related:
+- Keyword: [dump](#kw-dump)
 
 [To Top](#top)
+
+---
 
 ### Conditional Branching <a name="how-to-conditional-branching"></a>
 Let's look at a slightly more complicated example program:
@@ -112,6 +120,8 @@ Let's break down how it works piece-by-piece:
 |   10 |`endif`| Label to jump to if `if` condition is false and no `else` label is present or if `if` condition is true and an `else` label is present.|
 
 [To Top](#top)
+
+---
 
 ### Loops <a name="how-to-loops"></a>
 Corth now fully supports loops! Check out the following simple example:
@@ -141,6 +151,20 @@ With programs as simple as these, it's okay to do, however best practices indica
 
 [To Top](#top)
 
+---
+
+### Complications <a name="how-to-complications"></a>
+For a more complex example, see [rule 110](./examples/rule110.corth)
+
+Related:
+- Keyword: [mem](#kw-mem)
+- Keyword: [load](#kw-load)
+- Keyword: [store](#kw-store)
+
+[To Top](#top)
+
+---
+
 ## Definitions: <a name="corth-definitions"></a>
 
 Sections:
@@ -166,6 +190,7 @@ Example of a notation that pops two values and pushes the sum of them on to the 
 
 #### Operators <a name="corth-operators"></a>
 An operator will take value(s) from the stack and optionally push some back on.
+<<<<<<< HEAD
 The amount of values removed/added from/to the stack by a given operator can be seen by the stack notation in the following table.
 For further information on the operator, click on the link to be directed to a more verbose definition of the operator, down below.
 
@@ -1364,6 +1389,56 @@ Standard Output:
 ---
 
 ## How to build a Corth program <a name="how-to-use-corth"></a><a name="cross-platform-anchor"></a>
+The amount of values removed/added from/to the stack by a given operator can be seen by the 'pop' and 'push' amount in the following table.
+
+| Operator | Meaning              | Pop  | Push | Notation | Description                                                                                        |
+|:--------:|:---------------------|-----:|-----:|:--------:|:---------------------------------------------------------------------------------------------------|
+|    `#`   | Dump                 |    1 |    0 | `{a} -> { }`          |Humankind's best friend; pops a value off the stack, then prints that to the console. For alternate formats, see [dump keywords](#keywords-anchor)|
+|    `+`   | Addition             |    2 |    1 | `{a, b} -> {a + b}`   |Pops two values off the stack, then pushes the sum.                                    |
+|    `-`   | Subtraction          |    2 |    1 | `{a, b} -> {a - b}`   |Pops two values off the stack, then pushes the difference.                             |
+|    `*`   | Multiplication       |    2 |    1 | `{a, b} -> {a * b}`   |Pops two values off the stack, then pushes the product.                                |
+|    `/`   | Division             |    2 |    1 | `{a, b} -> {a / b}`   |Pops two values off the stack, then pushes the quotient.                               |
+|    `%`   | Modulo               |    2 |    1 | `{a, b} -> {a % b}`   |Pops two values off the stack, then pushes back the modulo (division remainder) of those values.|
+|    `=`   | Equality Comparison  |    2 |    1 | `{a, b} -> {a == b}`  |Pops two values off the stack, pushes `1` if they are equal to each other, `0` if not. |
+|    `>`   | Greater-than         |    2 |    1 | `{a, b} -> {a > b}`   |Pops two values off the stack, pushes `1` if the former is greater than the latter, `0` if not.|
+|    `<`   | Less-than            |    2 |    1 | `{a, b} -> {a < b}`   |Pops two values off the stack, pushes `1` if the former is less than the latter, `0` if not.|
+|   `>=`   | Greater-than-or-equal|    2 |    1 | `{a, b} -> {a >= b}`  |Pops two values off the stack; pushes `1` if the former is greater than or equal to the latter, `0` if not.|
+|   `<=`   | Less-than-or-equal   |    2 |    1 | `{a, b} -> {a <= b}`  |Pops two values off the stack, pushes `1` if the former is less thatn or equal to the latter, `0` if not.|
+|   `<<`   | Bitwise Shift Left   |    2 |    1 | `{a, b} -> {a << b}`  |Shifts the bits of a given value to the left by a given amount.                        |
+|   `>>`   | Bitwise Shift Right  |    2 |    1 | `{a, b} -> {a >> b}`  |Shifts the bits of a given value to the right by a given amount.                       |
+|   `\|\|` | Bitwise Operator     |    2 |    1 | `{a, b} -> {a \|\| b}`|Pops two values off the stack, then pushes back the bitwise-or of those values.        |
+|   `&&`   | Bitwise Operator     |    2 |    1 | `{a, b} -> {a && b}`  |Pops two values off the stack, then pushes back the bitwise-and of those values.       |
+
+#### <a name="keywords-anchor"></a> Keywords
+| Keyword  | Meaning | Pop  | Push | Notation | Description                                                                                                     |
+|:--------:|:--------|-----:|-----:|:--------:|:----------------------------------------------------------------------------------------------------------------|
+|`if`      |Conditional Branch   |1|0| `{<condition>} -> { }`          |Pops a value off the stack, then jumps to `else`/`endif` only if popped value is equal to zero.|
+|`else`    |Conditional Branch   |0|0|                                  | Only used between `if` and `endif` keywords to provide an alternate branch; what will be ran if `if` condition is false.|
+|`endif`   |Block Ending Symbol  |0|0|                                 | Required block-ending-symbol for `if` keyword.                                         |
+|`dup`     |Duplicate            |1|2| `{a} -> {a, a}`                 |Pops one value off the stack, then pushes it back twice.                                                 |
+|`twodup`  |Duplicate Two        |2|4| `{a, b} -> {a, b, a, b}`        |Pops two values off the stack, then pushes them both back on, twice.                    |
+|`mem`     |Memory Access        |0|1| `{ } -> {<memory address>}`     |Pushes the address of the usable memory in Corth. Hard-coded to 720kb; there will be a CCLI option in the future. To access any address within the memory, simply add the byte offset to the address, like so `mem <byte offset> +`, then use it with the memory access keywords that accept memory addresses as arguments.|
+|`store<x>`|Store from memory    |2|0| `{<memory address>, <value>} -> { }`|Pops a value and a memory address off the stack, then stores that value at that memory address. <x> can be any of 'b': byte, 'w': word (2 bytes), 'd': double word (4 bytes), 'q': quad word (8 bytes).|
+|`load<x>` |Load from memory     |1|1|`{<memory address>} -> {<value>}`|Pops a memory address off the stack, then pushes a value read from the memory address on to the stack. <x> can be any of 'b': byte, 'w': word (2 bytes), 'd': double word (4 bytes), 'q': quad word (8 bytes).|
+|`do`      |Conditional Jump     |1|0| `{<condition>} -> { }`          |Pops one value off the stack, then jumps just past `endwhile` if value is zero.         |
+|`while`   |Block Starting Symbol|0|0|                                 |Generates a label for `endwhile` to jump to.                                            |
+|`endwhile`|Block Ending Symbol  |0|0|                                 |Generates a label for `do` to jump to upon false condition.                             |
+|`drop`    |Stack Manipulation   |1|0| `{a} -> { }`                    |Drops the top-most item off the stack, leaving no reference to it. Use this to delete unused stack-items.|
+|`swap`    |Stack Manipulation   |2|2| `{a, b} -> {b, a}`              |Pops two values off the stack, then pushes them back in reverse order.                  |
+|`over`    |Stack Manipulation   |2|3| `{a, b} -> {a, b, a}`           |Pushes the stack item below the top on to the top.                                      |
+|`shl`     |Bitwise Operator     |2|1| `{a, b} -> {a << b}`            |Equivalent to [`<<` operator](#ops-anchor).                                             |
+|`shr`     |Bitwise Operator     |2|1| `{a, b} -> {a >> b}`            |Equivalent to [`>>` operator](#ops-anchor).                                             |
+|`or`      |Bitwise Operator     |2|1| `{a, b} -> {a \|\| b}`          |Equivalent to [`\|\|` operator](#ops-anchor).                                           |
+|`and`     |Bitwise Operator     |2|1| `{a, b} -> {a && b}`            |Equivalent to [`&&` operator](#ops-anchor).                                             |
+|`mod`     |Modulo               |2|1| `{a, b} -> {a % b}`              |Equivalent to [`%` operator](#ops-anchor).                                             |
+|`dump`    |Pop & Print          |1|0| `{a} -> { }`                    |Pops a value off the stack, then prints it formatted as an unsigned integer. Equivalent to [`#` operator](#ops-anchor).|
+|`dump_c`  |Dump Character       |1|0| `{a} -> { }`                    |Pops a value off the stack, then prints it formatted as a char.                         |
+|`dump_s`  |Dump String          |1|0| `{a} -> { }`                    |Pops a value off the stack, then prints it formatted as a string.                       |
+
+---
+
+## <a name="how-to-use-anchor"></a><a name="cross-platform-anchor"></a> How to build a Corth program
+>>>>>>> 9c498f563dc2d5d338791644ca481cf5499ff712
 So, you've written a program, what do you do now that you want to run it?
 
 If you do not already have the Corth executable, you can either download it from the [releases page](https://github.com/LensPlaysGames/Corth/releases) or build it yourself using CMake after cloning the repository (further instructions [down below](#how-to-build-corth)).
@@ -1395,7 +1470,7 @@ Example cmd with output renamed: \
 
 #### Windows <a name="use-corth-GAS-windows"></a>
 As for Windows, there is a little funky business... MinGW, the 'normal' installation manager for GNU tools on Windows, doesn't support 64 bits. \
-Luckily, there is a community-fix, [TDM-GCC-64](https://jmeubank.github.io/tdm-gcc/), that solves this exact problem, so go donate to this person for doing the hard work that all of us can now use. \
+Luckily, there is a community-fix, [TDM-GCC-64](https://jmeubank.github.io/tdm-gcc/), that solves this exact problem, so go donate to this person for doing the hard work that all of us can now use. If for some reason the github was taken down, or anything of the sort, [here](https://web.archive.org/web/20220105210812/https://github.com/jmeubank/tdm-gcc) is a link to a wayback machine snapshot. \
 It's a very easy to use installer, and comes with a whole host of very useful 64 bit tools on Windows. Install it at the default location, otherwise Corth will need to be passed the path to the `gcc` executable using the CCLI `-a` option.
 
 To familiarize yourself with the Corth Command Line Interface (CCLI), run the following command: \
