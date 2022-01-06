@@ -25,7 +25,9 @@
 
 // TODO:
 // Make MEM_CAPACITY accessible through a CCLI option
-// New keyword: `mod` with matching operator symbol '%' (modulus)
+// Allow Corth programs to access argc and argv
+//   I believe argc can be found at rbp + 8:
+//     GAS: 8(%rbp) or NASM: [rbp + 8 * <argument-number>]
 
 namespace Corth {
     const unsigned int MEM_CAPACITY = 720000;
