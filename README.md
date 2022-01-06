@@ -190,7 +190,6 @@ Example of a notation that pops two values and pushes the sum of them on to the 
 
 #### Operators <a name="corth-operators"></a>
 An operator will take value(s) from the stack and optionally push some back on.
-<<<<<<< HEAD
 The amount of values removed/added from/to the stack by a given operator can be seen by the stack notation in the following table.
 For further information on the operator, click on the link to be directed to a more verbose definition of the operator, down below.
 
