@@ -260,21 +260,49 @@ namespace Corth {
         printf("        %s\n", "-add-lo, --add-link-opt  | Append a command line argument to linker options");
     }
 
+	// NASM doesn't deal with strings well, so I construct hex by hand
+	//   to ensure behaviour is expected.
     std::vector<std::string> string_to_hex(const std::string& input)
     {
         static const char hex_digits[] = "0123456789abcdef";
+		static const std::string hex_prefix = "0x";
 
         std::vector<std::string> output;
         for (unsigned char c : input)
         {
             std::string hex;
-            hex.append(1, '0');
-            hex.append(1, 'x');
+			hex.append(hex_prefix);
             hex.push_back(hex_digits[c >> 4]);
             hex.push_back(hex_digits[c & 15]);
             output.push_back(hex);
         }
-        return output;
+
+		// '\n' gets interpreted as two characters instead of one.
+		// To remedy this, loop over output and find groupings
+		//   of 0x5c, 0x6e and replace with 0x2a
+		std::vector<std::string> new_output;
+		for (size_t i = 0; i < output.size(); i++) {
+			if (output[i] == "0x5c") {
+				// Backslash found
+				i++;
+				if (i < output.size()) {
+					if (output[i] == "0x6e") {
+						// Found "\n", write newline
+						new_output.push_back("0xa");
+						continue;
+					}
+					else if (output[i] == "0x74") {
+						// Found "\t", write horizontal tab
+						new_output.push_back("0x9");
+					}
+				}
+				// Special character pattern not found, undo look-ahead.
+				i--;
+			}
+			new_output.push_back(output[i]);
+		}
+		
+        return new_output;
     }
     
     void GenerateAssembly_NASM_linux64(Program& prog) {
