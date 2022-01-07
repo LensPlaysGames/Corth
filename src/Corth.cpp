@@ -265,21 +265,21 @@ namespace Corth {
     std::vector<std::string> string_to_hex(const std::string& input)
     {
         static const char hex_digits[] = "0123456789abcdef";
-		static const std::string hex_prefix = "0x";
 
         std::vector<std::string> output;
         for (unsigned char c : input)
         {
             std::string hex;
-			hex.append(hex_prefix);
+			hex.append("0x");
             hex.push_back(hex_digits[c >> 4]);
             hex.push_back(hex_digits[c & 15]);
             output.push_back(hex);
         }
 
-		// '\n' gets interpreted as two characters instead of one.
-		// To remedy this, loop over output and find groupings
-		//   of 0x5c, 0x6e and replace with 0x2a
+		// Fix output. "\n" gets converted to two hex characters;
+		//   detect those and replace with single newline character.
+		// Same goes for "\t"
+		// As for "\r", just ignore it and remove it from final output.
 		std::vector<std::string> new_output;
 		for (size_t i = 0; i < output.size(); i++) {
 			if (output[i] == "0x5c") {
@@ -287,13 +287,18 @@ namespace Corth {
 				i++;
 				if (i < output.size()) {
 					if (output[i] == "0x6e") {
-						// Found "\n", write newline
+						// Found "\n", write newline.
 						new_output.push_back("0xa");
 						continue;
 					}
+					else if (output[i] == "0x72") {
+						// Found "\r", write nothing (suck it, Windows).
+						continue;
+					}
 					else if (output[i] == "0x74") {
-						// Found "\t", write horizontal tab
+						// Found "\t", write horizontal tab.
 						new_output.push_back("0x9");
+						continue;
 					}
 				}
 				// Special character pattern not found, undo look-ahead.
