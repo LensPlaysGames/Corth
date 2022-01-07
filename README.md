@@ -76,16 +76,23 @@ Related:
 String literals are now supported in Corth; this makes printing a string to the console as simple as dumping with the `_s` suffix indicating a string format should be used.
 
 ```
-"Hello, World!" dump_s
+"Hello, World!\n" dump_s
 ```
 
-You can also dump single characters like so (most often used for a newline, as shown):
+As you can see, Corth supports some escaped characters within strings.
+They are `\n`, `\r`, and `\t`, to be exact. 
+
+You can also dump single characters using an ASCII code like so:
 ```
 10 dump_c
 ```
 
-Expected output: \
-<samp>Hello, World!</samp>
+Expected output:
+```
+Hello, World!
+
+
+```
 
 Related:
 - Keyword: [dump](#kw-dump)
@@ -773,12 +780,13 @@ Related:
 
 Example:
 ```
-1          // initialize loop counter
+1            // initialize loop counter
 while dup 5 <= do
-  dup dump // print loop counter
-  1 +      // increment loop counter
+  dup dump   // print loop counter
+  10 dump_c  // print newline
+  1 +        // increment loop counter
 endwhile
-drop       // drop loop counter from stack
+drop         // drop loop counter from stack
 ```
 
 Stack Output:
@@ -962,11 +970,11 @@ Standard Output:
 Print the item at the top of the stack to the standard output. \
 Internally, this uses the C RunTime `printf` method, so a format needs to be specified by using a specific keyword.
 
-| Keyword  | Print Format               |
-|----------|----------------------------|
-| `dump`   | unsigned integer + newline |
-| `dump_c` | character                  |
-| `dump_s` | string                     |
+| Keyword       | Print Format     |
+|---------------|------------------|
+| `dump` or `#` | unsigned integer |
+| `dump_c`      | character        |
+| `dump_s`      | string           |
 
 
 ```
@@ -1010,7 +1018,8 @@ mem 9  + 97   storeb  // a
 mem 10 + 116  storeb  // t
 mem 11 + 116  storeb  // t
 mem 12 + 115  storeb  // s
-mem 13 + 0    storeb  // null terminator
+mem 13 + 10   storeb  // <newline>
+mem 14 + 0    storeb  // null terminator
 mem dump_s
 ```
 
