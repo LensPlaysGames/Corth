@@ -33,7 +33,7 @@ Corth is:
 Corth, like Porth (like Forth), is a stack based language. \
 This means that in order to do any operation, a value must be pushed onto the stack. \
 Think of this as a literal stack of objects. \
-Likely, the operation will take it's arguments from the top of the stack, or `pop` from the stack, and sometimes it will return a value or two back onto it.
+Likely, the operation will take it's arguments from the top of the stack, or `pop` from the stack, and sometimes it will return a value or two back onto it, which is called `pushing` on to the stack.
 
 ### A Simple Example <a name="how-to-a-simple-example"></a>
 Take a look at this example in Corth:
@@ -111,40 +111,41 @@ Let's break down how it works piece-by-piece:
 | Step | Code | Description                                                                                                                     |
 |------|------|---------------------------------------------------------------------------------------------------------------------------------|
 |    1 |`500 80 -` | Push two values on to the stack, subtract them, then push the result on to the stack.                                      |
-|    4 |`420` | Push `420` onto the stack                                                                                                       |
-|    5 |  `=` | Use the equality comparison operator; it pops two values off the stack, compares them, then pushes back a `1` if they are equal or a `0` if they aren't.|
-|    6 | `if` | Pop the condition just pushed onto the stack, jump to `else`/`endif` if it is false, otherwise, like in this case, fall-through to next instruction.|
-|    7 |`69 #`| Push a value onto the stack, then dump it to console output.                                                                    |
-|    8 |`else`| Label to jump to if `if` condition is false. Label to jump over to `endif` if `if` condition is true.                           |
-|    9 |`420 #`| This would push a value onto the stack, then dump it to console output, however it will be jumped over due to the `if` condition evaluating to true.|
-|   10 |`endif`| Label to jump to if `if` condition is false and no `else` label is present or if `if` condition is true and an `else` label is present.|
+|    2 |`420` | Push `420` onto the stack                                                                                                       |
+|    3 |  `=` | Use the equality comparison operator; it pops two values off the stack, compares them, then pushes back a `1` if they are equal or a `0` if they aren't.|
+|    4 | `if` | Pop the condition just pushed onto the stack, jump to `else`/`endif` if it is false, otherwise, like in this case, fall-through to next instruction.|
+|    5 |`69 #`| Push a value onto the stack, then dump it to console output.                                                                    |
+|    6 |`else`| Label to jump to if `if` condition is false. Label to jump over to `endif` if `if` condition is true.                           |
+|    7 |`420 #`| This would push a value onto the stack, then dump it to console output, however it will be jumped over due to the `if` condition evaluating to true.|
+|    8 |`endif`| Label to jump to if `if` condition is false and no `else` label is present or if `if` condition is true and an `else` label is present.|
 
 [To Top](#top)
 
 ---
 
 ### Loops <a name="how-to-loops"></a>
-Corth now fully supports loops! Check out the following simple example:
+Corth now fully supports loops! Check out the following example:
 ```
 1 
 while dup 30 <= do
-  dup #
-  1 +
+  dup dump    // Print loop counter without destroying it
+  10  dump_c  // Print a newline character
+  1 +         // Increment loop counter
 endwhile
 ```
 
-This program will print every whole number from `1` to `30`, each being on a new-line.
+This program will print every whole number from `1` to `30`, each being on a new line.
 
 Let's break down how it works:
 | Step | Code | Description                                                                                                                     |
-|------|------|---------------------------------------------------------------------------------------------------------------------------------|
-|    1 |  `1` | Push a one onto the stack to initialize the loop counter.                                                                       |
-|    2 |`while`| Generate an address to jump to upon reaching endwhile.                                                                         |
-|    3 |`dup 30 <=`| Push a boolean condition on the stack comparing whether the last item on the stack (duplicated) is less than or equal to `30`.|
-|    4 | `do` | Pop the condition just pushed onto the stack, jump just past `endwhile` (step 7) if it is zero, otherwise, like in this case, fall-through to next instruction.|
-|    5 |`dup #`| Duplicate the top-most value onto the stack, then dump the duplicate to console output. This prints the current loop counter, as that is what's on the stack.|
-|    6 |`1 +`| Add 1 to top-most value on the stack. This increments the loop counter.                                                          |
-|    7 |`endwhile`| Upon reaching, jump back to `while` (step 2) and continue execution from there.                                             |
+|------|-------------|---------------------------------------------------------------------------------------------------------------------------------|
+|    1 | `1`         | Push a one onto the stack to initialize the loop counter.                                                                       |
+|    2 | `while`     | Generate an address to jump to upon reaching endwhile.                                                                          |
+|    3 | `dup 30 <=` | Push a boolean condition on the stack comparing whether the last item on the stack (duplicated) is less than or equal to `30`.  |
+|    4 | `do`        | Pop the condition just pushed onto the stack, jump just past `endwhile` (step 7) if it is zero, otherwise, like in this case, fall-through to next instruction.|
+|    5 | `dup #`     | Duplicate the top-most value onto the stack, then dump the duplicate to console output. This prints the current loop counter, as that is what's on the stack.|
+|    6 | `1 +`       | Add 1 to top-most value on the stack. This increments the loop counter.                                                         |
+|    7 | `endwhile`  | Upon reaching, jump back to `while` (step 2) and continue execution from there.                                                 |
 
 It is known that this program will trigger a stack validator warning, telling us that the stack at the end of the program is not empty. \
 With programs as simple as these, it's okay to do, however best practices indicate that the stack should be empty by the end of the program.
@@ -594,7 +595,7 @@ Pops two values, `a` and `b`, off of the stack then pushes bits of `a` shifted r
 ```
 
 Equivalent
-- [Keyword: shl](#kw-shr)
+- [Keyword: shr](#kw-shr)
 
 Related
 - No related
@@ -625,7 +626,7 @@ Pops two values, `a` and `b`, off of the stack, then pushes the [bitwise-and](ht
 ```
 
 Equivalent
-- [Keyword: shl](#kw-and)
+- [Keyword: and](#kw-and)
 
 Related
 - No related
@@ -656,7 +657,7 @@ Pops two values, `a` and `b`, off of the stack, then pushes the [bitwise-or](htt
 ```
 
 Equivalent
-- [Keyword: shl](#kw-or)
+- [Keyword: or](#kw-or)
 
 Related
 - No related
@@ -1259,7 +1260,7 @@ Equivalent:
 - Operator: [>>](#op-bit-shr)
 
 Related:
-- Keyword: [shr](#kw-shl)
+- Keyword: [shl](#kw-shl)
 
 Example:
 ```
@@ -1280,6 +1281,8 @@ Standard Output:
 ```
 ```
 
+[To Keywords](#corth-keywords)
+
 ---
 
 #### 'and' - Bitwise Operator <a name="kw-and"></a>
@@ -1292,7 +1295,7 @@ An AND operation entails the output only containing a `1` if both inputs do.
 ```
 
 Equivalent:
-- No equivalent
+- Operator: [&&](#op-bit-and)
 
 Related:
 - Keyword: [or](#kw-or)
@@ -1314,6 +1317,8 @@ Standard Output:
 ```
 ```
 
+[To Keywords](#corth-keywords)
+
 ---
 
 #### 'or' - Bitwise Operator <a name="kw-or"></a>
@@ -1326,10 +1331,10 @@ An OR operation entails the output containing a `1` if one or both of the inputs
 ```
 
 Equivalent:
-- No equivalent
+- Operator: [||](#op-bit-or)
 
 Related:
-- Keyword: [or](#kw-or)
+- Keyword: [and](#kw-and)
 
 Example:
 ```

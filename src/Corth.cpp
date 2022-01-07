@@ -260,6 +260,8 @@ namespace Corth {
         printf("        %s\n", "-add-lo, --add-link-opt  | Append a command line argument to linker options");
     }
 
+	// NASM doesn't deal with strings well, so I construct hex by hand
+	//   to ensure behaviour is expected.
     std::vector<std::string> string_to_hex(const std::string& input)
     {
         static const char hex_digits[] = "0123456789abcdef";
@@ -268,13 +270,44 @@ namespace Corth {
         for (unsigned char c : input)
         {
             std::string hex;
-            hex.append(1, '0');
-            hex.append(1, 'x');
+			hex.append("0x");
             hex.push_back(hex_digits[c >> 4]);
             hex.push_back(hex_digits[c & 15]);
             output.push_back(hex);
         }
-        return output;
+
+		// Fix output. "\n" gets converted to two hex characters;
+		//   detect those and replace with single newline character.
+		// Same goes for "\t"
+		// As for "\r", just ignore it and remove it from final output.
+		std::vector<std::string> new_output;
+		for (size_t i = 0; i < output.size(); i++) {
+			if (output[i] == "0x5c") {
+				// Backslash found
+				i++;
+				if (i < output.size()) {
+					if (output[i] == "0x6e") {
+						// Found "\n", write newline.
+						new_output.push_back("0xa");
+						continue;
+					}
+					else if (output[i] == "0x72") {
+						// Found "\r", write nothing (suck it, Windows).
+						continue;
+					}
+					else if (output[i] == "0x74") {
+						// Found "\t", write horizontal tab.
+						new_output.push_back("0x9");
+						continue;
+					}
+				}
+				// Special character pattern not found, undo look-ahead.
+				i--;
+			}
+			new_output.push_back(output[i]);
+		}
+		
+        return new_output;
     }
     
     void GenerateAssembly_NASM_linux64(Program& prog) {
@@ -633,15 +666,16 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov rdi, 0\n"
                      << "    call exit\n"
                      << '\n'
                      << "    SECTION .data\n"
-                     << "    fmt db '%u', 10, 0\n"
+                     << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
 
+			// WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
             for (auto& string : string_literals) {
                 std::vector<std::string> hex_chars = string_to_hex(string);
@@ -653,7 +687,8 @@ namespace Corth {
                 asm_file << "0\n";
                 index++;
             }
-                
+
+			// ALLOCATE MEMORY
             asm_file << '\n'
                      << "    SECTION .bss\n"
                      << "    mem resb " << MEM_CAPACITY << '\n';
@@ -1021,21 +1056,25 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+			
+            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov $0, %rdi\n"
                      << "    call exit\n"
                      << '\n'
                      << "    .data\n"
-                     << "    fmt: .string \"%u\\n\"\n"
+                     << "    fmt: .string \"%u\"\n"
                      << "    fmt_char: .string \"%c\"\n"
                      << "    fmt_str: .string \"%s\"\n";
 
+			// WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
             if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
             for (auto& string : string_literals) {
                 asm_file << "str_" << index << ": .string \"" << string << "\"\n";
                 index++;
             }
+
+			// ALLOCATE MEMORY
             asm_file << '\n'
                      << "    .bss\n"
                      << "    .comm mem, " << MEM_CAPACITY << '\n';
@@ -1075,7 +1114,7 @@ namespace Corth {
             asm_file << "    ;; -- TODO: graceful exit --\n"
                      << "\n\n"
                      << "    SECTION .data\n"
-                     << "    fmt db '%u', 10, 0\n"
+                     << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
         }
@@ -1459,7 +1498,7 @@ namespace Corth {
 
             // DECLARE CORTH CONSTANTS
             asm_file << "    SECTION .data\n"
-                     << "    fmt db '%u', 10, 0\n"
+                     << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
 
@@ -1850,27 +1889,31 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov $0, %rcx\n"
                      << "    call exit\n"
                      << '\n'
                      << "    .data\n"
-                     << "    fmt: .string \"%u\\n\"\n"
+                     << "    fmt: .string \"%u\"\n"
                      << "    fmt_char: .string \"%c\"\n"
                      << "    fmt_str: .string \"%s\"\n";
 
+			// WRITE USER DEFINED STRINGS
             size_t index = 0;
             if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
             for (auto& string : string_literals) {
                 asm_file << "str_" << index << ": .string \"" << string << "\"\n";
                 index++;
             }
+
+			// ALLOCATE MEMORY
             asm_file << '\n'
                      << "    .bss\n"
                      << "    .comm mem, " << MEM_CAPACITY << '\n';
-            
+
+			// Close open filestream.
             asm_file.close();
-                
+			
             Log("WIN64 GAS assembly generated at " + asm_file_path);
         }
         else {

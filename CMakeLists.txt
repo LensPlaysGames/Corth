@@ -6,7 +6,7 @@ set(SOURCE_FILES
 	"src/Corth.cpp"
 )
 
-set(HEADER_FILES )
+set(HEADER_FILES "src/Errors.h")
 
 # Add source files project.
 add_executable (Corth ${HEADER_FILES} ${SOURCE_FILES})
