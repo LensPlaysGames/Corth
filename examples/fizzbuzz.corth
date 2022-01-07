@@ -9,8 +9,8 @@ while dup 100 < do
 	  dup 5 mod 0 = if
 	    "Buzz\n" dump_s
 	  else
-	    // Print loop counter
-	    dup dump
+	    dup dump   // Print loop counter
+		10 dump_c  // Print new-line
 	  endif
     endif
   endif

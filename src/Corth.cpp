@@ -633,15 +633,16 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov rdi, 0\n"
                      << "    call exit\n"
                      << '\n'
                      << "    SECTION .data\n"
-                     << "    fmt db '%u', 10, 0\n"
+                     << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
 
+			// WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
             for (auto& string : string_literals) {
                 std::vector<std::string> hex_chars = string_to_hex(string);
@@ -653,7 +654,8 @@ namespace Corth {
                 asm_file << "0\n";
                 index++;
             }
-                
+
+			// ALLOCATE MEMORY
             asm_file << '\n'
                      << "    SECTION .bss\n"
                      << "    mem resb " << MEM_CAPACITY << '\n';
@@ -1021,21 +1023,25 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+			
+            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov $0, %rdi\n"
                      << "    call exit\n"
                      << '\n'
                      << "    .data\n"
-                     << "    fmt: .string \"%u\\n\"\n"
+                     << "    fmt: .string \"%u\"\n"
                      << "    fmt_char: .string \"%c\"\n"
                      << "    fmt_str: .string \"%s\"\n";
 
+			// WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
             if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
             for (auto& string : string_literals) {
                 asm_file << "str_" << index << ": .string \"" << string << "\"\n";
                 index++;
             }
+
+			// ALLOCATE MEMORY
             asm_file << '\n'
                      << "    .bss\n"
                      << "    .comm mem, " << MEM_CAPACITY << '\n';
@@ -1075,7 +1081,7 @@ namespace Corth {
             asm_file << "    ;; -- TODO: graceful exit --\n"
                      << "\n\n"
                      << "    SECTION .data\n"
-                     << "    fmt db '%u', 10, 0\n"
+                     << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
         }
@@ -1459,7 +1465,7 @@ namespace Corth {
 
             // DECLARE CORTH CONSTANTS
             asm_file << "    SECTION .data\n"
-                     << "    fmt db '%u', 10, 0\n"
+                     << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
 
@@ -1850,27 +1856,31 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS, MEMORY ALLOCATION)
+            // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov $0, %rcx\n"
                      << "    call exit\n"
                      << '\n'
                      << "    .data\n"
-                     << "    fmt: .string \"%u\\n\"\n"
+                     << "    fmt: .string \"%u\"\n"
                      << "    fmt_char: .string \"%c\"\n"
                      << "    fmt_str: .string \"%s\"\n";
 
+			// WRITE USER DEFINED STRINGS
             size_t index = 0;
             if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
             for (auto& string : string_literals) {
                 asm_file << "str_" << index << ": .string \"" << string << "\"\n";
                 index++;
             }
+
+			// ALLOCATE MEMORY
             asm_file << '\n'
                      << "    .bss\n"
                      << "    .comm mem, " << MEM_CAPACITY << '\n';
-            
+
+			// Close open filestream.
             asm_file.close();
-                
+			
             Log("WIN64 GAS assembly generated at " + asm_file_path);
         }
         else {
