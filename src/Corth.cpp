@@ -1697,7 +1697,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::KEYWORD) {
                     static_assert(static_cast<int>(Keyword::COUNT) == 28,
-								  "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
+								  "Exhaustive handling of keywords in GenerateAssembly_GAS_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
                                  << "    pop %rax\n"
