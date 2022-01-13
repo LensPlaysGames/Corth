@@ -66,17 +66,17 @@ namespace Corth {
     // This needs to be changed if operators are added or removed from Corth internally.
     const size_t OP_COUNT = 15;
     bool isoperator(char& c){
-		return c == '+'    // addition
-			|| c == '-'    // subtraction
-			|| c == '*'    // multiplication
-			|| c == '/'    // division
-			|| c == '='    // equality comparison
-			|| c == '<'    // less than (or equal) comparison
-			|| c == '>'    // greater than (or equal) comparison
-			|| c == '#'    // dump (pop + print)
-			|| c == '%'    // modulo
-			|| c == '&'    // bitwise and (when combined with another)
-			|| c == '|';   // bitwise or (when combined with another)
+        return c == '+'    // addition
+            || c == '-'    // subtraction
+            || c == '*'    // multiplication
+            || c == '/'    // division
+            || c == '='    // equality comparison
+            || c == '<'    // less than (or equal) comparison
+            || c == '>'    // greater than (or equal) comparison
+            || c == '#'    // dump (pop + print)
+            || c == '%'    // modulo
+            || c == '&'    // bitwise and (when combined with another)
+            || c == '|';   // bitwise or (when combined with another)
   }
 
     enum class Keyword {
@@ -205,7 +205,7 @@ namespace Corth {
 
     std::string TokenTypeStr(TokenType& t) {
         static_assert(static_cast<int>(TokenType::COUNT) == 5,
-					  "Exhaustive handling of token types in TokenTypeStr");
+                      "Exhaustive handling of token types in TokenTypeStr");
         if (t == TokenType::WHITESPACE)   { return "WHITESPACE"; }
         else if (t == TokenType::INT)     { return "INTEGER";    }
         else if (t == TokenType::STRING)  { return "STRING";     }
@@ -260,8 +260,8 @@ namespace Corth {
         printf("        %s\n", "-add-lo, --add-link-opt  | Append a command line argument to linker options");
     }
 
-	// NASM doesn't deal with strings well, so I construct hex by hand
-	//   to ensure behaviour is expected.
+    // NASM doesn't deal with strings well, so I construct hex by hand
+    //   to ensure behaviour is expected.
     std::vector<std::string> string_to_hex(const std::string& input)
     {
         static const char hex_digits[] = "0123456789abcdef";
@@ -270,43 +270,43 @@ namespace Corth {
         for (unsigned char c : input)
         {
             std::string hex;
-			hex.append("0x");
+            hex.append("0x");
             hex.push_back(hex_digits[c >> 4]);
             hex.push_back(hex_digits[c & 15]);
             output.push_back(hex);
         }
 
-		// Fix output. "\n" gets converted to two hex characters;
-		//   detect those and replace with single newline character.
-		// Same goes for "\t"
-		// As for "\r", just ignore it and remove it from final output.
-		std::vector<std::string> new_output;
-		for (size_t i = 0; i < output.size(); i++) {
-			if (output[i] == "0x5c") {
-				// Backslash found
-				i++;
-				if (i < output.size()) {
-					if (output[i] == "0x6e") {
-						// Found "\n", write newline.
-						new_output.push_back("0xa");
-						continue;
-					}
-					else if (output[i] == "0x72") {
-						// Found "\r", write nothing (suck it, Windows).
-						continue;
-					}
-					else if (output[i] == "0x74") {
-						// Found "\t", write horizontal tab.
-						new_output.push_back("0x9");
-						continue;
-					}
-				}
-				// Special character pattern not found, undo look-ahead.
-				i--;
-			}
-			new_output.push_back(output[i]);
-		}
-		
+        // Fix output. "\n" gets converted to two hex characters;
+        //   detect those and replace with single newline character.
+        // Same goes for "\t"
+        // As for "\r", just ignore it and remove it from final output.
+        std::vector<std::string> new_output;
+        for (size_t i = 0; i < output.size(); i++) {
+            if (output[i] == "0x5c") {
+                // Backslash found
+                i++;
+                if (i < output.size()) {
+                    if (output[i] == "0x6e") {
+                        // Found "\n", write newline.
+                        new_output.push_back("0xa");
+                        continue;
+                    }
+                    else if (output[i] == "0x72") {
+                        // Found "\r", write nothing (suck it, Windows).
+                        continue;
+                    }
+                    else if (output[i] == "0x74") {
+                        // Found "\t", write horizontal tab.
+                        new_output.push_back("0x9");
+                        continue;
+                    }
+                }
+                // Special character pattern not found, undo look-ahead.
+                i--;
+            }
+            new_output.push_back(output[i]);
+        }
+        
         return new_output;
     }
     
@@ -334,7 +334,7 @@ namespace Corth {
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
             static_assert(static_cast<int>(TokenType::COUNT) == 5,
-						  "Exhaustive handling of token types in GenerateAssembly_NASM_linux64");
+                          "Exhaustive handling of token types in GenerateAssembly_NASM_linux64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -354,7 +354,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::OP) {
                     static_assert(OP_COUNT == 15,
-								  "Exhaustive handling of operators in GenerateAssembly_NASM_linux64");
+                                  "Exhaustive handling of operators in GenerateAssembly_NASM_linux64");
                     if (tok.text == "+") {
                         asm_file << "    ;; -- add --\n"
                                  << "    pop rax\n"
@@ -384,7 +384,7 @@ namespace Corth {
                                  << "    div rbx\n"
                                  << "    push rax\n";
                     }
-					else if (tok.text == "%") {
+                    else if (tok.text == "%") {
                         asm_file << "    ;; -- modulo --\n"
                                  << "    xor rdx, rdx\n"
                                  << "    pop rbx\n"
@@ -481,7 +481,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::KEYWORD) {
                     static_assert(static_cast<int>(Keyword::COUNT) == 28,
-								  "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
+                                  "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
                                  << "    pop rax\n"
@@ -513,7 +513,7 @@ namespace Corth {
                                  << "addr_" << instr_ptr << ":\n";
                     }
                     
-					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
                         asm_file << "    ;; -- dup --\n"
                                  << "    pop rax\n"
                                  << "    push rax\n"
@@ -547,7 +547,7 @@ namespace Corth {
                                  << "    push rax\n"
                                  << "    push rbx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
                         asm_file << "    ;; -- dump --\n"
                                  << "    lea rdi, [rel fmt]\n"
                                  << "    pop rsi\n"
@@ -569,7 +569,7 @@ namespace Corth {
                                  << "    call printf\n";
                     }
 
-					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
                         asm_file << "    ;; -- mem --\n"
                                  << "    push mem\n";
                         // Pushes the relative address of allocated memory onto the stack
@@ -587,7 +587,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], bl\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
                         asm_file << "    ;; -- load word --\n"
                                  << "    pop rax\n"
                                  << "    xor rbx, rbx\n"
@@ -600,7 +600,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], bx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
                         asm_file << "    ;; -- load double word --\n"
                                  << "    pop rax\n"
                                  << "    xor rbx, rbx\n"
@@ -613,7 +613,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], ebx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    ;; -- load quad word --\n"
                                  << "    pop rax\n"
                                  << "    xor rbx, rbx\n"
@@ -626,7 +626,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], rbx\n";
                     }
-					
+                    
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    ;; -- bitwise-shift left --\n"
                                  << "    pop rcx\n"
@@ -655,7 +655,7 @@ namespace Corth {
                                  << "    and rax, rbx\n"
                                  << "    push rax\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::MOD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MOD)) {
                         asm_file << "    ;; -- modulo --\n"
                                  << "    xor rdx, rdx\n"
                                  << "    pop rbx\n"
@@ -675,7 +675,7 @@ namespace Corth {
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n";
 
-			// WRITE USER DEFINED STRING CONSTANTS
+            // WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
             for (auto& string : string_literals) {
                 std::vector<std::string> hex_chars = string_to_hex(string);
@@ -688,7 +688,7 @@ namespace Corth {
                 index++;
             }
 
-			// ALLOCATE MEMORY
+            // ALLOCATE MEMORY
             asm_file << '\n'
                      << "    SECTION .bss\n"
                      << "    mem resb " << MEM_CAPACITY << '\n';
@@ -724,7 +724,7 @@ namespace Corth {
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
             static_assert(static_cast<int>(TokenType::COUNT) == 5,
-						  "Exhaustive handling of token types in GenerateAssembly_GAS_linux64");
+                          "Exhaustive handling of token types in GenerateAssembly_GAS_linux64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -744,7 +744,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::OP) {
                     static_assert(OP_COUNT == 15,
-								  "Exhaustive handling of operators in GenerateAssembly_GAS_linux64");
+                                  "Exhaustive handling of operators in GenerateAssembly_GAS_linux64");
                     if (tok.text == "+") {
                         asm_file << "    # -- add --\n"
                                  << "    pop %rax\n"
@@ -774,7 +774,7 @@ namespace Corth {
                                  << "    div %rbx\n"
                                  << "    push %rax\n";
                     }
-					else if (tok.text == "%") {
+                    else if (tok.text == "%") {
                         asm_file << "    # -- modulo --\n"
                                  << "    xor %rdx, %rdx\n"
                                  << "    pop %rbx\n"
@@ -870,7 +870,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::KEYWORD) {
                     static_assert(static_cast<int>(Keyword::COUNT) == 28,
-								  "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
+                                  "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
                                  << "    pop %rax\n"
@@ -901,8 +901,8 @@ namespace Corth {
                                  << "    jmp addr_" << tok.data << "\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-					
-					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                    
+                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
                         asm_file << "    # -- dup --\n"
                                  << "    pop %rax\n"
                                  << "    push %rax\n"
@@ -936,7 +936,7 @@ namespace Corth {
                                  << "    push %rax\n"
                                  << "    push %rbx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
                         asm_file << "    # -- dump --\n"
                                  << "    lea fmt(%rip), %rdi\n"
                                  << "    pop %rsi\n"
@@ -958,7 +958,7 @@ namespace Corth {
                                  << "    call printf\n";
                     }
 
-					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
                         asm_file << "    # -- mem --\n"
                                  << "    lea mem(%rip), %rax\n"
                                  << "    push %rax\n";
@@ -977,7 +977,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %bl, (%rax)\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
                         asm_file << "    # -- load word --\n"
                                  << "    pop %rax\n"
                                  << "    xor %rbx, %rbx\n"
@@ -990,7 +990,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %bx, (%rax)\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
                         asm_file << "    # -- load double word --\n"
                                  << "    pop %rax\n"
                                  << "    xor %rbx, %rbx\n"
@@ -1003,7 +1003,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %ebx, (%rax)\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    # -- load quad word --\n"
                                  << "    pop %rax\n"
                                  << "    xor %rbx, %rbx\n"
@@ -1016,7 +1016,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %rbx, (%rax)\n";
                     }
-					
+                    
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    # -- bitwise-shift left --\n"
                                  << "    pop %rcx\n"
@@ -1045,7 +1045,7 @@ namespace Corth {
                                  << "    and %rbx, %rax\n"
                                  << "    push %rax\n";
                     }
-				    else if (tok.text == GetKeywordStr(Keyword::MOD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MOD)) {
                         asm_file << "    # -- modulo --\n"
                                  << "    xor %rdx, %rdx\n"
                                  << "    pop %rbx\n"
@@ -1056,7 +1056,7 @@ namespace Corth {
                 }
                 instr_ptr++;
             }
-			
+            
             // WRITE ASM FOOTER (GRACEFUL PROGRAM EXIT, CONSTANTS)
             asm_file << "    mov $0, %rdi\n"
                      << "    call exit\n"
@@ -1066,7 +1066,7 @@ namespace Corth {
                      << "    fmt_char: .string \"%c\"\n"
                      << "    fmt_str: .string \"%s\"\n";
 
-			// WRITE USER DEFINED STRING CONSTANTS
+            // WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
             if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
             for (auto& string : string_literals) {
@@ -1074,7 +1074,7 @@ namespace Corth {
                 index++;
             }
 
-			// ALLOCATE MEMORY
+            // ALLOCATE MEMORY
             asm_file << '\n'
                      << "    .bss\n"
                      << "    .comm mem, " << MEM_CAPACITY << '\n';
@@ -1148,7 +1148,7 @@ namespace Corth {
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
             static_assert(static_cast<int>(TokenType::COUNT) == 5,
-						  "Exhaustive handling of token types in GenerateAssembly_NASM_win64");
+                          "Exhaustive handling of token types in GenerateAssembly_NASM_win64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -1166,7 +1166,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::OP) {
                     static_assert(OP_COUNT == 15,
-								  "Exhaustive handling of operators in GenerateAssembly_NASM_win64");
+                                  "Exhaustive handling of operators in GenerateAssembly_NASM_win64");
                     if (tok.text == "+") {
                         asm_file << "    ;; -- add --\n"
                                  << "    pop rax\n"
@@ -1196,7 +1196,7 @@ namespace Corth {
                                  << "    div rbx\n"
                                  << "    push rax\n";
                     }
-					else if (tok.text == "%") {
+                    else if (tok.text == "%") {
                         asm_file << "    ;; -- modulo --\n"
                                  << "    xor rdx, rdx\n"
                                  << "    pop rbx\n"
@@ -1300,7 +1300,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::KEYWORD) {
                     static_assert(static_cast<int>(Keyword::COUNT) == 28,
-								  "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
+                                  "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
                                  << "    pop rax\n"
@@ -1331,8 +1331,8 @@ namespace Corth {
                                  << "    jmp addr_" << tok.data << "\n"
                                  << "addr_" << instr_ptr << ":\n";
                     }
-					
-					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                    
+                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
                         asm_file << "    ;; -- dup --\n"
                                  << "    pop rax\n"
                                  << "    push rax\n"
@@ -1366,7 +1366,7 @@ namespace Corth {
                                  << "    push rax\n"
                                  << "    push rbx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
                         asm_file << "    ;; -- dump --\n"
                                  << "    lea rcx, [rel fmt]\n"
                                  << "    pop rdx\n"
@@ -1394,7 +1394,7 @@ namespace Corth {
                                  << "    add rsp, 32\n";
                     }
 
-					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
                         // Pushes the relative address of allocated memory onto the stack
                         asm_file << "    ;; -- mem --\n"
                                  << "    push mem\n";
@@ -1413,7 +1413,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], bl\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
                         asm_file << "    ;; -- load word --\n"
                                  << "    pop rax\n"
                                  << "    xor rbx, rbx\n"
@@ -1426,7 +1426,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], bx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
                         asm_file << "    ;; -- load double word --\n"
                                  << "    pop rax\n"
                                  << "    xor rbx, rbx\n"
@@ -1439,7 +1439,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], ebx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    ;; -- load quad word --\n"
                                  << "    pop rax\n"
                                  << "    xor rbx, rbx\n"
@@ -1452,7 +1452,7 @@ namespace Corth {
                                  << "    pop rax\n"
                                  << "    mov [rax], rbx\n";
                     }
-					
+                    
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    ;; -- bitwise-shift left --\n"
                                  << "    pop rcx\n"
@@ -1481,7 +1481,7 @@ namespace Corth {
                                  << "    and rax, rbx\n"
                                  << "    push rax\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::MOD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MOD)) {
                         asm_file << "    ;; -- modulo --\n"
                                  << "    xor rdx, rdx\n"
                                  << "    pop rbx\n"
@@ -1549,7 +1549,7 @@ namespace Corth {
 
             // WRITE TOKENS TO ASM FILE MAIN LABEL
             static_assert(static_cast<int>(TokenType::COUNT) == 5,
-						  "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
+                          "Exhaustive handling of token types in GenerateAssembly_GAS_win64");
             size_t instr_ptr = 0;
             size_t instr_ptr_max = prog.tokens.size();
             while (instr_ptr < instr_ptr_max) {
@@ -1569,7 +1569,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::OP) {
                     static_assert(OP_COUNT == 15,
-								  "Exhaustive handling of operators in GenerateAssembly_GAS_win64");
+                                  "Exhaustive handling of operators in GenerateAssembly_GAS_win64");
                     if (tok.text == "+") {
                         asm_file << "    # -- add --\n"
                                  << "    pop %rax\n"
@@ -1599,14 +1599,14 @@ namespace Corth {
                                  << "    div %rbx\n"
                                  << "    push %rax\n";
                     }
-					else if (tok.text == "%") {
-						asm_file << "    # -- modulo --\n"
+                    else if (tok.text == "%") {
+                        asm_file << "    # -- modulo --\n"
                                  << "    xor %rdx, %rdx\n"
                                  << "    pop %rbx\n"
                                  << "    pop %rax\n"
                                  << "    div %rbx\n"
                                  << "    push %rdx\n";
-					}
+                    }
                     else if (tok.text == "=") {
                         asm_file << "    # -- equality condition --\n"
                                  << "    mov $0, %rcx\n"
@@ -1697,7 +1697,7 @@ namespace Corth {
                 }
                 else if (tok.type == TokenType::KEYWORD) {
                     static_assert(static_cast<int>(Keyword::COUNT) == 28,
-								  "Exhaustive handling of keywords in GenerateAssembly_GAS_win64");
+                                  "Exhaustive handling of keywords in GenerateAssembly_GAS_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
                                  << "    pop %rax\n"
@@ -1729,7 +1729,7 @@ namespace Corth {
                                  << "addr_" << instr_ptr << ":\n";
                     }
                     
-					else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                    else if (tok.text == GetKeywordStr(Keyword::DUP)) {
                         asm_file << "    # -- dup --\n"
                                  << "    pop %rax\n"
                                  << "    push %rax\n"
@@ -1763,7 +1763,7 @@ namespace Corth {
                                  << "    push %rax\n"
                                  << "    push %rbx\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
+                    else if (tok.text == GetKeywordStr(Keyword::DUMP)) {
                         asm_file << "    # -- dump --\n"
                                  << "    lea fmt(%rip), %rcx\n"
                                  << "    pop %rdx\n"
@@ -1791,7 +1791,7 @@ namespace Corth {
                                  << "    add $32, %rsp\n";
                     }
 
-					else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                    else if (tok.text == GetKeywordStr(Keyword::MEM)) {
                         asm_file << "    # -- mem --\n"
                                  << "    lea mem(%rip), %rax\n"
                                  << "    push %rax\n";
@@ -1810,7 +1810,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %bl, (%rax)\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADW)) {
                         asm_file << "    # -- load word --\n"
                                  << "    pop %rax\n"
                                  << "    xor %rbx, %rbx\n"
@@ -1823,7 +1823,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %bx, (%rax)\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADD)) {
                         asm_file << "    # -- load double word --\n"
                                  << "    pop %rax\n"
                                  << "    xor %rbx, %rbx\n"
@@ -1836,7 +1836,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %ebx, (%rax)\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
+                    else if (tok.text == GetKeywordStr(Keyword::LOADQ)) {
                         asm_file << "    # -- load quad word --\n"
                                  << "    pop %rax\n"
                                  << "    xor %rbx, %rbx\n"
@@ -1849,7 +1849,7 @@ namespace Corth {
                                  << "    pop %rax\n"
                                  << "    mov %rbx, (%rax)\n";
                     }
-					
+                    
                     else if (tok.text == GetKeywordStr(Keyword::SHL)) {
                         asm_file << "    # -- bitwise-shift left --\n"
                                  << "    pop %rcx\n"
@@ -1878,14 +1878,14 @@ namespace Corth {
                                  << "    and %rbx, %rax\n"
                                  << "    push %rax\n";
                     }
-					else if (tok.text == GetKeywordStr(Keyword::MOD)) {
-						asm_file << "    # -- modulo --\n"
+                    else if (tok.text == GetKeywordStr(Keyword::MOD)) {
+                        asm_file << "    # -- modulo --\n"
                                  << "    xor %rdx, %rdx\n"
                                  << "    pop %rbx\n"
                                  << "    pop %rax\n"
                                  << "    div %rbx\n"
                                  << "    push %rdx\n";
-					}
+                    }
                 }
                 instr_ptr++;
             }
@@ -1898,7 +1898,7 @@ namespace Corth {
                      << "    fmt_char: .string \"%c\"\n"
                      << "    fmt_str: .string \"%s\"\n";
 
-			// WRITE USER DEFINED STRINGS
+            // WRITE USER DEFINED STRINGS
             size_t index = 0;
             if (string_literals.size() > 0) { asm_file << "\n    # USER DEFINED STRINGS\n"; }
             for (auto& string : string_literals) {
@@ -1906,14 +1906,14 @@ namespace Corth {
                 index++;
             }
 
-			// ALLOCATE MEMORY
+            // ALLOCATE MEMORY
             asm_file << '\n'
                      << "    .bss\n"
                      << "    .comm mem, " << MEM_CAPACITY << '\n';
 
-			// Close open filestream.
+            // Close open filestream.
             asm_file.close();
-			
+            
             Log("WIN64 GAS assembly generated at " + asm_file_path);
         }
         else {
@@ -1927,11 +1927,11 @@ namespace Corth {
         // False = Execution will halt in main function
         // True = Execution will continue in main function
         static_assert(static_cast<int>(MODE::COUNT) == 2,
-					  "Exhaustive handling of supported modes in HandleCMDLineArgs");
+                      "Exhaustive handling of supported modes in HandleCMDLineArgs");
         static_assert(static_cast<int>(PLATFORM::COUNT) == 2,
-					  "Exhaustive handling of supported platforms in HandleCMDLineArgs");
+                      "Exhaustive handling of supported platforms in HandleCMDLineArgs");
         static_assert(static_cast<int>(ASM_SYNTAX::COUNT) == 2,
-					  "Exhaustive handling of supported assembly syntaxes in HandleCMDLineArgs");
+                      "Exhaustive handling of supported assembly syntaxes in HandleCMDLineArgs");
 
         if (argc == 1) {
             // No command line args entered, print usage
@@ -2108,7 +2108,7 @@ namespace Corth {
         size_t src_end = src.size();
 
         static_assert(static_cast<int>(TokenType::COUNT) == 5,
-					  "Exhaustive handling of token types in Lex method");
+                      "Exhaustive handling of token types in Lex method");
         
         std::vector<Token>& toks = prog.tokens;
         Token tok;
@@ -2128,7 +2128,7 @@ namespace Corth {
             }
             else if (isoperator(current)) {
                 static_assert(OP_COUNT == 15,
-							  "Exhaustive handling of operators in Lex method");
+                              "Exhaustive handling of operators in Lex method");
                 tok.type = TokenType::OP;
                 tok.text.append(1, current);
                 // Look-ahead to check for multi-character operators
@@ -2200,10 +2200,10 @@ namespace Corth {
                     current = src[i];
                     tok.col_number++;
                     if (isalpha(current)
-						|| current == '_')
-					{
-						tok.text.append(1, current);
-					}
+                        || current == '_')
+                    {
+                        tok.text.append(1, current);
+                    }
                     else { break; }
                 }
 
@@ -2216,7 +2216,7 @@ namespace Corth {
                 else {
                     Error("Unidentified keyword: " + tok.text,
                             tok.line_number, tok.col_number);
-					return false;
+                    return false;
                 }
                 
                 i--; // Undo lookahead.
@@ -2247,13 +2247,13 @@ namespace Corth {
                 if (i >= src_end) {
                     Error("Expected closing quotes following opening quotes",
                           tok.line_number, tok.col_number);
-					return false;
+                    return false;
                 }
                 i--;
                 PushToken(toks, tok);
             }
         }
-		return true;
+        return true;
     }
 
     void PrintToken(Token& t) {
@@ -2287,659 +2287,659 @@ namespace Corth {
         StackError(tok.line_number, tok.col_number);
     }
 
-	// This function simulates the program running on its most basic level: adding and removing from the stack.
-	// A read-access violation can occur if trying to pop off the stack without pushing something on first.
-	// To prevent this violation during runtime of Corth, this function catches over-popping before it can happen.
-	void ValidateTokens_Stack(Program& prog) {
-		std::vector<Token>& toks = prog.tokens;
-		// Amount of things on virtual stack
-		size_t stackSize = 0;
-		static_assert(static_cast<int>(TokenType::COUNT) == 5,
-					  "Exhaustive handling of token types in ValidateTokens_Stack");
-		for (auto& tok : toks) {
-			if (tok.type == TokenType::WHITESPACE) {
-				Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number, tok.col_number);
-			}
-			else if (tok.type == TokenType::INT
-					 || tok.type == TokenType::STRING)
-			{
-				stackSize++;
-			}
-			else if (tok.type == TokenType::OP) {
-				static_assert(OP_COUNT == 15,
-							  "Exhaustive handling of operators in ValidateTokens_Stack.");
-				// Operators that pop two values off the stack and return one to it
-				if (tok.text == "+"
-					|| tok.text == "-"
-					|| tok.text == "*"
-					|| tok.text == "/"
-					|| tok.text == "%"
-					// conditionals
-					|| tok.text == "="
-					|| tok.text == "<"
-					|| tok.text == ">"
-					|| tok.text == "<="
-					|| tok.text == ">="
-					// bitwise
-					|| tok.text == "<<"
-					|| tok.text == ">>"
-					|| tok.text == "||"
-					|| tok.text == "&&")
-				{
-					if (stackSize > 1) {
-						stackSize--; // Two values removed, result added, net loss of one
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				// Operators that pop one value off the stack and return zero to it
-				else if (tok.text == "#") {
-					if (stackSize > 0) {
-						stackSize--;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-			}
-			else if (tok.type == TokenType::KEYWORD) {
-				static_assert(static_cast<int>(Keyword::COUNT) == 28,
-							  "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
-				// Skip skippable tokens first for speed
-				if (tok.text == GetKeywordStr(Keyword::ELSE)
-					|| tok.text == GetKeywordStr(Keyword::ENDIF)
-					|| tok.text == GetKeywordStr(Keyword::WHILE)
-					|| tok.text == GetKeywordStr(Keyword::ENDWHILE))
-				{
-					continue;
-				}
-				else if (tok.text == GetKeywordStr(Keyword::IF)
-						 || tok.text == GetKeywordStr(Keyword::DO))
-				{
-					// both `if` and `do` will pop from the stack to check the condition to see if it needs to jump or not
-					// {<condition>} -> { }
-					if (stackSize > 0) {
-						stackSize--;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::DUP)) {
-					// dup will pop from the stack then push that value back twice
-					if (stackSize > 0) {
-						stackSize++;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
-					// dup will pop from the stack then push that value back twice
-					if (stackSize > 1) {
-						stackSize += 2;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::MEM)) {
-					// `mem` will push the address of usable memory onto the stack
-					// { } -> {<memory address>}
-					stackSize++;
-				}
-				else if (tok.text == GetKeywordStr(Keyword::LOADB)
-						 || tok.text == GetKeywordStr(Keyword::LOADW)
-						 || tok.text == GetKeywordStr(Keyword::LOADD)
-						 || tok.text == GetKeywordStr(Keyword::LOADQ))
-				{
-					// `loadb` operations will pop an address from the stack,
-					//   then push the value at that address.
-					// {<address>} -> {<value>}
-					if (stackSize > 0) {
-						continue;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::STOREB)
-						 || tok.text == GetKeywordStr(Keyword::STOREW)
-						 || tok.text == GetKeywordStr(Keyword::STORED)
-						 || tok.text == GetKeywordStr(Keyword::STOREQ))
-				{
-					// `store` operations will pop a value and an
-					//   address from the stack.
-					// {<address>, <value>} -> { }
-					if (stackSize > 1) {
-						stackSize -= 2;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::DUMP)
-						 || tok.text == GetKeywordStr(Keyword::DUMP_C)
-						 || tok.text == GetKeywordStr(Keyword::DUMP_S)
-						 || tok.text == GetKeywordStr(Keyword::DROP))
-				{
-					// both `dump`, `dump_c`, `dump_s`, and `drop` will
-					//   take an item off the stack without returning anything
-					// {a} -> { }
-					if (stackSize > 0) {
-						stackSize--;
-					}
-					else {
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
-					// `swap` will pop two values but also push two values, net zero.
-					if (stackSize > 1) {
-						continue;
-					}
-					else
-					{
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::OVER)) {
-					// Over will pop two values but push three values, net one
-					// {a, b} -> {a, b, a}
-					if (stackSize > 1) {
-						stackSize++;
-					}
-					else
-					{
-						TokenStackError(tok);
-					}
-				}
-				else if (tok.text == GetKeywordStr(Keyword::SHL)
-						 || tok.text == GetKeywordStr(Keyword::SHR)
-						 || tok.text == GetKeywordStr(Keyword::OR)
-						 || tok.text == GetKeywordStr(Keyword::AND)
-						 || tok.text == GetKeywordStr(Keyword::MOD))
-				{
-					// Bitwise-shift left and right, bitwise-or and bitwise-and, as well as modulo will pop two
-					//   values off the stack and add one, net negative one
-					// {a, b} -> {c}
-					if (stackSize > 1) {
-						stackSize--;
-					}
-					else
-					{
-						TokenStackError(tok);
-					}
-				}
-			}
-		}
-		
-		if (stackSize != 0) {
-			Warning("Validator: Best practices indicate stack should be empty at end of program.\nStack Size at End of Program: " + std::to_string(stackSize));
-		}
-	}
+    // This function simulates the program running on its most basic level: adding and removing from the stack.
+    // A read-access violation can occur if trying to pop off the stack without pushing something on first.
+    // To prevent this violation during runtime of Corth, this function catches over-popping before it can happen.
+    void ValidateTokens_Stack(Program& prog) {
+        std::vector<Token>& toks = prog.tokens;
+        // Amount of things on virtual stack
+        size_t stackSize = 0;
+        static_assert(static_cast<int>(TokenType::COUNT) == 5,
+                      "Exhaustive handling of token types in ValidateTokens_Stack");
+        for (auto& tok : toks) {
+            if (tok.type == TokenType::WHITESPACE) {
+                Warning("Validator: Whitespace tokens should not appear in final program. Problem with the Lexing?", tok.line_number, tok.col_number);
+            }
+            else if (tok.type == TokenType::INT
+                     || tok.type == TokenType::STRING)
+            {
+                stackSize++;
+            }
+            else if (tok.type == TokenType::OP) {
+                static_assert(OP_COUNT == 15,
+                              "Exhaustive handling of operators in ValidateTokens_Stack.");
+                // Operators that pop two values off the stack and return one to it
+                if (tok.text == "+"
+                    || tok.text == "-"
+                    || tok.text == "*"
+                    || tok.text == "/"
+                    || tok.text == "%"
+                    // conditionals
+                    || tok.text == "="
+                    || tok.text == "<"
+                    || tok.text == ">"
+                    || tok.text == "<="
+                    || tok.text == ">="
+                    // bitwise
+                    || tok.text == "<<"
+                    || tok.text == ">>"
+                    || tok.text == "||"
+                    || tok.text == "&&")
+                {
+                    if (stackSize > 1) {
+                        stackSize--; // Two values removed, result added, net loss of one
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                // Operators that pop one value off the stack and return zero to it
+                else if (tok.text == "#") {
+                    if (stackSize > 0) {
+                        stackSize--;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+            }
+            else if (tok.type == TokenType::KEYWORD) {
+                static_assert(static_cast<int>(Keyword::COUNT) == 28,
+                              "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
+                // Skip skippable tokens first for speed
+                if (tok.text == GetKeywordStr(Keyword::ELSE)
+                    || tok.text == GetKeywordStr(Keyword::ENDIF)
+                    || tok.text == GetKeywordStr(Keyword::WHILE)
+                    || tok.text == GetKeywordStr(Keyword::ENDWHILE))
+                {
+                    continue;
+                }
+                else if (tok.text == GetKeywordStr(Keyword::IF)
+                         || tok.text == GetKeywordStr(Keyword::DO))
+                {
+                    // both `if` and `do` will pop from the stack to check the condition to see if it needs to jump or not
+                    // {<condition>} -> { }
+                    if (stackSize > 0) {
+                        stackSize--;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::DUP)) {
+                    // dup will pop from the stack then push that value back twice
+                    if (stackSize > 0) {
+                        stackSize++;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::TWODUP)) {
+                    // dup will pop from the stack then push that value back twice
+                    if (stackSize > 1) {
+                        stackSize += 2;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                    // `mem` will push the address of usable memory onto the stack
+                    // { } -> {<memory address>}
+                    stackSize++;
+                }
+                else if (tok.text == GetKeywordStr(Keyword::LOADB)
+                         || tok.text == GetKeywordStr(Keyword::LOADW)
+                         || tok.text == GetKeywordStr(Keyword::LOADD)
+                         || tok.text == GetKeywordStr(Keyword::LOADQ))
+                {
+                    // `loadb` operations will pop an address from the stack,
+                    //   then push the value at that address.
+                    // {<address>} -> {<value>}
+                    if (stackSize > 0) {
+                        continue;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::STOREB)
+                         || tok.text == GetKeywordStr(Keyword::STOREW)
+                         || tok.text == GetKeywordStr(Keyword::STORED)
+                         || tok.text == GetKeywordStr(Keyword::STOREQ))
+                {
+                    // `store` operations will pop a value and an
+                    //   address from the stack.
+                    // {<address>, <value>} -> { }
+                    if (stackSize > 1) {
+                        stackSize -= 2;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::DUMP)
+                         || tok.text == GetKeywordStr(Keyword::DUMP_C)
+                         || tok.text == GetKeywordStr(Keyword::DUMP_S)
+                         || tok.text == GetKeywordStr(Keyword::DROP))
+                {
+                    // both `dump`, `dump_c`, `dump_s`, and `drop` will
+                    //   take an item off the stack without returning anything
+                    // {a} -> { }
+                    if (stackSize > 0) {
+                        stackSize--;
+                    }
+                    else {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::SWAP)) {
+                    // `swap` will pop two values but also push two values, net zero.
+                    if (stackSize > 1) {
+                        continue;
+                    }
+                    else
+                    {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::OVER)) {
+                    // Over will pop two values but push three values, net one
+                    // {a, b} -> {a, b, a}
+                    if (stackSize > 1) {
+                        stackSize++;
+                    }
+                    else
+                    {
+                        TokenStackError(tok);
+                    }
+                }
+                else if (tok.text == GetKeywordStr(Keyword::SHL)
+                         || tok.text == GetKeywordStr(Keyword::SHR)
+                         || tok.text == GetKeywordStr(Keyword::OR)
+                         || tok.text == GetKeywordStr(Keyword::AND)
+                         || tok.text == GetKeywordStr(Keyword::MOD))
+                {
+                    // Bitwise-shift left and right, bitwise-or and bitwise-and, as well as modulo will pop two
+                    //   values off the stack and add one, net negative one
+                    // {a, b} -> {c}
+                    if (stackSize > 1) {
+                        stackSize--;
+                    }
+                    else
+                    {
+                        TokenStackError(tok);
+                    }
+                }
+            }
+        }
+        
+        if (stackSize != 0) {
+            Warning("Validator: Best practices indicate stack should be empty at end of program.\nStack Size at End of Program: " + std::to_string(stackSize));
+        }
+    }
 
-	bool ValidateBlock(Program& prog, size_t& instr_ptr, size_t instr_ptr_max) {
-	    // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
-		size_t block_instr_ptr = instr_ptr;
+    bool ValidateBlock(Program& prog, size_t& instr_ptr, size_t instr_ptr_max) {
+        // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
+        size_t block_instr_ptr = instr_ptr;
 
-		static_assert(static_cast<int>(Keyword::COUNT) == 28,
-					  "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
-		
-		// Handle while block
-		if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
-			// Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
-			while (instr_ptr < instr_ptr_max) {
-				if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-					prog.tokens[instr_ptr].data = std::to_string(block_instr_ptr);
-					return ValidateBlock(prog, instr_ptr, instr_ptr_max);
-					// Undo look-ahead
-					instr_ptr--;
-				}
-				else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
-						 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)
-						 || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)
-						 || instr_ptr + 1 == instr_ptr_max)
-				{
-					Error("Expected `" + GetKeywordStr(Keyword::DO)
-						  + "` following `" + GetKeywordStr(Keyword::WHILE) + "`",
-						  prog.tokens[instr_ptr].line_number,
-						  prog.tokens[instr_ptr].col_number);
-					return false;
-				}
-				instr_ptr++;
-			}	
-		}
-		
-		while (instr_ptr < instr_ptr_max) {
-			instr_ptr++;
-				
-			if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
-				if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)) {
-					// Recursively validate nested if
-					ValidateBlock(prog, instr_ptr, instr_ptr_max);
-				}
-				else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)) {
-					if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::IF)) {
-						// Upon an `if` reaching an `else`, the `if` data field
-						//   should be updated to the `else` instr_ptr
-						prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
-						// Recursively validate else block
-						return ValidateBlock(prog, instr_ptr, instr_ptr_max);
-					}
-					else {
-						Error("`" + GetKeywordStr(Keyword::ELSE)
-							  + "` keyword can only be used within `"
-							  + GetKeywordStr(Keyword::IF) + "` blocks",
-							  prog.tokens[instr_ptr].line_number,
-							  prog.tokens[instr_ptr].col_number);
-						return false;
-					}
-				}
-				else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
-					// Recursively validate nested while
-					ValidateBlock(prog, instr_ptr, instr_ptr_max);
-				}
-				else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDWHILE)) {
-					if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::DO)) {
-						// An endwhile must set the `do` data field to
-						//    it's instruction pointer (to jump to upon condition fail)
-						// It must first set it's own data field to it's jump point,
-						//   which is the `do`s data field before we change it
-						prog.tokens[instr_ptr].data = prog.tokens[block_instr_ptr].data;
-						prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
-						return true;
-					}
-					Error("`" + GetKeywordStr(Keyword::ENDWHILE)
-						  + "` keyword can only be used within `"
-						  + GetKeywordStr(Keyword::DO) + "` blocks",
-						  prog.tokens[instr_ptr].line_number,
-						  prog.tokens[instr_ptr].col_number);
-					return false;
-				}
-				else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
-					if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::IF)
-						|| prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::ELSE))
-					{
-						prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
-						return true;
-					}
-					Error("`" + GetKeywordStr(Keyword::ENDIF)
-						  + "` keyword can only be used within `"
-						  + GetKeywordStr(Keyword::IF) + "` blocks",
-						  prog.tokens[instr_ptr].line_number,
-						  prog.tokens[instr_ptr].col_number);
-					return false;
-				}
-			} 
-		}	
-		
-		return false;
-	}
+        static_assert(static_cast<int>(Keyword::COUNT) == 28,
+                      "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
+        
+        // Handle while block
+        if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
+            // Find `do`, error if you can't. Set `do` data field to WHILE instr_ptr temporarily for endwhile to use
+            while (instr_ptr < instr_ptr_max) {
+                if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::DO)) {
+                    prog.tokens[instr_ptr].data = std::to_string(block_instr_ptr);
+                    return ValidateBlock(prog, instr_ptr, instr_ptr_max);
+                    // Undo look-ahead
+                    instr_ptr--;
+                }
+                else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
+                         || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)
+                         || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)
+                         || instr_ptr + 1 == instr_ptr_max)
+                {
+                    Error("Expected `" + GetKeywordStr(Keyword::DO)
+                          + "` following `" + GetKeywordStr(Keyword::WHILE) + "`",
+                          prog.tokens[instr_ptr].line_number,
+                          prog.tokens[instr_ptr].col_number);
+                    return false;
+                }
+                instr_ptr++;
+            }   
+        }
+        
+        while (instr_ptr < instr_ptr_max) {
+            instr_ptr++;
+                
+            if (prog.tokens[instr_ptr].type == TokenType::KEYWORD) {
+                if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)) {
+                    // Recursively validate nested if
+                    ValidateBlock(prog, instr_ptr, instr_ptr_max);
+                }
+                else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ELSE)) {
+                    if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::IF)) {
+                        // Upon an `if` reaching an `else`, the `if` data field
+                        //   should be updated to the `else` instr_ptr
+                        prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
+                        // Recursively validate else block
+                        return ValidateBlock(prog, instr_ptr, instr_ptr_max);
+                    }
+                    else {
+                        Error("`" + GetKeywordStr(Keyword::ELSE)
+                              + "` keyword can only be used within `"
+                              + GetKeywordStr(Keyword::IF) + "` blocks",
+                              prog.tokens[instr_ptr].line_number,
+                              prog.tokens[instr_ptr].col_number);
+                        return false;
+                    }
+                }
+                else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE)) {
+                    // Recursively validate nested while
+                    ValidateBlock(prog, instr_ptr, instr_ptr_max);
+                }
+                else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDWHILE)) {
+                    if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::DO)) {
+                        // An endwhile must set the `do` data field to
+                        //    it's instruction pointer (to jump to upon condition fail)
+                        // It must first set it's own data field to it's jump point,
+                        //   which is the `do`s data field before we change it
+                        prog.tokens[instr_ptr].data = prog.tokens[block_instr_ptr].data;
+                        prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
+                        return true;
+                    }
+                    Error("`" + GetKeywordStr(Keyword::ENDWHILE)
+                          + "` keyword can only be used within `"
+                          + GetKeywordStr(Keyword::DO) + "` blocks",
+                          prog.tokens[instr_ptr].line_number,
+                          prog.tokens[instr_ptr].col_number);
+                    return false;
+                }
+                else if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::ENDIF)) {
+                    if (prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::IF)
+                        || prog.tokens[block_instr_ptr].text == GetKeywordStr(Keyword::ELSE))
+                    {
+                        prog.tokens[block_instr_ptr].data = std::to_string(instr_ptr);
+                        return true;
+                    }
+                    Error("`" + GetKeywordStr(Keyword::ENDIF)
+                          + "` keyword can only be used within `"
+                          + GetKeywordStr(Keyword::IF) + "` blocks",
+                          prog.tokens[instr_ptr].line_number,
+                          prog.tokens[instr_ptr].col_number);
+                    return false;
+                }
+            } 
+        }   
+        
+        return false;
+    }
 
-	// This function ensures any tokens that start or stop blocks are correctly referenced
-	// For example, an `if` statement needs to know where to jump to if it is false.
-	// Another example: `endwhile` statement needs to know where to jump back to.
-	void ValidateTokens_Blocks(Program& prog) {
-		static_assert(static_cast<int>(Keyword::COUNT) == 28,
-					  "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
-		size_t instr_ptr = 0;
-		size_t instr_ptr_max = prog.tokens.size();
-		while (instr_ptr < instr_ptr_max) {
-			if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
-				|| prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE))
-			{
-				ValidateBlock(prog, instr_ptr, instr_ptr_max);
-				// Undo look-ahead
-				instr_ptr--;
-			}
-			instr_ptr++;
-		}
-	}
-	
-	void ValidateTokens(Program& prog) {
-		// Stack protection
-		ValidateTokens_Stack(prog);
+    // This function ensures any tokens that start or stop blocks are correctly referenced
+    // For example, an `if` statement needs to know where to jump to if it is false.
+    // Another example: `endwhile` statement needs to know where to jump back to.
+    void ValidateTokens_Blocks(Program& prog) {
+        static_assert(static_cast<int>(Keyword::COUNT) == 28,
+                      "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
+        size_t instr_ptr = 0;
+        size_t instr_ptr_max = prog.tokens.size();
+        while (instr_ptr < instr_ptr_max) {
+            if (prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::IF)
+                || prog.tokens[instr_ptr].text == GetKeywordStr(Keyword::WHILE))
+            {
+                ValidateBlock(prog, instr_ptr, instr_ptr_max);
+                // Undo look-ahead
+                instr_ptr--;
+            }
+            instr_ptr++;
+        }
+    }
+    
+    void ValidateTokens(Program& prog) {
+        // Stack protection
+        ValidateTokens_Stack(prog);
 
-		// Cross-reference blocks (give `if` tokens a reference to it's `endif` counterpart
-		ValidateTokens_Blocks(prog);
+        // Cross-reference blocks (give `if` tokens a reference to it's `endif` counterpart
+        ValidateTokens_Blocks(prog);
 
-		// Remove all un-neccessary tokens
-	    static_cast<void>(std::remove_if(prog.tokens.begin(), prog.tokens.end(), RemovableToken));
+        // Remove all un-neccessary tokens
+        static_cast<void>(std::remove_if(prog.tokens.begin(), prog.tokens.end(), RemovableToken));
 
-		if (verbose_logging) { Log("Tokens validated"); }
-	}
+        if (verbose_logging) { Log("Tokens validated"); }
+    }
 }
 
 // This function is my Windows version of the `where` cmd
 bool FileExists(std::string filePath) {
-	// Check path relative Corth.exe
-	std::ifstream file(filePath);
-	if (file.is_open()) { file.close(); return true; }
-	
+    // Check path relative Corth.exe
+    std::ifstream file(filePath);
+    if (file.is_open()) { file.close(); return true; }
+    
     #ifdef _WIN64
-	// Get PATH system variable on Windows
-	std::vector<std::string> path_var;
-	size_t buf_sz = 2048;
-	char* buf[2048];
-	if (_dupenv_s(buf, &buf_sz, "PATH")) {
-		Corth::Error("Could not access PATH system variable");
-	}
-	// Split path by semi-colon, and ensure there is a slash at the end of every split.
-	std::string tmp;
-	std::string path_var_str(buf[0], buf_sz);
-	std::stringstream path_var_ss(path_var_str);
-	while (std::getline(path_var_ss, tmp, ';')) {
-		if (tmp.back() != '\\' || tmp.back() != '/') {
-			tmp.append(1, '/');
-		}
-	   	path_var.push_back(tmp);
+    // Get PATH system variable on Windows
+    std::vector<std::string> path_var;
+    size_t buf_sz = 2048;
+    char* buf[2048];
+    if (_dupenv_s(buf, &buf_sz, "PATH")) {
+        Corth::Error("Could not access PATH system variable");
+    }
+    // Split path by semi-colon, and ensure there is a slash at the end of every split.
+    std::string tmp;
+    std::string path_var_str(buf[0], buf_sz);
+    std::stringstream path_var_ss(path_var_str);
+    while (std::getline(path_var_ss, tmp, ';')) {
+        if (tmp.back() != '\\' || tmp.back() != '/') {
+            tmp.append(1, '/');
+        }
+        path_var.push_back(tmp);
     }
 
     // Check each path in Windows PATH variable if file exists
-	for (auto& path : path_var) {
-		std::string test(path + filePath);
-		if (Corth::verbose_logging) { Corth::Log("Testing " + test); }
-		std::ifstream f(test);
-		if (f.is_open()) { f.close(); return true; }
-	}
-	#else
-	#endif
+    for (auto& path : path_var) {
+        std::string test(path + filePath);
+        if (Corth::verbose_logging) { Corth::Log("Testing " + test); }
+        std::ifstream f(test);
+        if (f.is_open()) { f.close(); return true; }
+    }
+    #else
+    #endif
 
-	return false;
+    return false;
 }
 
 // Load a file into a string from a path.
 std::string loadFromFile(std::string filePath) {
     std::ifstream inFileStream(filePath);
     if (!inFileStream) {
-		throw std::runtime_error(("File not found at " + filePath).c_str());
-	}
+        throw std::runtime_error(("File not found at " + filePath).c_str());
+    }
     return std::string(std::istreambuf_iterator<char>(inFileStream), std::istreambuf_iterator<char>());
 }
 
 void printCharactersFromFile(std::string filePath, std::string logPrefix = "[LOG]") {
-	FILE* file_ptr {nullptr};
-	char c;
-	file_ptr = fopen(filePath.c_str(), "r");
-	if (file_ptr != nullptr) {
-		// Don't print if log-file is empty
-		fseek(file_ptr, 0, SEEK_END);
-		if (ftell(file_ptr) != 0) {
-			printf("%c", '\n');
-			// Navigate back to beginning of file
-			fseek(file_ptr, 0, SEEK_SET);
-			printf("%s (%s):\n", logPrefix.c_str(), filePath.c_str());
-			c = fgetc(file_ptr);
-			while (c != EOF) {
-				printf("%c", c);
-				c = fgetc(file_ptr);
-			}
-		}
-		fclose(file_ptr);
-	}
+    FILE* file_ptr {nullptr};
+    char c;
+    file_ptr = fopen(filePath.c_str(), "r");
+    if (file_ptr != nullptr) {
+        // Don't print if log-file is empty
+        fseek(file_ptr, 0, SEEK_END);
+        if (ftell(file_ptr) != 0) {
+            printf("%c", '\n');
+            // Navigate back to beginning of file
+            fseek(file_ptr, 0, SEEK_SET);
+            printf("%s (%s):\n", logPrefix.c_str(), filePath.c_str());
+            c = fgetc(file_ptr);
+            while (c != EOF) {
+                printf("%c", c);
+                c = fgetc(file_ptr);
+            }
+        }
+        fclose(file_ptr);
+    }
 }
 
 int main(int argc, char** argv) {
     // PLATFORM SPECIFIC DEFAULTS
-	#ifdef _WIN64
-	// Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
-	Corth::ASMB_PATH = "\\NASM\\nasm.exe";
-	Corth::ASMB_OPTS = "-f win64";
-	Corth::LINK_PATH = "\\Golink\\golink.exe";
-	Corth::LINK_OPTS = "/console /ENTRY:main msvcrt.dll";
+    #ifdef _WIN64
+    // Defaults assume tools were installed on the same drive as Corth as well as in the root directory of the drive.
+    Corth::ASMB_PATH = "\\NASM\\nasm.exe";
+    Corth::ASMB_OPTS = "-f win64";
+    Corth::LINK_PATH = "\\Golink\\golink.exe";
+    Corth::LINK_OPTS = "/console /ENTRY:main msvcrt.dll";
     #endif
 
-	#ifdef __linux__
-	Corth::ASMB_PATH = "nasm";
-	Corth::ASMB_OPTS = "-f elf64";
-	Corth::LINK_PATH = "ld";
-	Corth::LINK_OPTS = "-dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64";
-	#endif
-	
-	if (!Corth::HandleCMDLineArgs(argc, argv)){
-		// Non-graceful handling of command line arguments, abort execution.
-		return -1;
-	}
-	
-	Corth::Program prog;
+    #ifdef __linux__
+    Corth::ASMB_PATH = "nasm";
+    Corth::ASMB_OPTS = "-f elf64";
+    Corth::LINK_PATH = "ld";
+    Corth::LINK_OPTS = "-dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc -m elf_x86_64";
+    #endif
+    
+    if (!Corth::HandleCMDLineArgs(argc, argv)){
+        // Non-graceful handling of command line arguments, abort execution.
+        return -1;
+    }
+    
+    Corth::Program prog;
 
-	static_assert(static_cast<int>(Corth::MODE::COUNT) == 2,
-				  "Exhaustive handling of modes in main method");
-	static_assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2,
-				  "Exhaustive handling of platforms in main method");
-	static_assert(static_cast<int>(Corth::ASM_SYNTAX::COUNT) == 2,
-				  "Exhaustive handling of assembly syntaxes in main method");
+    static_assert(static_cast<int>(Corth::MODE::COUNT) == 2,
+                  "Exhaustive handling of modes in main method");
+    static_assert(static_cast<int>(Corth::PLATFORM::COUNT) == 2,
+                  "Exhaustive handling of platforms in main method");
+    static_assert(static_cast<int>(Corth::ASM_SYNTAX::COUNT) == 2,
+                  "Exhaustive handling of assembly syntaxes in main method");
 
-	// Try to load program source from a file
+    // Try to load program source from a file
     try {
         prog.source = loadFromFile(Corth::SOURCE_PATH);
-		if (Corth::verbose_logging) { Corth::Log("Load file: successful"); }
+        if (Corth::verbose_logging) { Corth::Log("Load file: successful"); }
     }
     catch (std::runtime_error e) {
-		Corth::Error("Could not load source file!", e);
+        Corth::Error("Could not load source file!", e);
         return -1;
     }
     catch (...) {
-		Corth::Error(("Could not load source file at " + Corth::SOURCE_PATH));
+        Corth::Error(("Could not load source file at " + Corth::SOURCE_PATH));
         return -1;
     }
 
-	// Lex program source into tokens
-	bool lexSuccessful = Corth::Lex(prog);
-	if (lexSuccessful) {
-		Corth::ValidateTokens(prog);
-		if (Corth::verbose_logging) {
-			Corth::Log("Lexed file into tokens: successful");
-			Corth::PrintTokens(prog);
-		}
-	}
-	else {
-		Corth::Error("Failure when lexing file into tokens");
-	    return -1;
-	}
+    // Lex program source into tokens
+    bool lexSuccessful = Corth::Lex(prog);
+    if (lexSuccessful) {
+        Corth::ValidateTokens(prog);
+        if (Corth::verbose_logging) {
+            Corth::Log("Lexed file into tokens: successful");
+            Corth::PrintTokens(prog);
+        }
+    }
+    else {
+        Corth::Error("Failure when lexing file into tokens");
+        return -1;
+    }
 
-	if (Corth::RUN_MODE == Corth::MODE::GENERATE) {
-		if (Corth::RUN_PLATFORM == Corth::PLATFORM::WIN64) {
+    if (Corth::RUN_MODE == Corth::MODE::GENERATE) {
+        if (Corth::RUN_PLATFORM == Corth::PLATFORM::WIN64) {
             #ifdef _WIN64
-			if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
-				Corth::GenerateAssembly_NASM_win64(prog);
-			}
-			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
-				Corth::GenerateAssembly_GAS_win64(prog);
-			}
+            if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+                Corth::GenerateAssembly_NASM_win64(prog);
+            }
+            else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+                Corth::GenerateAssembly_GAS_win64(prog);
+            }
             #else
-			Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line flag");
-			return -1;
+            Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line flag");
+            return -1;
             #endif
-		}
-		else if (Corth::RUN_PLATFORM == Corth::PLATFORM::LINUX64) {
+        }
+        else if (Corth::RUN_PLATFORM == Corth::PLATFORM::LINUX64) {
             #ifdef __linux__
-		    if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
-				Corth::GenerateAssembly_NASM_linux64(prog);
-			}
-			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
-				Corth::GenerateAssembly_GAS_linux64(prog);
-			}
+            if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+                Corth::GenerateAssembly_NASM_linux64(prog);
+            }
+            else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+                Corth::GenerateAssembly_GAS_linux64(prog);
+            }
             #else
-			Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
-			return -1;
+            Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
+            return -1;
             #endif
-		}
-	}
-	else if (Corth::RUN_MODE == Corth::MODE::COMPILE) {
-		if (Corth::RUN_PLATFORM == Corth::PLATFORM::WIN64) {
+        }
+    }
+    else if (Corth::RUN_MODE == Corth::MODE::COMPILE) {
+        if (Corth::RUN_PLATFORM == Corth::PLATFORM::WIN64) {
             #ifdef _WIN64
-			if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
-				Corth::GenerateAssembly_GAS_win64(prog);
-				if (FileExists(Corth::ASMB_PATH)) {
-					/* Construct Commands
-					   Assembly is generated at `Corth::OUTPUT_NAME.s` */
-						
-					std::string cmd_asmb = Corth::ASMB_PATH + " "
-						+ Corth::ASMB_OPTS + " "
-						+ Corth::OUTPUT_NAME + ".s "
-						+ ">assembler-log.txt 2>&1";
-		
-					printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-					if (system(cmd_asmb.c_str()) == 0) {
-						Corth::Log("Assembler successful!");
-					}
-					else {
-						Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
-					}
+            if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+                Corth::GenerateAssembly_GAS_win64(prog);
+                if (FileExists(Corth::ASMB_PATH)) {
+                    /* Construct Commands
+                       Assembly is generated at `Corth::OUTPUT_NAME.s` */
+                        
+                    std::string cmd_asmb = Corth::ASMB_PATH + " "
+                        + Corth::ASMB_OPTS + " "
+                        + Corth::OUTPUT_NAME + ".s "
+                        + ">assembler-log.txt 2>&1";
+        
+                    printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+                    if (system(cmd_asmb.c_str()) == 0) {
+                        Corth::Log("Assembler successful!");
+                    }
+                    else {
+                        Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+                    }
 
-					if (Corth::verbose_logging) {
-						printCharactersFromFile("assembler-log.txt", "Assembler Log");
-					}
-				}
-				else {
-					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-					return -1;
-				}
-			}
-			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
-				Corth::GenerateAssembly_NASM_win64(prog);
-				if (FileExists(Corth::ASMB_PATH)) {
-					if (FileExists(Corth::LINK_PATH)) {
-						/* Construct Commands
-						   Assembly is generated at `Corth::OUTPUT_NAME.asm`
-						   By default on win64, NASM generates an output `.obj` file of the same name as the input file.
-						   This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
-						
-						std::string cmd_asmb = Corth::ASMB_PATH + " "
-							+ Corth::ASMB_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".asm "
-							+ ">assembler-log.txt 2>&1";
-						
-						std::string cmd_link = Corth::LINK_PATH + " "
-							+ Corth::LINK_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".obj "
-							+ ">linker-log.txt 2>&1";
-		
-						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-						if (system(cmd_asmb.c_str()) == 0) {
-							Corth::Log("Assembler successful!");
-						}
-						else {
-							Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
-						}
+                    if (Corth::verbose_logging) {
+                        printCharactersFromFile("assembler-log.txt", "Assembler Log");
+                    }
+                }
+                else {
+                    Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+                    return -1;
+                }
+            }
+            else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+                Corth::GenerateAssembly_NASM_win64(prog);
+                if (FileExists(Corth::ASMB_PATH)) {
+                    if (FileExists(Corth::LINK_PATH)) {
+                        /* Construct Commands
+                           Assembly is generated at `Corth::OUTPUT_NAME.asm`
+                           By default on win64, NASM generates an output `.obj` file of the same name as the input file.
+                           This means the linker needs to link to `Corth::OUTPUT_NAME.obj` */
+                        
+                        std::string cmd_asmb = Corth::ASMB_PATH + " "
+                            + Corth::ASMB_OPTS + " "
+                            + Corth::OUTPUT_NAME + ".asm "
+                            + ">assembler-log.txt 2>&1";
+                        
+                        std::string cmd_link = Corth::LINK_PATH + " "
+                            + Corth::LINK_OPTS + " "
+                            + Corth::OUTPUT_NAME + ".obj "
+                            + ">linker-log.txt 2>&1";
+        
+                        printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+                        if (system(cmd_asmb.c_str()) == 0) {
+                            Corth::Log("Assembler successful!");
+                        }
+                        else {
+                            Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+                        }
 
-						printf("[CMD]: `%s`\n", cmd_link.c_str());
-						if (system(cmd_link.c_str()) == 0) {
-							Corth::Log("Linker successful!");
-						}
-						else {
-							Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
-						}
+                        printf("[CMD]: `%s`\n", cmd_link.c_str());
+                        if (system(cmd_link.c_str()) == 0) {
+                            Corth::Log("Linker successful!");
+                        }
+                        else {
+                            Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
+                        }
 
-						if (Corth::verbose_logging) {
-							printCharactersFromFile("assembler-log.txt", "Assembler Log");
-							printCharactersFromFile("linker-log.txt", "Linker Log");
-						}
-					}
-					else {
-						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
-						return -1;
-					}
-				}
-				else {
-					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-					return -1;
-				}
-			}
+                        if (Corth::verbose_logging) {
+                            printCharactersFromFile("assembler-log.txt", "Assembler Log");
+                            printCharactersFromFile("linker-log.txt", "Linker Log");
+                        }
+                    }
+                    else {
+                        Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
+                        return -1;
+                    }
+                }
+                else {
+                    Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+                    return -1;
+                }
+            }
             #else
-			Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
-			return -1;
+            Corth::Error("_WIN64 is undefined; specify the correct platform with a cmd-line option");
+            return -1;
             #endif
-		}
-		else if (Corth::RUN_PLATFORM == Corth::PLATFORM::LINUX64) {
-			#ifdef __linux__
-			if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
-				Corth::GenerateAssembly_GAS_linux64(prog);
-				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
-					/* Construct Commands
-					   Assembly is generated at `<Corth::OUTPUT_NAME>.s` */
-					std::string cmd_asmb = Corth::ASMB_PATH + " "
-						+ Corth::ASMB_OPTS + " "
-						+ Corth::OUTPUT_NAME + ".s "
-						+ ">assembler-log.txt 2>&1";
-						
-					// TODO: Look into exec() family of functions
-					printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-					if (system(cmd_asmb.c_str()) == 0) {
-						Corth::Log("Assembler successful!");
-					}
-					else {
-						Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
-					}
+        }
+        else if (Corth::RUN_PLATFORM == Corth::PLATFORM::LINUX64) {
+            #ifdef __linux__
+            if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::GAS) {
+                Corth::GenerateAssembly_GAS_linux64(prog);
+                if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+                    /* Construct Commands
+                       Assembly is generated at `<Corth::OUTPUT_NAME>.s` */
+                    std::string cmd_asmb = Corth::ASMB_PATH + " "
+                        + Corth::ASMB_OPTS + " "
+                        + Corth::OUTPUT_NAME + ".s "
+                        + ">assembler-log.txt 2>&1";
+                        
+                    // TODO: Look into exec() family of functions
+                    printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+                    if (system(cmd_asmb.c_str()) == 0) {
+                        Corth::Log("Assembler successful!");
+                    }
+                    else {
+                        Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+                    }
 
-					if (Corth::verbose_logging) {
-						printCharactersFromFile("assembler-log.txt", "Assembler Log");
-					}
-				}
-				else {
-					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-					return -1;
-				}
-			}
-			else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
-				Corth::GenerateAssembly_NASM_linux64(prog);
-				if (!system(("which " + Corth::ASMB_PATH).c_str())) {
-					if (!system(("which " + Corth::LINK_PATH).c_str())) {
-						/* Construct Commands
-						   Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
-						   By default on linux, NASM generates an output `.o` file of the same name as the input file
-						   This means the linker needs to link to `Corth::OUTPUT_NAME.o`
-						*/
-						std::string cmd_asmb = Corth::ASMB_PATH + " "
-							+ Corth::ASMB_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".asm "
-							+ ">assembler-log.txt 2>&1";
-						
-						std::string cmd_link = Corth::LINK_PATH + " "
-							+ Corth::LINK_OPTS + " "
-							+ Corth::OUTPUT_NAME + ".o "
-							+ ">linker-log.txt 2>&1";
+                    if (Corth::verbose_logging) {
+                        printCharactersFromFile("assembler-log.txt", "Assembler Log");
+                    }
+                }
+                else {
+                    Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+                    return -1;
+                }
+            }
+            else if (Corth::ASSEMBLY_SYNTAX == Corth::ASM_SYNTAX::NASM) {
+                Corth::GenerateAssembly_NASM_linux64(prog);
+                if (!system(("which " + Corth::ASMB_PATH).c_str())) {
+                    if (!system(("which " + Corth::LINK_PATH).c_str())) {
+                        /* Construct Commands
+                           Assembly is generated at `<Corth::OUTPUT_NAME>.asm`
+                           By default on linux, NASM generates an output `.o` file of the same name as the input file
+                           This means the linker needs to link to `Corth::OUTPUT_NAME.o`
+                        */
+                        std::string cmd_asmb = Corth::ASMB_PATH + " "
+                            + Corth::ASMB_OPTS + " "
+                            + Corth::OUTPUT_NAME + ".asm "
+                            + ">assembler-log.txt 2>&1";
+                        
+                        std::string cmd_link = Corth::LINK_PATH + " "
+                            + Corth::LINK_OPTS + " "
+                            + Corth::OUTPUT_NAME + ".o "
+                            + ">linker-log.txt 2>&1";
 
-						// TODO: Look into exec() family of functions
-						printf("[CMD]: `%s`\n", cmd_asmb.c_str());
-						if (system(cmd_asmb.c_str()) == 0) {
-							Corth::Log("Assembler successful!");
-						}
-						else {
-							Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
-						}
+                        // TODO: Look into exec() family of functions
+                        printf("[CMD]: `%s`\n", cmd_asmb.c_str());
+                        if (system(cmd_asmb.c_str()) == 0) {
+                            Corth::Log("Assembler successful!");
+                        }
+                        else {
+                            Corth::Log("Assembler returned non-zero exit code, indicating a failure. Check `assembler-log.txt` for the output of the assembler, or enable verbose logging (`-v` flag) to print output to the console.");
+                        }
 
-						printf("[CMD]: `%s`\n", cmd_link.c_str());
-						if (system(cmd_link.c_str()) == 0) {
-							Corth::Log("Linker successful!");
-						}
-						else {
-							Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
-						}
+                        printf("[CMD]: `%s`\n", cmd_link.c_str());
+                        if (system(cmd_link.c_str()) == 0) {
+                            Corth::Log("Linker successful!");
+                        }
+                        else {
+                            Corth::Log("Linker returned non-zero exit code, indicating a failure. Check `linker-log.txt` for the output of the linker, or enable verbose logging (`-v` flag) to print output to the console.");
+                        }
 
-						if (Corth::verbose_logging) {
-							printCharactersFromFile("assembler-log.txt", "Assembler Log");
-							printCharactersFromFile("linker-log.txt", "Linker Log");
-						}
-					}
-					else {
-						Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
-						return -1;
-					}
-				}
-				else {
-					Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
-					return -1;
-				}
-			}
-		    #else
-			Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
-			return -1;
+                        if (Corth::verbose_logging) {
+                            printCharactersFromFile("assembler-log.txt", "Assembler Log");
+                            printCharactersFromFile("linker-log.txt", "Linker Log");
+                        }
+                    }
+                    else {
+                        Corth::Error("Linker not found at " + Corth::LINK_PATH + "\n");
+                        return -1;
+                    }
+                }
+                else {
+                    Corth::Error("Assembler not found at " + Corth::ASMB_PATH + "\n");
+                    return -1;
+                }
+            }
+            #else
+            Corth::Error("__linux__ is undefined. Incorrect platform selected using cmd-line flags?");
+            return -1;
             #endif
-		}
-	}
-	return 0;
+        }
+    }
+    return 0;
 }
