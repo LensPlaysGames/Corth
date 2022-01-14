@@ -714,6 +714,12 @@ Standard Output:
 |[and](#kw-and)          | `[a][b] -> [a && b]`        | Equivalent to [&&](#op-bit-and) operator.                              |
 |[or](#kw-or)            | `[a][b] -> [a \|\| b]`      | Equivalent to [\|\|](#op-bit-or) operator.                             |
 |[mod](#kw-mod)          | `[a][b] -> [a % b]`         | Equivalent to [%](#op-modulo) operator.                                |
+|[open_file](#kw-f-open) | `[path][mode] -> [ptr]`     | Push a pointer to a file at path on to the stack.                      |
+|[write_to_file](#kw-f-write)| `[str][1][len][ptr] -> []` | Write a string `str` to a file `ptr`.                               |
+|[close_file](#kw-f-close)| `[ptr] -> []`              | Safely close an opened file.                                           |
+|[length_s](#kw-strlen)    | `[str] -> [len]`          | Push the length of a string on to the stack.                           |
+|[write](#kw-write)      | `[] -> [mode]`              | Push the `write` file mode constant on to the stack.                   |
+|[append](#kw-append)      | `[] -> [mode]`            | Push the `append` file mode constant on to the stack.                  |
 
 #### 'if' - Conditional Branch <a name="kw-if"></a><a name="kw-else"></a><a name="kw-endif"></a>
 The `if` keyword pops a value off the stack, then jumps to `endif` if the value is zero ,or `else` if it is present between `if`/`endif`.
@@ -1392,6 +1398,264 @@ Stack Output:
 ```
 
 Standard Output:
+```
+```
+
+[To Keywords](#corth-keywords)
+
+---
+
+#### 'open_file` - Operator <a name="kw-f-open"></a>
+Pop two values off the stack, `path` and `mode` then push a file pointer to an opened file. \
+Used with file operation keywords (see related).
+
+File paths are always relative to wherever the Corth executable was when it compiled the program. \
+File paths are NOT relative to the source code, or generated executable.
+
+```
+[path][mode] -> [file pointer]
+```
+
+Equivalent:
+- No equivalent
+
+Related:
+- Keyword: [write](#kw-write)
+- Keyword: [append](#kw-append)
+- Keyword: [write_to_file](#kw-f-write)
+- Keyword: [close_file](#kw-f-close)
+
+Example:
+```
+"myFile.txt" write open_file
+```
+
+Stack Output:
+```
+[pointer to writeable file]
+```
+
+Standard Output:
+```
+```
+
+[To Keywords](#corth-keywords)
+
+---
+
+#### `write_to_file` - Operator <a name="kw-f-write"></a>
+Pop four values off the stack, then use them as arguments to call `fwrite` from the C RunTime.
+
+Number of bytes per character is usually one unless you are doing some weird utf-16 stuff.
+
+File paths are always relative to wherever the Corth executable was when it compiled the program. \
+File paths are NOT relative to the source code, or generated executable.
+
+```
+[content str][num bytes per character][num characters to write][file pointer] -> []
+```
+
+Equivalent:
+- No equivalent
+
+Related:
+- Keyword: [open_file](#kw-f-open)
+- Keyword: [close_file](#kw-f-close)
+
+Example:
+```
+// Store file pointer in mem[0] thru mem[7]
+mem "myFile.txt" write open_file storeq
+
+// Content String
+"I want to write this string to a text file\n"
+
+// The length of the string is determined
+dup length_s
+
+// Next, the number of bytes per character must be set
+1
+
+// Then, it must be arranged correctly in-between the 
+//   string and it's length
+// [str][len][1] -> [str][1][len]
+swap
+
+// Load file pointer from memory
+mem loadq
+
+// Call `write_to_file`
+// 4 arguments: [content str][num bytes per character][num characters][file ptr]
+write_to_file
+
+// Load file pointer and close it
+mem loadq close_file
+```
+
+Stack Output:
+```
+[]
+```
+
+Standard Output:
+```
+```
+
+`myFile.txt` Contents:
+```
+I want to write this string to a text file
+
+```
+
+---
+
+#### 'close_file` - Operator <a name="kw-f-close"></a>
+Pops a single value off the stack, `file ptr`, then closes the file opened at that pointer.
+
+Best practices indicate that every opened file must be closed before execution halts.
+
+File paths are always relative to wherever the Corth executable was when it compiled the program. \
+File paths are NOT relative to the source code, or generated executable.
+
+```
+[file pointer] -> []
+```
+
+Equivalent:
+- No equivalent
+
+Related:
+- Keyword: [open_file](#kw-f-open)
+
+Example:
+```
+"myFile.txt" write open_file
+
+close_file
+```
+
+Stack Output:
+```
+[]
+```
+
+Standard Output:
+```
+```
+
+`myFile.txt` Contents:
+```
+```
+
+[To Keywords](#corth-keywords)
+
+---
+
+#### 'length_s` - Operator <a name="kw-strlen"></a>
+Pop a string off the stack, then return the length of that string back on to the stack.
+
+```
+[string] -> [length]
+```
+
+Equivalent:
+- No equivalent
+
+Related:
+- Keyword: [write_to_file](#kw-f-write)
+
+Example:
+```
+"Hello, World!" length_s dump
+```
+
+Stack Output:
+```
+[]
+```
+
+Standard Output:
+```
+13
+```
+
+[To Keywords](#corth-keywords)
+
+---
+
+#### 'write` - Operator <a name="kw-write"></a>
+Pushes a file mode constant on to the stack.
+
+Used with `open_file` to indicate that the file should start empty, creating the file if it doesn't already exist. \
+This means opening a file in this way over-writes any data previously stored there.
+
+```
+[] -> [file mode `write` constant]
+```
+
+Equivalent:
+- No equivalent
+
+Related:
+- Keyword: [open_file](#kw-f-open)
+- Keyword: [append](#kw-append)
+
+Example:
+```
+"myFile.txt" write open_file
+close_file
+```
+
+Stack Output:
+```
+[]
+```
+
+Standard Output:
+```
+```
+
+`myFile.txt` Contents:
+```
+```
+
+[To Keywords](#corth-keywords)
+
+---
+
+#### `append` - Operator <a name="kw-append"></a>
+Pushes a file mode constant on to the stack.
+
+Used with `open_file` to indicate that it should keep the contents of the file. \
+Anything written to the file is put after the contents that were there already.
+
+```
+[] -> [file mode `append` constant]
+```
+
+Equivalent:
+- No equivalent
+
+Related:
+- Keyword: [open_file](#kw-f-open)
+- Keyword: [write](#kw-write)
+
+Example:
+```
+"myFile.txt" append open_file
+close_file
+```
+
+Stack Output:
+```
+[]
+```
+
+Standard Output:
+```
+```
+
+`myFile.txt` Contents:
 ```
 ```
 
