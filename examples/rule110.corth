@@ -1,7 +1,7 @@
 // Triangle side length (stored at mem[9900] thru mem[9908])
 //          |
 //          V
-mem 9900 +  300  storeq
+mem 9900 +  41  storeq
 
 // Initialize column pattern
 // The column pattern is simply a condition for each

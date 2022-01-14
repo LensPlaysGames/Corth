@@ -1,0 +1,26 @@
+// OPEN FILE FOR WRITING
+// Store file pointer in mem[0] through mem[7]
+mem "myFile.txt" write open_file storeq
+
+// PREPARE CONTENT STRING
+// String of characters to write into file
+"'If I wanted, I could do anything I wanted to. You could be my BITCH'\n\t~ Sinbad"
+
+
+// PREPARE `write_to_file` ARGUMENTS
+// fwrite(<content string>, <number of byters per character>, <number of characters to write>, <file pointer>)
+// [Content String]
+dup length_s       // Get length of string without destroying it
+// [Content String] -> [Content String][Content String] -> [Content String][Content Length]
+1 swap             // Set number of bytes per character, arrange behind content size
+// [Content String][Content Length][1] -> [Content String][1][Content Length]
+mem loadq          // Load file pointer
+// [Content String][Content Length][1][File Pointer]
+
+// Call fwrite(content ptr, bytes per char, num chars, file ptr)
+write_to_file
+// []
+
+// CLOSE FILE (ENSURE CONTENTS ARE WRITTEN, FREE MEMORY, ETC)
+mem loadq          // Load file pointer
+close_file         // Close file, writing all unflushed buffers to disk
