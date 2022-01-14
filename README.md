@@ -1405,7 +1405,7 @@ Standard Output:
 
 ---
 
-#### 'open_file` - Operator <a name="kw-f-open"></a>
+#### 'open_file' - Operator <a name="kw-f-open"></a>
 Pop two values off the stack, `path` and `mode` then push a file pointer to an opened file. \
 Used with file operation keywords (see related).
 
@@ -1443,7 +1443,7 @@ Standard Output:
 
 ---
 
-#### `write_to_file` - Operator <a name="kw-f-write"></a>
+#### 'write_to_file' - Operator <a name="kw-f-write"></a>
 Pop four values off the stack, then use them as arguments to call `fwrite` from the C RunTime.
 
 Number of bytes per character is usually one unless you are doing some weird utf-16 stuff.
@@ -1509,7 +1509,7 @@ I want to write this string to a text file
 
 ---
 
-#### 'close_file` - Operator <a name="kw-f-close"></a>
+#### 'close_file' - Operator <a name="kw-f-close"></a>
 Pops a single value off the stack, `file ptr`, then closes the file opened at that pointer.
 
 Best practices indicate that every opened file must be closed before execution halts.
@@ -1551,7 +1551,7 @@ Standard Output:
 
 ---
 
-#### 'length_s` - Operator <a name="kw-strlen"></a>
+#### 'length_s' - Operator <a name="kw-strlen"></a>
 Pop a string off the stack, then return the length of that string back on to the stack.
 
 ```
@@ -1583,7 +1583,7 @@ Standard Output:
 
 ---
 
-#### 'write` - Operator <a name="kw-write"></a>
+#### 'write' - Operator <a name="kw-write"></a>
 Pushes a file mode constant on to the stack.
 
 Used with `open_file` to indicate that the file should start empty, creating the file if it doesn't already exist. \
@@ -1623,7 +1623,7 @@ Standard Output:
 
 ---
 
-#### `append` - Operator <a name="kw-append"></a>
+#### 'append' - Operator <a name="kw-append"></a>
 Pushes a file mode constant on to the stack.
 
 Used with `open_file` to indicate that it should keep the contents of the file. \
