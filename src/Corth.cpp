@@ -112,11 +112,15 @@ namespace Corth {
         WRITE_TO_FILE,
         CLOSE_FILE,
         LENGTH_S,
+		WRITE,
+		WRITE_PLUS,
+		APPEND,
+		APPEND_PLUS,
         COUNT
     };
 
     bool iskeyword(std::string word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 32,
+        static_assert(static_cast<int>(Keyword::COUNT) == 36,
                       "Exhaustive handling of keywords in iskeyword");
         if (word == "if"
             || word == "else"
@@ -150,7 +154,11 @@ namespace Corth {
             || word == "write_to_file"
             || word == "read_file"
             || word == "close_file"
-            || word == "length_s")
+            || word == "length_s"
+            || word == "write"
+            || word == "write_plus"
+            || word == "append"
+            || word == "append_plus")
         {
             return true;
         }
@@ -162,7 +170,7 @@ namespace Corth {
     // This function outlines the corth source input and the output it will generate.
     // case <output>: { return "<input>"; }
     std::string GetKeywordStr(Keyword word) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 32,
+        static_assert(static_cast<int>(Keyword::COUNT) == 36,
                       "Exhaustive handling of keywords in GetKeywordStr");
         switch (word) {
         case Keyword::IF:               { return "if";            }
@@ -201,6 +209,11 @@ namespace Corth {
         case Keyword::WRITE_TO_FILE:    { return "write_to_file"; }
         case Keyword::CLOSE_FILE:       { return "close_file";    }
         case Keyword::LENGTH_S:         { return "length_s";      }
+
+        case Keyword::WRITE:            { return "write";         }
+        case Keyword::WRITE_PLUS:       { return "write_plus";    }
+        case Keyword::APPEND:           { return "append";        }
+        case Keyword::APPEND_PLUS:      { return "append_plus";   }
         default:
             Error("UNREACHABLE in GetKeywordStr");
             exit(1);
@@ -498,7 +511,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 32,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 36,
                                   "Exhaustive handling of keywords in GenerateAssembly_NASM_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
@@ -694,20 +707,34 @@ namespace Corth {
                                  << "    pop rdx\n"
                                  << "    pop rsi\n"
                                  << "    pop rdi\n"
-                                 << "    call fopen\n"
-                                 << "    push rax\n";
+                                 << "    call fwrite\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::CLOSE_FILE)) {
                         asm_file << "    ;; -- close file --\n"
                                  << "    pop rdi\n"
-                                 << "    call fclose\n"
-                                 << "    push rax\n";
+                                 << "    call fclose\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LENGTH_S)) {
                         asm_file << "    ;; -- get length of string --\n"
                                  << "    pop rdi\n"
                                  << "    call strlen\n"
                                  << "    push rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE)) {
+                        asm_file << "    ;; -- push pointer to write file mode constant --\n"
+                                 << "    push write\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE_PLUS)) {
+                        asm_file << "    ;; -- push pointer to write/read file mode constant --\n"
+                                 << "    push write_plus\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::APPEND)) {
+                        asm_file << "    ;; -- push pointer to append file mode constant --\n"
+                                 << "    push append\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::APPEND_PLUS)) {
+                        asm_file << "    ;; -- push pointer to append/read file mode constant --\n"
+                                 << "    push append_plus\n";
                     }
                 }
                 instr_ptr++;
@@ -720,10 +747,10 @@ namespace Corth {
                      << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
                      << "    fmt_str db '%s', 0\n"
-					 << "    write db 'w', 0\n"
-					 << "    append db 'a', 0\n"
-					 << "    write_plus db 'w+', 0\n"
-					 << "    append_plus db 'a+', 0\n";
+					 << "    write db \"w\", 0\n"
+					 << "    append db \"a\", 0\n"
+					 << "    write_plus db \"w+\", 0\n"
+					 << "    append_plus db \"a+\", 0\n";
 
             // WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
@@ -919,7 +946,7 @@ namespace Corth {
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 32,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 36,
                                   "Exhaustive handling of keywords in GenerateAssembly_GAS_linux64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
@@ -1116,19 +1143,37 @@ namespace Corth {
                                  << "    pop %rdx\n"
                                  << "    pop %rsi\n"
                                  << "    pop %rdi\n"
-                                 << "    call fopen\n"
-                                 << "    push %rax\n";
+                                 << "    call fwrite\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::CLOSE_FILE)) {
-                        asm_file << "    ;; -- close file --\n"
+                        asm_file << "    # -- close file --\n"
                                  << "    pop %rdi\n"
-                                 << "    call fclose\n"
-                                 << "    push %rax\n";
+                                 << "    call fclose\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LENGTH_S)) {
-                        asm_file << "    ;; -- get length of string --\n"
+                        asm_file << "    # -- get length of string --\n"
                                  << "    pop %rdi\n"
                                  << "    call strlen\n"
+                                 << "    push %rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE)) {
+                        asm_file << "    # -- push pointer to write file mode constant --\n"
+                                 << "    lea write(%rip), %rax\n"
+                                 << "    push %rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE_PLUS)) {
+                        asm_file << "    # -- push pointer to write/read file mode constant --\n"
+								 << "    lea write_plus(%rip), %rax\n"
+                                 << "    push %rax\n";
+                    }
+				    else if (tok.text == GetKeywordStr(Keyword::APPEND)) {
+                        asm_file << "    # -- push pointer to append file mode constant --\n"
+                                 << "    lea append(%rip), %rax\n"
+                                 << "    push %rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::APPEND_PLUS)) {
+                        asm_file << "    # -- push pointer to append/read file mode constant --\n"
+								 << "    lea append_plus(%rip), %rax\n"
                                  << "    push %rax\n";
                     }
                 }
@@ -1142,7 +1187,11 @@ namespace Corth {
                      << "    .data\n"
                      << "    fmt: .string \"%u\"\n"
                      << "    fmt_char: .string \"%c\"\n"
-                     << "    fmt_str: .string \"%s\"\n";
+                     << "    fmt_str: .string \"%s\"\n"
+					 << "    write: .string \"w\"\n"
+					 << "    append: .string \"a\"\n"
+					 << "    write_plus: .string \"w+\"\n"
+					 << "    append_plus: .string \"a+\"\n";
 
             // WRITE USER DEFINED STRING CONSTANTS
             size_t index = 0;
@@ -1194,7 +1243,11 @@ namespace Corth {
                      << "    SECTION .data\n"
                      << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
-                     << "    fmt_str db '%s', 0\n";
+                     << "    fmt_str db '%s', 0\n"
+					 << "    write db \"w\", 0\n"
+					 << "    append db \"a\", 0\n"
+					 << "    write_plus db \"w+\", 0\n"
+					 << "    append_plus db \"a+\", 0\n";
         }
         else {
             Error("Could not open file for writing. Does directory exist?");
@@ -1219,6 +1272,10 @@ namespace Corth {
                      << "    SECTION .text\n"
                      << "    ;; DEFINE EXTERNAL C RUNTIME SYMBOLS (LINK AGAINST MSVCRT.DLL)\n"
                      << "    extern printf\n"
+                     << "    extern fopen\n"
+                     << "    extern fwrite\n"
+                     << "    extern fclose\n"
+                     << "    extern strlen\n"
                      << "    extern exit\n"
                      << "\n"
                      << "    global main\n"
@@ -1371,13 +1428,13 @@ namespace Corth {
                                  << "    lea rcx, [rel fmt]\n"
                                  << "    pop rdx\n"
                                  << "    xor rax, rax\n"
-                                 << "    sub rsp, 32\n"
+                                 << "    sub rsp, 64\n"
                                  << "    call printf\n"
-                                 << "    add rsp, 32\n";
+                                 << "    add rsp, 64\n";
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 32,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 36,
                                   "Exhaustive handling of keywords in GenerateAssembly_NASM_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    ;; -- if --\n"
@@ -1449,27 +1506,27 @@ namespace Corth {
                                  << "    lea rcx, [rel fmt]\n"
                                  << "    pop rdx\n"
                                  << "    xor rax, rax\n"
-                                 << "    sub rsp, 32\n"
+                                 << "    sub rsp, 64\n"
                                  << "    call printf\n"
-                                 << "    add rsp, 32\n";
+                                 << "    add rsp, 64\n";
                     }
                     else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
                         asm_file << "    ;; -- dump --\n"
                                  << "    lea rcx, [rel fmt_char]\n"
                                  << "    pop rdx\n"
                                  << "    xor rax, rax\n"
-                                 << "    sub rsp, 32\n"
+                                 << "    sub rsp, 64\n"
                                  << "    call printf\n"
-                                 << "    add rsp, 32\n";
+                                 << "    add rsp, 64\n";
                     }
                     else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
                         asm_file << "    ;; -- dump --\n"
                                  << "    lea rcx, [rel fmt_str]\n"
                                  << "    pop rdx\n"
                                  << "    xor rax, rax\n"
-                                 << "    sub rsp, 32\n"
+                                 << "    sub rsp, 64\n"
                                  << "    call printf\n"
-                                 << "    add rsp, 32\n";
+                                 << "    add rsp, 64\n";
                     }
 
                     else if (tok.text == GetKeywordStr(Keyword::MEM)) {
@@ -1571,7 +1628,9 @@ namespace Corth {
                         asm_file << "    ;; -- open file and push pointer --\n"
                                  << "    pop rdx\n"
                                  << "    pop rcx\n"
+								 << "    sub rsp, 64\n"
                                  << "    call fopen\n"
+								 << "    add rsp, 64\n"
                                  << "    push rax\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::WRITE_TO_FILE)) {
@@ -1580,20 +1639,40 @@ namespace Corth {
                                  << "    pop r8\n"
                                  << "    pop rdx\n"
                                  << "    pop rcx\n"
-                                 << "    call fopen\n"
-                                 << "    push rax\n";
+								 << "    sub rsp, 64\n"
+                                 << "    call fwrite\n"
+								 << "    add rsp, 64\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::CLOSE_FILE)) {
                         asm_file << "    ;; -- close file --\n"
                                  << "    pop rcx\n"
+								 << "    sub rsp, 64\n"
                                  << "    call fclose\n"
-                                 << "    push rax\n";
+								 << "    add rsp, 64\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LENGTH_S)) {
                         asm_file << "    ;; -- get length of string --\n"
                                  << "    pop rcx\n"
+								 << "    sub rsp, 64\n"
                                  << "    call strlen\n"
+								 << "    add rsp, 64\n"
                                  << "    push rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE)) {
+                        asm_file << "    ;; -- push pointer to write file mode constant --\n"
+                                 << "    push write\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE_PLUS)) {
+                        asm_file << "    ;; -- push pointer to write/read file mode constant --\n"
+                                 << "    push write_plus\n";
+                    }
+				    else if (tok.text == GetKeywordStr(Keyword::APPEND)) {
+                        asm_file << "    ;; -- push pointer to append file mode constant --\n"
+                                 << "    push append\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::APPEND_PLUS)) {
+                        asm_file << "    ;; -- push pointer to append/read file mode constant --\n"
+                                 << "    push append_plus\n";
                     }
                 }
                 instr_ptr++;
@@ -1606,7 +1685,11 @@ namespace Corth {
             asm_file << "    SECTION .data\n"
                      << "    fmt db '%u', 0\n"
                      << "    fmt_char db '%c', 0\n"
-                     << "    fmt_str db '%s', 0\n";
+                     << "    fmt_str db '%s', 0\n"
+					 << "    write db \"w\", 0\n"
+					 << "    append db \"a\", 0\n"
+					 << "    write_plus db \"w+\", 0\n"
+					 << "    append_plus db \"a+\", 0\n";
 
             // DECLARE USER-DEFINED STRING CONSTANTS HERE
             size_t index = 0;
@@ -1796,13 +1879,13 @@ namespace Corth {
                                  << "    lea fmt(%rip), %rcx\n"
                                  << "    pop %rdx\n"
                                  << "    xor %rax, %rax\n"
-                                 << "    sub $32, %rsp\n"
+                                 << "    sub $64, %rsp\n"
                                  << "    call printf\n"
-                                 << "    add $32, %rsp\n";
+                                 << "    add $64, %rsp\n";
                     }
                 }
                 else if (tok.type == TokenType::KEYWORD) {
-                    static_assert(static_cast<int>(Keyword::COUNT) == 32,
+                    static_assert(static_cast<int>(Keyword::COUNT) == 36,
                                   "Exhaustive handling of keywords in GenerateAssembly_GAS_win64");
                     if (tok.text == GetKeywordStr(Keyword::IF)) {
                         asm_file << "    # -- if --\n"
@@ -1874,27 +1957,27 @@ namespace Corth {
                                  << "    lea fmt(%rip), %rcx\n"
                                  << "    pop %rdx\n"
                                  << "    xor %rax, %rax\n"
-                                 << "    sub $32, %rsp\n"
+                                 << "    sub $64, %rsp\n"
                                  << "    call printf\n"
-                                 << "    add $32, %rsp\n";
+                                 << "    add $64, %rsp\n";
                     }
                     else if (tok.text == GetKeywordStr(Keyword::DUMP_C)) {
                         asm_file << "    # -- dump character --\n"
                                  << "    lea fmt_char(%rip), %rcx\n"
                                  << "    pop %rdx\n"
                                  << "    xor %rax, %rax\n"
-                                 << "    sub $32, %rsp\n"
+                                 << "    sub $64, %rsp\n"
                                  << "    call printf\n"
-                                 << "    add $32, %rsp\n";
+                                 << "    add $64, %rsp\n";
                     }
                     else if (tok.text == GetKeywordStr(Keyword::DUMP_S)) {
                         asm_file << "    # -- dump string --\n"
                                  << "    lea fmt_str(%rip), %rcx\n"
                                  << "    pop %rdx\n"
                                  << "    xor %rax, %rax\n"
-                                 << "    sub $32, %rsp\n"
+                                 << "    sub $64, %rsp\n"
                                  << "    call printf\n"
-                                 << "    add $32, %rsp\n";
+                                 << "    add $64, %rsp\n";
                     }
 
                     else if (tok.text == GetKeywordStr(Keyword::MEM)) {
@@ -1993,31 +2076,57 @@ namespace Corth {
                                  << "    push %rdx\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::OPEN_FILE)) {
-                        asm_file << "    ;; -- open file and push pointer --\n"
+                        asm_file << "    # -- open file and push pointer --\n"
                                  << "    pop %rdx\n"
                                  << "    pop %rcx\n"
+								 << "    sub $64, %rsp\n"
                                  << "    call fopen\n"
+								 << "    add $64, %rsp\n"
                                  << "    push %rax\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::WRITE_TO_FILE)) {
-                        asm_file << "    ;; -- write to file --\n"
+                        asm_file << "    # -- write to file --\n"
                                  << "    pop %r9\n"
                                  << "    pop %r8\n"
                                  << "    pop %rdx\n"
                                  << "    pop %rcx\n"
-                                 << "    call fopen\n"
-                                 << "    push %rax\n";
+								 << "    sub $64, %rsp\n"
+                                 << "    call fwrite\n"
+								 << "    add $64, %rsp\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::CLOSE_FILE)) {
-                        asm_file << "    ;; -- close file --\n"
+                        asm_file << "    # -- close file --\n"
                                  << "    pop %rcx\n"
+								 << "    sub $64, %rsp\n"
                                  << "    call fclose\n"
-                                 << "    push %rax\n";
+								 << "    add $64, %rsp\n";
                     }
 					else if (tok.text == GetKeywordStr(Keyword::LENGTH_S)) {
-                        asm_file << "    ;; -- get length of string --\n"
+                        asm_file << "    # -- get length of string --\n"
                                  << "    pop %rcx\n"
+								 << "    sub $64, %rsp\n"
                                  << "    call strlen\n"
+								 << "    add $64, %rsp\n"
+                                 << "    push %rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE)) {
+                        asm_file << "    # -- push pointer to write file mode constant --\n"
+                                 << "    lea write(%rip), %rax\n"
+                                 << "    push %rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::WRITE_PLUS)) {
+                        asm_file << "    # -- push pointer to write/read file mode constant --\n"
+								 << "    lea write_plus(%rip), %rax\n"
+                                 << "    push %rax\n";
+                    }
+				    else if (tok.text == GetKeywordStr(Keyword::APPEND)) {
+                        asm_file << "    # -- push pointer to append file mode constant --\n"
+                                 << "    lea append(%rip), %rax\n"
+                                 << "    push %rax\n";
+                    }
+					else if (tok.text == GetKeywordStr(Keyword::APPEND_PLUS)) {
+                        asm_file << "    # -- push pointer to append/read file mode constant --\n"
+								 << "    lea append_plus(%rip), %rax\n"
                                  << "    push %rax\n";
                     }
                 }
@@ -2030,7 +2139,11 @@ namespace Corth {
                      << "    .data\n"
                      << "    fmt: .string \"%u\"\n"
                      << "    fmt_char: .string \"%c\"\n"
-                     << "    fmt_str: .string \"%s\"\n";
+                     << "    fmt_str: .string \"%s\"\n"
+					 << "    write: .string \"w\"\n"
+					 << "    append: .string \"a\"\n"
+					 << "    write_plus: .string \"w+\"\n"
+					 << "    append_plus: .string \"a+\"\n";
 
             // WRITE USER DEFINED STRINGS
             size_t index = 0;
@@ -2340,7 +2453,6 @@ namespace Corth {
                     }
                     else { break; }
                 }
-
                 // If the token is not a keyword, output a warning and
                 // keep this token's type as whitespace
                 // (effectively ensuring it will be removed)
@@ -2478,7 +2590,7 @@ namespace Corth {
                 }
             }
             else if (tok.type == TokenType::KEYWORD) {
-                static_assert(static_cast<int>(Keyword::COUNT) == 32,
+                static_assert(static_cast<int>(Keyword::COUNT) == 36,
                               "Exhaustive handling of keywords in ValidateTokens_Stack. Keep in mind not all keywords do stack operations");
                 // Skip skippable tokens first for speed
                 if (tok.text == GetKeywordStr(Keyword::ELSE)
@@ -2492,7 +2604,7 @@ namespace Corth {
                          || tok.text == GetKeywordStr(Keyword::DO))
                 {
                     // both `if` and `do` will pop from the stack to check the condition to see if it needs to jump or not
-                    // {<condition>} -> { }
+                    // [condition] -> []
                     if (stackSize > 0) {
                         stackSize--;
                     }
@@ -2512,21 +2624,29 @@ namespace Corth {
                     }
                     else { TokenStackError(tok); }
                 }
-                else if (tok.text == GetKeywordStr(Keyword::MEM)) {
+                else if (tok.text == GetKeywordStr(Keyword::MEM)
+						 || tok.text == GetKeywordStr(Keyword::WRITE)
+						 || tok.text == GetKeywordStr(Keyword::APPEND)
+						 || tok.text == GetKeywordStr(Keyword::WRITE_PLUS)
+						 || tok.text == GetKeywordStr(Keyword::APPEND_PLUS))
+				{
                     // `mem` will push the address of usable memory onto the stack
-                    // { } -> {<memory address>}
+                    // [] -> [addr]
+					// the file mode keywords will push the pointer to the char[] file mode
                     stackSize++;
                 }
                 else if (tok.text == GetKeywordStr(Keyword::LOADB)
                          || tok.text == GetKeywordStr(Keyword::LOADW)
                          || tok.text == GetKeywordStr(Keyword::LOADD)
-                         || tok.text == GetKeywordStr(Keyword::LOADQ))
+                         || tok.text == GetKeywordStr(Keyword::LOADQ)
+						 || tok.text == GetKeywordStr(Keyword::LENGTH_S))
                 {
 					// All operations that pop one and push one from the stack
 					//  belong in this conditional branch.
                     // `load` keywords will pop an address from the stack,
                     //   then push the value at that address.
-                    // {<address>} -> {<value>}
+                    // [addr] -> [value]
+					// `length_s` pops a string ptr and returns it's length
                     if (stackSize > 0) {
                         continue;
                     }
@@ -2539,7 +2659,7 @@ namespace Corth {
                 {
                     // `store` operations will pop a value and an
                     //   address from the stack.
-                    // {<address>, <value>} -> { }
+                    // [addr][value] -> []
                     if (stackSize > 1) {
                         stackSize -= 2;
                     }
@@ -2549,13 +2669,12 @@ namespace Corth {
                          || tok.text == GetKeywordStr(Keyword::DUMP_C)
                          || tok.text == GetKeywordStr(Keyword::DUMP_S)
                          || tok.text == GetKeywordStr(Keyword::DROP)
-						 || tok.text == GetKeywordStr(Keyword::CLOSE_FILE)
-						 || tok.text == GetKeywordStr(Keyword::LENGTH_S))
+						 || tok.text == GetKeywordStr(Keyword::CLOSE_FILE))
                 {
                     // `dump`, `dump_c`, `dump_s`, `drop`, `close_file`,
 					//   and `length_s` will take an item off the stack
 					//   without returning anything.
-                    // {a} -> { }
+                    // [a] -> []
                     if (stackSize > 0) {
                         stackSize--;
                     }
@@ -2572,7 +2691,7 @@ namespace Corth {
                 }
                 else if (tok.text == GetKeywordStr(Keyword::OVER)) {
                     // Over will pop two values but push three values, net one
-                    // {a, b} -> {a, b, a}
+                    // [a][b] -> [a][b][a]
                     if (stackSize > 1) {
                         stackSize++;
                     }
@@ -2595,7 +2714,7 @@ namespace Corth {
                     else { TokenStackError(tok); }
                 }
 				else if (tok.text == GetKeywordStr(Keyword::WRITE_TO_FILE)) {
-					// `write_to_file` calls fwrite, which takes four! arguments.
+					// `write_file` calls fwrite, which takes four! arguments.
 					// [content string][bytes per character][number of characters][file pointer]
 					// ->
 					// []
@@ -2616,7 +2735,7 @@ namespace Corth {
         // Assume that current token at instruction pointer is an `if`, `else`, `do`, or `while`
         size_t block_instr_ptr = instr_ptr;
 
-        static_assert(static_cast<int>(Keyword::COUNT) == 32,
+        static_assert(static_cast<int>(Keyword::COUNT) == 36,
                       "Exhaustive handling of keywords in ValidateBlock. Keep in mind not all keywords form blocks.");
         
         // Handle while block
@@ -2714,7 +2833,7 @@ namespace Corth {
     // For example, an `if` statement needs to know where to jump to if it is false.
     // Another example: `endwhile` statement needs to know where to jump back to.
     void ValidateTokens_Blocks(Program& prog) {
-        static_assert(static_cast<int>(Keyword::COUNT) == 32,
+        static_assert(static_cast<int>(Keyword::COUNT) == 36,
                       "Exhaustive handling of keywords in ValidateTokens_Blocks. Keep in mind not all tokens form blocks");
         size_t instr_ptr = 0;
         size_t instr_ptr_max = prog.tokens.size();
@@ -2861,9 +2980,12 @@ int main(int argc, char** argv) {
     // Lex program source into tokens
     bool lexSuccessful = Corth::Lex(prog);
     if (lexSuccessful) {
+		if (Corth::verbose_logging) {
+			Corth::Log("Lexed file into tokens");
+			Corth::PrintTokens(prog);
+		}
         Corth::ValidateTokens(prog);
         if (Corth::verbose_logging) {
-            Corth::Log("Lexed file into tokens: successful");
             Corth::PrintTokens(prog);
         }
     }
