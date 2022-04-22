@@ -470,7 +470,7 @@ Standard Output:
 
 ---
 
-#### '>' - LESS-THAN <a name="op-cmp-lt"></a>
+#### '<' - LESS-THAN <a name="op-cmp-lt"></a>
 Pops two values, `a` and `b`, off of the stack then pushes a `1` if `a` is smaller than `b`, or a `0` otherwise.
 
 ```
@@ -501,7 +501,7 @@ Standard Output:
 
 ---
 
-#### '>' - GREATER-THAN-OR-EQUAL <a name="op-cmp-ge"></a>
+#### '>=' - GREATER-THAN-OR-EQUAL <a name="op-cmp-ge"></a>
 Pops two values, `a` and `b`, off of the stack then pushes a `1` if `a` is larger than or equal to `b`, or a `0` otherwise.
 
 ```
@@ -532,7 +532,7 @@ Standard Output:
 
 ---
 
-#### '>' - LESS-THAN-OR-EQUAL <a name="op-cmp-le"></a>
+#### '<=' - LESS-THAN-OR-EQUAL <a name="op-cmp-le"></a>
 Pops two values, `a` and `b`, off of the stack then pushes a `1` if `a` is smaller than or equal to `b`, or a `0` otherwise.
 
 ```
@@ -594,7 +594,7 @@ Standard Output:
 
 ---
 
-#### '<<' - BITWISE-SHIFT RIGHT <a name="op-bit-shr"></a>
+#### '>>' - BITWISE-SHIFT RIGHT <a name="op-bit-shr"></a>
 Pops two values, `a` and `b`, off of the stack then pushes bits of `a` shifted right by `b` amount of bits.
 
 ```
