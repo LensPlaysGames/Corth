@@ -345,7 +345,7 @@ Standard Output:
 ---
 
 #### '/' - DIVIDE <a name="op-divide"></a>
-Pops two values, `a` and `b`, off of the stack, then pushes the product of those values.
+Pops two values, `a` and `b`, off of the stack, then pushes the quotient of those values.
 
 ```
 [a][b] -> [a * b]
